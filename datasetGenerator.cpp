@@ -15,7 +15,7 @@ std::vector<std::string> generateRandomName( const int n );
 
 int main( int argc, char ** argv ) {
 	if (argc < 5) {
-		std::cout << "suca" << std::endl;
+		std::cout << "usage: ./datasetGenerator numberOfNodes nameOfPositiveLabelFile nameOfNetFile edgeProbability" << std::endl;
 		return -1;
 	}
 
@@ -25,7 +25,7 @@ int main( int argc, char ** argv ) {
 	// 3: nome rete
 	// 4: densita'
 	uint32_t		nNodes = atoi( argv[1] );
-	uint32_t		nClasses = 1;
+	uint32_t		nClasses = 5;
 	std::string		labelFileName( argv[2] );
 	std::string		netFileName( argv[3] );
 	float			probLabels	= 0.01f;
@@ -34,15 +34,6 @@ int main( int argc, char ** argv ) {
 	std::cout << "nNodes: " << nNodes << " - probDensity: " << probDensity << " - label: "
 		<< labelFileName << " - net: " << netFileName << std::endl;
 
-	//uint32_t		nNodes = 1000000 /* = inserire */;
-	//uint32_t		nClasses = 12 /* = inserire */;
-	//std::string labelFileName( "generatedLabels1000k.txt" );
-	//std::string netFileName( "erdos1000k.txt" );
-	// OPZIONALE: leggere i parametri precedenti da riga di comando
-
-	//float probLabels = 0.05f;
-	//float probDensity = 100.0 / (float) nNodes;
-	//std::default_random_engine eng( time( NULL ) );
 	std::default_random_engine eng( time( NULL ) );
 	std::uniform_real_distribution<> randR(0.0, 1.0);
 	std::normal_distribution<> randNorm(0, 0.1);
@@ -52,12 +43,12 @@ int main( int argc, char ** argv ) {
 
 	if (!labelFile.is_open()) {
 		std::cerr << "errore aperture file etichette" << std::endl;
-		abort();
+		exit(-1);
 	}
 
 	if (!netFile.is_open()) {
 		std::cerr << "errore aperture file rete" << std::endl;
-		abort();
+		exit(-1);
 	}
 
 	// Richiama generateRandomNames per generare il vettore dei nomi dei nodi
@@ -159,7 +150,7 @@ std::vector<std::string> generateRandomName( const int n ) {
 	        "abcdefghijklmnopqrstuvwxyz";
 	std::vector<std::string> out;
 	std::set<std::string> tempSet;
-	const int slen = 24;	// <- dovrebbe bastare
+	const int slen = 12;	// <- dovrebbe bastare
 	char stringa[slen + 1];
 	stringa[slen] = 0;
 
