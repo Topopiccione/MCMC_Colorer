@@ -35,18 +35,18 @@
 
 struct GPUMemTracker {
 public:
-	static uint64_t            graphStructSize;
-	static uint64_t            graphDegsSize;
-	static uint64_t            graphNeighsSize;
-	static uint64_t            graphNodeWSize;
-	static uint64_t            graphEdgeWSize;
+	static uint64_t				graphStructSize;
+	static uint64_t				graphDegsSize;
+	static uint64_t				graphNeighsSize;
+	static uint64_t				graphNodeWSize;
+	static uint64_t				graphEdgeWSize;
 	static uint64_t				graphNodeTSize;
 
-	static uint64_t            coloringColorsSize;
-	static uint64_t            coloringColorBinsSize;
-	static uint64_t            coloringColorHistSize;
-	static uint64_t            coloringNconflictsSize;
-	static uint64_t            coloringQjSize;
+	static uint64_t				coloringColorsSize;
+	static uint64_t				coloringColorBinsSize;
+	static uint64_t				coloringColorHistSize;
+	static uint64_t				coloringNconflictsSize;
+	static uint64_t				coloringQjSize;
 
     static void printGraphReport() {
         std::cout << "GPU mem allocation report (graph)" << std::endl;

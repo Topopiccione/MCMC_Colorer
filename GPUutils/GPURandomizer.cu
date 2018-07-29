@@ -5,8 +5,8 @@
 
 #define OFFSET 0
 
-__global__ void GPURand_k::initCurand(curandState* states, unsigned int seed, unsigned int nElem ) {
-	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
+__global__ void GPURand_k::initCurand(curandState* states, uint32_t seed, uint32_t nElem ) {
+	uint32_t tid = threadIdx.x + blockDim.x * blockIdx.x;
 	if (tid < nElem) {
 		curand_init( seed, tid, 0, &states[tid] );
 	}
@@ -20,13 +20,13 @@ __global__ void GPURand_k::initCurand(curandState* states, unsigned int seed, un
  * @param n the distribution size
  */
 __device__ int GPURand_k::discreteSampling(curandState* states, discreteDistribution dist) {
-	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
-	unsigned int n = dist->length;
-	unsigned int l = 0, r = n-1;
+	uint32_t tid = threadIdx.x + blockDim.x * blockIdx.x;
+	uint32_t n = dist->length;
+	uint32_t l = 0, r = n-1;
 	float u = curand_uniform(&states[tid]);
 	float bin = dist->prob[n-1]*u;
 	while (l < r) {
-		unsigned int m = floorf((l+r)/2);
+		uint32_t m = floorf((l+r)/2);
 		if (bin < dist->prob[m])
 			r = m;
 		else
@@ -41,28 +41,28 @@ __device__ int GPURand_k::discreteSampling(curandState* states, discreteDistribu
  * @param lambda parameter
  * @param n number of mass points
  */
-void CPURand::createExpDistribution(expDiscreteDistribution dist, float lambda, unsigned int nCol) {
+void CPURand::createExpDistribution(expDiscreteDistribution dist, float lambda, uint32_t nCol) {
 	dist->CDF.prob = new float[nCol];
 	dist->CDF.length = nCol;
 	dist->CDF.normFactor = 0;
-	for (unsigned int i = 1; i <= nCol; i++) {
+	for (uint32_t i = 1; i <= nCol; i++) {
 		dist->CDF.prob[i-1] = expf(-lambda*i);
 		dist->CDF.normFactor += dist->CDF.prob[i];
 	}
 }
 
-void CPURand::discreteSampling(discreteDistribution dist, unsigned int* C, unsigned int n, unsigned int seed) {
-	unsigned int nCol = dist->length;
+void CPURand::discreteSampling(discreteDistribution dist, uint32_t * C, uint32_t n, uint32_t seed) {
+	uint32_t nCol = dist->length;
 	std::default_random_engine eng {seed};
 	std::uniform_real_distribution<> randU(0.0, 1.0);
 
 	float* P = new float[nCol];
 	P[0] = dist->prob[0];   // cumSum
-	for (unsigned i = 1; i < nCol; i++)
+	for (uint32_t i = 1; i < nCol; i++)
 		P[i] = P[i-1]+dist->prob[i];
 
-	for (unsigned int i = 0; i < n; i++) {
-		unsigned int l = 0;  // , r = nCol-1;
+	for (uint32_t i = 0; i < n; i++) {
+		uint32_t l = 0;  // , r = nCol-1;
 		float u = static_cast<float>( randU(eng) );
 		float bin = P[nCol-1]*u;
 
@@ -82,7 +82,7 @@ void CPURand::discreteSampling(discreteDistribution dist, unsigned int* C, unsig
 	delete[] P;
 }
 
-GPURand::GPURand( int n, long seed ) : num( n ), seed( seed ) {
+GPURand::GPURand( uint32_t n, long seed ) : num( n ), seed( seed ) {
 
     // configuro la griglia e i blocchi
 	dim3 threadsPerBlock( 32, 1, 1 );

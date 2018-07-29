@@ -6,6 +6,7 @@
 #endif
 
 #include <random>
+#include <cinttypes>
 #include <curand.h>
 #include <curand_kernel.h>
 
@@ -41,11 +42,11 @@ namespace CPURand {
 class GPURand {
 public:
 
-	GPURand( int n, long seed );
+	GPURand( uint32_t n, long seed );
 	~GPURand();
 
-	int						num;
-	unsigned int			seed;
+	uint32_t				num;
+	uint32_t				seed;
 	cudaError_t             cuSts;
 	curandStatus_t          curandSts;
 	curandState         *   randStates;
