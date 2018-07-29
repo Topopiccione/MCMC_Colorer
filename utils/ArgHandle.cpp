@@ -271,7 +271,7 @@ void ArgHandle::processCommandLine() {
 
 
 void ArgHandle::displayHelp() {
-	std::cout << " **** CosNET-GPU ****" << std::endl;
+	std::cout << " **** TITLE! ****" << std::endl;
 	std::cout << "( --- qui bisogna scrivere qualcosa tipo i nomi degli autori e una descrizione dell'applicazione --- )" << std::endl;
 
 	std::cout << "Usage: " << std::endl;

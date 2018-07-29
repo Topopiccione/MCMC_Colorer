@@ -12,8 +12,8 @@
 #include <time.h>
 
 #include "coloring.h"
+#include "coloringLuby.h"
 #include "graph/graph.h"
-
 #include "GPUutils/GPUutils.h"
 #include "GPUutils/GPUStream.h"
 
@@ -24,14 +24,11 @@ void ColoringLuby<nodeW, edgeW>::run_fast() {
 	std::cout << "\n\033[32;1m** Luby GPU fast colorer **\033[0m" << std::endl;
 #endif
 
-	//int numOfColors_d;
-	//cuSts = cudaMalloc( (void**)&numOfColors_d, sizeof( int ) );
-
 	// Preparo gli array per il primo giro
-	cuSts = cudaMemset( is_d, 0, nnodes * sizeof( bool ) );  cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( i_i_d, 0, nnodes * sizeof( bool ) );  cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( cands_d, 1, nnodes * sizeof( bool ) );  cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( coloring_d, 0, nnodes * sizeof( int ) );  cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( is_d, 0, nnodes * sizeof( bool ) );			cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( i_i_d, 0, nnodes * sizeof( bool ) );		cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( cands_d, 1, nnodes * sizeof( bool ) );		cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( coloring_d, 0, nnodes * sizeof( int ) );	cudaCheck( cuSts, __FILE__, __LINE__ );
 
 	ColoringLuby_k::fast_colorer_k << < 1, 1 >> > (nnodes, graphStruct_d->cumulDegs, graphStruct_d->neighs, randStates,
 		uncoloredNodes_d, nodeLeft_d, i_i_d, is_d, cands_d, numOfColors_d, coloring_d);
@@ -47,7 +44,6 @@ void ColoringLuby<nodeW, edgeW>::run_fast() {
 #endif
 
 	convert_to_standard_notation();
-	//cudaFree( numOfColors_d );
 }
 
 // Lanciare questo thread con configurazione <<< 1, 1 >>>

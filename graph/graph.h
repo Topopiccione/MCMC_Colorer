@@ -7,9 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
-#ifdef WIN32
 #include <cinttypes>
-#endif
 #include "utils/fileImporter.h"
 #include "GPUutils/GPURandomizer.h"
 
@@ -31,13 +29,13 @@ enum GPUMEMINITTYPES {
  * Base structure (array 1D format) of a graph with weighted nodes/edges
  */
 template<typename nodeW, typename edgeW> struct GraphStruct {
-	node		nNodes{0};					// num of graph nodes
-	node_sz		nEdges{0};					// num of graph edges
-	node_sz*	cumulDegs{ nullptr };		// cumsum of node degrees
-	node*		neighs{ nullptr };			// list of neighbors for all nodes (edges)
-	nodeW*		nodeWeights{ nullptr };		// list of weights for all nodes
-	edgeW*		edgeWeights{ nullptr };		// list of weights for all edges
-	nodeW*		nodeThresholds{ nullptr };
+	node			nNodes{0};					// num of graph nodes
+	node_sz			nEdges{0};					// num of graph edges
+	node_sz		*	cumulDegs{ nullptr };		// cumsum of node degrees
+	node		*	neighs{ nullptr };			// list of neighbors for all nodes (edges)
+	nodeW		*	nodeWeights{ nullptr };		// list of weights for all nodes
+	edgeW		*	edgeWeights{ nullptr };		// list of weights for all edges
+	nodeW		*	nodeThresholds{ nullptr };
 
 	~GraphStruct() {
 		if (neighs != nullptr)			delete[] neighs;
@@ -50,8 +48,8 @@ template<typename nodeW, typename edgeW> struct GraphStruct {
 	class Invalid {};
 
 	bool is_valid() {
-		for (int i = 0; i < nEdges; i++)
-			if (neighs[i] > nNodes-1)   // inconsistent neighbor index
+		for (uint32_t i = 0; i < nEdges; i++)
+			if (neighs[i] > nNodes - 1)   // inconsistent neighbor index
 				return false;
 		if (cumulDegs[nNodes] != nEdges)  // inconsistent number of edges
 			return false;
@@ -65,7 +63,7 @@ template<typename nodeW, typename edgeW> struct GraphStruct {
 
 	/// check whether node i is a neighbor of node j
 	bool areNeighbor(node i, node j) {
-		for (unsigned k = 0; k < deg(j); k++) {
+		for (uint32_t k = 0; k < deg(j); k++) {
 			if (neighs[cumulDegs[j]+k] == i)
 				return true;
 		}

@@ -1,4 +1,4 @@
-// COSnet - Commandline Argument Handler
+// Commandline Argument Handler
 // Alessandro Petrini, 2017
 #pragma once
 #include <string>
