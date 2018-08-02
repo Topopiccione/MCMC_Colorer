@@ -30,13 +30,13 @@ ColoringLuby<nodeW,edgeW>::ColoringLuby( Graph<nodeW,edgeW> * inGraph_d, curandS
 
 	coloring_h = std::unique_ptr<int[]>( new int[nnodes] );
 
-	cuSts = cudaMalloc( (void**)&coloring_d, nnodes * sizeof( int ) );	cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&coloring_d, nnodes * sizeof( uint32_t ) );	cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMalloc( (void**)&is_d, nnodes * sizeof( bool ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMalloc( (void**)&i_i_d, nnodes * sizeof( bool ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMalloc( (void**)&cands_d, nnodes * sizeof( bool ) ); 	cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMalloc( (void**)&nodeLeft_d, sizeof( bool ) ); 			cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMalloc( (void**)&uncoloredNodes_d, sizeof( bool ) ); 	cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMalloc( (void**)&numOfColors_d, sizeof( int ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&numOfColors_d, sizeof( uint32_t ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
 
 	// pointer per il Coloring in output
 	outColoring_d = std::unique_ptr<Coloring>( new Coloring );
@@ -81,7 +81,7 @@ void ColoringLuby<nodeW, edgeW>::printgraph() {
 
 template<typename nodeW, typename edgeW>
 void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
-	int idx;
+	uint32_t idx;
 
 	uint32_t *	colClass =  new uint32_t[nnodes] ;
 	uint32_t *	cumulSize = new uint32_t[numOfColors+1] ;
@@ -91,11 +91,11 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 	memset( cumulSize, 0, (numOfColors+1)*sizeof(uint32_t) );
 
 	// Ciclo sui colori
-	for(int c=0; c<numOfColors; c++){
+	for(uint32_t c=0; c<numOfColors; c++){
 		// NB: i colori in luby vanno da 1 a numOfColors
 
 		// Ciclo sui nodi
-		for(int i=0; i<nnodes; i++){
+		for(uint32_t i=0; i<nnodes; i++){
 			if(coloring_h[i]==(c+1)){
 				colClass[idx]=i;
 				idx++;
@@ -113,7 +113,7 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 		std::cout << cumulSize[i] << " ";
 	std::cout << std::endl;
 
-	for (int i = 0; i < numOfColors; i++) {
+	for (uint32_t i = 0; i < numOfColors; i++) {
 		uint32_t ISoffs = cumulSize[i];
 		uint32_t ISsize = cumulSize[i + 1] - cumulSize[i];
 		std::cout << "colore " << i + 1 << ": ";
@@ -137,7 +137,7 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 			const uint32_t nodoCorrente = colClass[ISoffs + j];
 			const node_sz degNodoCorrn = graphStruct_d->cumulDegs[nodoCorrente + 1] - graphStruct_d->cumulDegs[nodoCorrente];
 			const node_sz offNodoCorrn = graphStruct_d->cumulDegs[nodoCorrente];
-			for (int k = 0; k < ISsize; k++) {
+			for (uint32_t k = 0; k < ISsize; k++) {
 				if (std::find( &(graphStruct_d->neighs[offNodoCorrn]), &(graphStruct_d->neighs[offNodoCorrn + degNodoCorrn]), colClass[ISoffs + k] ) !=
 					&(graphStruct_d->neighs[offNodoCorrn + degNodoCorrn])) {
 					std::cout << "NO! In colore " << i + 1 << ", il nodo " << nodoCorrente << " ha come vicino " << colClass[i + k] << std::endl;
@@ -158,12 +158,12 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 
 #ifdef PRINT_COLORING
 	printf( "\nStampa convertita in formato standard GPU colorer\n" );
-	int temp, size;
+	uint32_t temp, size;
 	temp=0;
-	for (int i = 0; i < numOfColors; i++) {
+	for (uint32_t i = 0; i < numOfColors; i++) {
 		printf( "Colore %d: ", i );
 		size=cumulSize[i+1]-cumulSize[i];
-		for (int j = 0; j < size; j++){
+		for (uint32_t j = 0; j < size; j++){
 			printf( "%d ", colClass[temp] );
 			temp++;
 		}
@@ -177,8 +177,8 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 
 
 // Rimuove dal vettore dei candidati i nodi già colorati
-__global__ void ColoringLuby_k::prune_eligible( const int nnodes, const int * const coloring_d, bool *const cands_d ) {
-	unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+__global__ void ColoringLuby_k::prune_eligible( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d ) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 	if (idx >= nnodes)
 		return;
 	cands_d[idx] = (coloring_d[idx] == 0) ? 1 : 0;
@@ -186,8 +186,8 @@ __global__ void ColoringLuby_k::prune_eligible( const int nnodes, const int * co
 
 
 // Scelta casuale (non controllata) tra i vari nodi candidati non ancora colorati
-__global__ void ColoringLuby_k::set_initial_distr_k( int nnodes, curandState * states, const bool * const cands_d, bool * const i_i_d ) {
-	unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+__global__ void ColoringLuby_k::set_initial_distr_k( uint32_t nnodes, curandState * states, const bool * const cands_d, bool * const i_i_d ) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 	if (idx >= nnodes)
 		return;
 
@@ -202,10 +202,10 @@ __global__ void ColoringLuby_k::set_initial_distr_k( int nnodes, curandState * s
 
 // Controllo se esistono conflitti nella scelta dei candicati (presenza di nodi adiacenti) e li elimino
 template<typename nodeW, typename edgeW>
-__global__ void ColoringLuby_k::check_conflicts_k( int nnodes, const node_sz * const cumulDegs, const node * const neighs, bool * const i_i_d ) {
-	unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
-	unsigned int deg_i, neigh_ijDeg;
-	int offset, neigh_ij;
+__global__ void ColoringLuby_k::check_conflicts_k( uint32_t nnodes, const node_sz * const cumulDegs, const node * const neighs, bool * const i_i_d ) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+	uint32_t deg_i, neigh_ijDeg;
+	uint32_t offset, neigh_ij;
 
 	if (idx >= nnodes)
 		return;
@@ -217,7 +217,7 @@ __global__ void ColoringLuby_k::check_conflicts_k( int nnodes, const node_sz * c
 	offset = cumulDegs[idx];
 	deg_i = cumulDegs[idx+1] - cumulDegs[idx];
 
-	for (int j = 0; j < deg_i; j++){
+	for (uint32_t j = 0; j < deg_i; j++){
 		neigh_ij = neighs[offset + j];
 		neigh_ijDeg = cumulDegs[neigh_ij+1] - cumulDegs[neigh_ij];
 
@@ -239,9 +239,9 @@ __global__ void ColoringLuby_k::check_conflicts_k( int nnodes, const node_sz * c
 // Rimuovo loro e tutti i loro vicini da cands_d
 // Me li segno su is_d
 template<typename nodeW, typename edgeW>
-__global__ void ColoringLuby_k::update_eligible_k( int nnodes, const node_sz * const cumulDegs, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d ) {
-	unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
-	int deg_i, offset;
+__global__ void ColoringLuby_k::update_eligible_k( uint32_t nnodes, const node_sz * const cumulDegs, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d ) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+	uint32_t deg_i, offset;
 
 	if (idx >= nnodes)
 		return;
@@ -263,15 +263,15 @@ __global__ void ColoringLuby_k::update_eligible_k( int nnodes, const node_sz * c
 	cands_d[idx] = 0;
 
 	//e rimuovo dai candidati i suoi nodi adiacenti
-	for (int j = 0; j < deg_i; j++)
+	for (uint32_t j = 0; j < deg_i; j++)
 		cands_d[ neighs[offset + j] ] = 0;
 	return;
 }
 
 
 // Controllo se ci sono ancora dei candidati in cands_d
-__global__ void ColoringLuby_k::check_finished_k( int nnodes, const bool * const cands_d, bool * const nodeLeft_d ) {
-	unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+__global__ void ColoringLuby_k::check_finished_k( uint32_t nnodes, const bool * const cands_d, bool * const nodeLeft_d ) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nnodes)
 		return;
@@ -282,8 +282,8 @@ __global__ void ColoringLuby_k::check_finished_k( int nnodes, const bool * const
 
 
 // Coloro i nodi candidati presenti in is_d e controllo se ci sono ancora nodi non colorati
-__global__ void ColoringLuby_k::add_color_and_check_uncolored_k( int nnodes, int numOfColors, const bool * const is_d, bool * const uncoloredNodes_d, int * const coloring_d ) {
-	unsigned int idx = threadIdx.x + blockDim.x * blockIdx.x;
+__global__ void ColoringLuby_k::add_color_and_check_uncolored_k( uint32_t nnodes, uint32_t numOfColors, const bool * const is_d, bool * const uncoloredNodes_d, uint32_t * const coloring_d ) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nnodes)
 		return;
@@ -300,17 +300,17 @@ __global__ void ColoringLuby_k::add_color_and_check_uncolored_k( int nnodes, int
 
 // Stampa grafo
 template<typename nodeW, typename edgeW>
-__global__ void ColoringLuby_k::print_graph_k( int nnodes, const node_sz * const cumulDegs, const node * const neighs ) {
-	int deg_i, offset;
+__global__ void ColoringLuby_k::print_graph_k( uint32_t nnodes, const node_sz * const cumulDegs, const node * const neighs ) {
+	uint32_t deg_i, offset;
 
 	printf( "numero nodi: %d", nnodes );
 	printf( "numero nodi 2: %d", nnodes );
 
-	for (int idx = 0; idx < nnodes; idx++) {
+	for (uint32_t idx = 0; idx < nnodes; idx++) {
 		offset = cumulDegs[idx];
 		deg_i = cumulDegs[idx+1] - cumulDegs[idx];
 		printf( "Nodo %d - Neigh: ", idx );
-		for (int i = 0; i < deg_i; i++)
+		for (uint32_t i = 0; i < deg_i; i++)
 			printf( "%d ", neighs[offset + i] );
 		printf( "\n" );
 	}
@@ -346,7 +346,7 @@ void ColoringLuby<nodeW,edgeW>::run() {
 	cuSts = cudaMemset( is_d, 0, nnodes * sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMemset( i_i_d, 0, nnodes * sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMemset( cands_d, 1, nnodes * sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( coloring_d, 0, nnodes * sizeof( int ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( coloring_d, 0, nnodes * sizeof( uint32_t ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMemset( uncoloredNodes_d, 1, sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
 
 	std::unique_ptr<bool[]> tempPrint( new bool[nnodes] );
@@ -366,7 +366,7 @@ void ColoringLuby<nodeW,edgeW>::run() {
 #ifdef DEBUGPRINT_K
 		cuSts = cudaMemcpy( tempPrint.get(), cands_d, nnodes * sizeof( bool ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 		printf( "candidati:\n" );
-		for (int i = 0; i < nnodes; i++) {
+		for (uint32_t i = 0; i < nnodes; i++) {
 			if (tempPrint[i] == 1) printf( "%d ", i );
 		}
 		printf( "\n" );
@@ -380,7 +380,7 @@ void ColoringLuby<nodeW,edgeW>::run() {
 #ifdef DEBUGPRINT_K
 			cuSts = cudaMemcpy( tempPrint.get(), i_i_d, nnodes * sizeof( bool ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 			printf( "candidato ad IS:\n" );
-			for (int i = 0; i < nnodes; i++) {
+			for (uint32_t i = 0; i < nnodes; i++) {
 				if (tempPrint[i] == 1) printf( "%d ", i );
 			}
 			printf( "\n" );
@@ -394,7 +394,7 @@ void ColoringLuby<nodeW,edgeW>::run() {
 #ifdef DEBUGPRINT_K
 			cuSts = cudaMemcpy( tempPrint.get(), i_i_d, nnodes * sizeof( bool ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 			printf( "candidato ad IS pulito:\n" );
-			for (int i = 0; i < nnodes; i++) {
+			for (uint32_t i = 0; i < nnodes; i++) {
 				if (tempPrint[i] == 1) printf( "%d ", i );
 			}
 			printf( "\n" );
@@ -407,14 +407,14 @@ void ColoringLuby<nodeW,edgeW>::run() {
 #ifdef DEBUGPRINT_K
 			cuSts = cudaMemcpy( tempPrint.get(), cands_d, nnodes * sizeof( bool ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 			printf( "cands aggiornato:\n" );
-			for (int i = 0; i < nnodes; i++) {
+			for (uint32_t i = 0; i < nnodes; i++) {
 				if (tempPrint[i] == 1) printf( "%d ", i );
 			}
 			printf( "\n" );
 
 			cuSts = cudaMemcpy( tempPrint.get(), is_d, nnodes * sizeof( bool ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 			printf( "IS prima del controllo:\n" );
-			for (int i = 0; i < nnodes; i++) {
+			for (uint32_t i = 0; i < nnodes; i++) {
 				if (tempPrint[i] == 1) printf( "%d ", i );
 			}
 			printf( "\n" );
@@ -432,7 +432,7 @@ void ColoringLuby<nodeW,edgeW>::run() {
 		printf("OUT!\n");
 		cuSts = cudaMemcpy( tempPrint.get(), is_d, nnodes * sizeof( bool ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 		printf( "\n\ncolore: " );
-		for (int i = 0; i < nnodes; i++) {
+		for (uint32_t i = 0; i < nnodes; i++) {
 			if (tempPrint[i] == 1) printf( "%d ", i );
 		}
 		printf( "\n\n" );
@@ -460,7 +460,7 @@ void ColoringLuby<nodeW,edgeW>::run() {
 	std::cout << std::endl << "Numero di colori trovati " << numOfColors << std::endl;
 #endif
 
-	cuSts = cudaMemcpy( coloring_h.get(), coloring_d, nnodes * sizeof( int ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemcpy( coloring_h.get(), coloring_d, nnodes * sizeof( uint32_t ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
 
 
 #ifdef TESTCOLORINGCORRECTNESS

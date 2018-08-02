@@ -67,6 +67,7 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph/graphGPU.cu"
                 	"graph_coloring/coloringLuby.cu"
 					"graph_coloring/coloringLubyFast.cu"
+					"graph_coloring/coloringMCMC.cu"
 					"testColoring_Benchmark.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
 FILE(GLOB LOGGINGPP "easyloggingpp/easylogging++.cc")

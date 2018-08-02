@@ -1,31 +1,194 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-#include <memory>
-#include <iostream>
-#include <algorithm>
-#include <time.h>
-#include <stdio.h>
-#include <cmath>
-#include "coloring.h"
-#include "GPUutils/GPUutils.h"
-#include "GPUutils/GPURandomizer.h"
-
-using namespace std;
-
-namespace ColoringMCMC_k {
-__global__ void initColoring(curandState*, expCumulatedDiscreteDistribution_t, col*, col_sz, node_sz);
-__global__ void drawNewColoring(unsigned int*, curandState*, GraphStruct<col, col>*, col*, col*, col*);
-__inline__ __host__ __device__ node_sz checkConflicts(node, node_sz, node*, col*);
-__inline__  __device__ col newFreeColor(curandState*, node, node_sz, node*, col*, col*);
-__inline__  __device__ col fixColor(curandState*, node*, col);
-__device__ int discreteSampling(curandState *, cumulatedDiscreteDistribution_t);
-}
+#include "coloringMCMC.h"
 
 __constant__ float LAMBDA;
 __constant__ col_sz NCOLS;
 __constant__ float EPSILON;
-__constant__ float CUMSUMDIST;
+__constant__ float CUMULSUMDIST;
 __constant__ float RATIOFREEZED;
+
+
+template<typename nodeW, typename edgeW>
+ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandState * randStates ) :
+	Colorer<nodeW,edgeW>( inGraph_d ),
+	graphStruct_d( inGraph_d->getStruct() ),
+	nnodes( inGraph_d->getStruct()->nNodes ),
+	randStates( randStates ),
+	numOfColors( 0 ),
+	threadId( 0 ) {
+
+	coloring_h = std::unique_ptr<int[]>( new int[nnodes] );
+
+	// pointer per il Coloring in output
+	outColoring_d = std::unique_ptr<Coloring>( new Coloring );
+
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+
+	// TODO: le parti commentate sono le stesse usate in lubyGPU. Adedire a quest convenzione
+	// configuro la griglia e i blocchi
+	//threadsPerBlock = dim3( 128, 1, 1 );
+	//blocksPerGrid = dim3( (nnodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1 );
+	int numThreads = 32;
+	dim3 block(numThreads);
+	dim3 grid((nnodes + numThreads - 1) / numThreads);
+
+	// init curand
+	// TODO: abbiamo già una classe che si occupa di gestire curand, megio usare quella! [cfr. lubyGPU]
+	curandState* states;
+	cuSts = cudaMalloc((void **) &states, nnodes * sizeof(curandState));
+	cudaCheck(cuSts, __FILE__, __LINE__);
+	long seed = 0;
+	GPURand_k::initCurand<<<grid, block>>>(states, seed, nnodes);
+	cudaDeviceSynchronize();
+
+	// coloring
+	// TODO: adeguare le strutture usate nella colorazione in modo che siano come in lubyGPU
+	// TODO: no malloc, sì new
+	/*col_sz*/ nCol = graphStruct_d->getMaxNodeDeg() + 1;
+	//col *C, *C1_d, *C2_d;
+	C = (col*)malloc(nnodes * sizeof(col));
+	cuSts = cudaMalloc(&C1_d, nnodes * sizeof(col)); cudaCheck(cuSts, __FILE__, __LINE__);
+	cuSts = cudaMalloc(&C2_d, nnodes * sizeof(col)); cudaCheck(cuSts, __FILE__, __LINE__);
+
+	// neighborhood coloring
+	//col* colNeigh;
+	cuSts = cudaMalloc(&colNeigh, graphStruct_d->cumulDegs[nnodes]*sizeof(col));	// Questo non funzionerà: cumulDegs è su device mem
+	cudaCheck(cuSts, __FILE__, __LINE__);
+
+	// MCMC priori distribution parameters
+	param.nCol = nCol;
+	param.lambda = param.lambda/(float)nCol;
+	expCumulatedDiscreteDistribution dist;
+	dist.lambda = param.lambda;
+	CPURand::createExpDistribution(&dist, dist.lambda, nCol); // form: exp(-lambda*c/nCol), c = 1,2...
+
+}
+
+template<typename nodeW, typename edgeW>
+ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
+	cudaEventDestroy(stop);
+	cudaEventDestroy(start);
+	if (outColoring_d->colClass != nullptr) {
+		cudaFree( outColoring_d->colClass );
+		outColoring_d->colClass = nullptr;
+	}
+	if (outColoring_d->colClass != nullptr) {
+		cudaFree( outColoring_d->cumulSize );
+		outColoring_d->cumulSize = nullptr;
+	}
+}
+
+template<typename nodeW, typename edgeW>
+Coloring* ColoringMCMC<nodeW,edgeW>::getColoringGPU() {
+	return outColoring_d.get();
+}
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::printgraph() {
+	ColoringMCMC_k::print_graph_k<nodeW, edgeW> <<< 1, 1 >>> (nnodes, graphStruct_d->cumulDegs, graphStruct_d->neighs);
+}
+
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::convert_to_standard_notation(){
+	uint32_t idx;
+
+	uint32_t *	colClass =  new uint32_t[nnodes] ;
+	uint32_t *	cumulSize = new uint32_t[numOfColors+1] ;
+
+	idx=0;
+	memset( colClass, 0, nnodes*sizeof(uint32_t) );
+	memset( cumulSize, 0, (numOfColors+1)*sizeof(uint32_t) );
+
+	// Ciclo sui colori
+	for(uint32_t c=0; c<numOfColors; c++){
+		// NB: i colori in luby vanno da 1 a numOfColors
+
+		// Ciclo sui nodi
+		for(uint32_t i=0; i<nnodes; i++){
+			if(coloring_h[i]==(c+1)){
+				colClass[idx]=i;
+				idx++;
+			}
+		}
+
+		cumulSize[c+1]=idx;
+	}
+	/*
+	for (uint32_t i = 0; i < nnodes; i++)
+		std::cout << coloring_h[i] << " ";
+	std::cout << std::endl;
+
+	for (uint32_t i = 0; i < numOfColors + 1; i++)
+		std::cout << cumulSize[i] << " ";
+	std::cout << std::endl;
+
+	for (uint32_t i = 0; i < numOfColors; i++) {
+		uint32_t ISoffs = cumulSize[i];
+		uint32_t ISsize = cumulSize[i + 1] - cumulSize[i];
+		std::cout << "colore " << i + 1 << ": ";
+		for (uint32_t j = ISoffs; j < ISoffs + ISsize; j++) {
+			std::cout << colClass[j] << " ";
+		}
+		std::cout << std::endl;
+	}
+	*/
+#ifdef TESTCOLORINGCORRECTNESS
+	std::cout << "Test colorazione attivato!" << std::endl;
+	std::unique_ptr<node_sz[]> temp_cumulDegs( new node_sz[graphStruct_d->nNodes + 1]);
+	std::unique_ptr<node[]>  temp_neighs( new node[graphStruct_d->nEdges] );
+	cuSts = cudaMemcpy( temp_cumulDegs.get(), graphStruct_d->cumulDegs, (graphStruct_d->nNodes + 1) * sizeof(node_sz), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemcpy( temp_neighs.get(),    graphStruct_d->neighs,    graphStruct_d->nEdges * sizeof(node_sz), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
+
+	for (uint32_t i = 0; i < numOfColors; i++) {
+		uint32_t ISsize = cumulSize[i + 1] - cumulSize[i];
+		uint32_t ISoffs = cumulSize[i];
+		for (uint32_t j = 0; j < ISsize; j++) {
+			const uint32_t nodoCorrente = colClass[ISoffs + j];
+			const node_sz degNodoCorrn = graphStruct_d->cumulDegs[nodoCorrente + 1] - graphStruct_d->cumulDegs[nodoCorrente];
+			const node_sz offNodoCorrn = graphStruct_d->cumulDegs[nodoCorrente];
+			for (uint32_t k = 0; k < ISsize; k++) {
+				if (std::find( &(graphStruct_d->neighs[offNodoCorrn]), &(graphStruct_d->neighs[offNodoCorrn + degNodoCorrn]), colClass[ISoffs + k] ) !=
+					&(graphStruct_d->neighs[offNodoCorrn + degNodoCorrn])) {
+					std::cout << "NO! In colore " << i + 1 << ", il nodo " << nodoCorrente << " ha come vicino " << colClass[i + k] << std::endl;
+					abort();
+				}
+			}
+		}
+	}
+#endif
+
+	outColoring_d->nCol = numOfColors;
+	cuSts = cudaMalloc( (void**)&(outColoring_d->colClass), nnodes*sizeof(uint32_t) ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemcpy( outColoring_d->colClass, colClass, nnodes*sizeof(uint32_t), cudaMemcpyHostToDevice ); cudaCheck( cuSts, __FILE__, __LINE__ );
+
+	cuSts = cudaMalloc( (void**)&(outColoring_d->cumulSize), (numOfColors+1)*sizeof(uint32_t) ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemcpy( outColoring_d->cumulSize, cumulSize, (numOfColors+1)*sizeof(uint32_t), cudaMemcpyHostToDevice ); cudaCheck( cuSts, __FILE__, __LINE__ );
+
+
+#ifdef PRINT_COLORING
+	printf( "\nStampa convertita in formato standard GPU colorer\n" );
+	uint32_t temp, size;
+	temp=0;
+	for (uint32_t i = 0; i < numOfColors; i++) {
+		printf( "Colore %d: ", i );
+		size=cumulSize[i+1]-cumulSize[i];
+		for (uint32_t j = 0; j < size; j++){
+			printf( "%d ", colClass[temp] );
+			temp++;
+		}
+		printf( "\n" );
+	}
+#endif
+
+	delete[] colClass;
+	delete[] cumulSize;
+}
+
+
+
 
 /**
  * Samples a discrete distribution
@@ -35,7 +198,7 @@ __constant__ float RATIOFREEZED;
  * @param n the distribution size
  */
 __device__ int ColoringMCMC_k::discreteSampling(curandState* states,
-		cumulatedDiscreteDistribution_t dist) {
+		discreteDistribution_st * dist) {
 	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 	unsigned int n = dist->length;
 	printf("n = %d\n", n);
@@ -54,13 +217,13 @@ __device__ int ColoringMCMC_k::discreteSampling(curandState* states,
 }
 
 __global__ void ColoringMCMC_k::initColoring(curandState* state,
-		expCumulatedDiscreteDistribution_t dist, col* C, col_sz nCol,
+		expDiscreteDistribution_st * dist, col* C, col_sz nCol,
 		node_sz n) {
 	unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 	if (i < n) {
-		cumulatedDiscreteDistribution_st d = dist->CDF;
+		discreteDistribution_st d = dist->CDF;
 		printf("length = %d\n", d.length);
-//		C[i] = ColoringMCMC_k::discreteSampling(state, d);
+		// C[i] = ColoringMCMC_k::discreteSampling(state, d);
 		printf("init_col[%d] = %d\n", i, C[i]);
 	}
 }
@@ -110,7 +273,6 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
 	float epsilon = EPSILON;
 
 	// find num unique neigh colors
-//	unsigned l = 1;
 	colNeighs[0] = C[neighs[0]];
 	col_sz nColNotFree = 1;
 	for (node j = 1; j < deg; j++) {
@@ -127,8 +289,6 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
 		}
 	}
 
-//	printf("nodeID[%d] nColNotFree = %d\n",nodeID,nColNotFree);
-
 
 	// bubble sort neigh nodes
 	for (col c = 0; c < nColNotFree - 1; c++)
@@ -139,12 +299,6 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
 				colNeighs[c] = tmp;
 			}
 
-
-//	if (nodeID == 9)
-//	for (col c = 0; c < nColNotFree; c++)
-//		printf("colNeighs[%d] = %d\n", c,colNeighs[c]);
-
-//		printf("epsilon = %f\n", epsilon);
 
 	// compute cumSum probability
 	float cumProb = 0;
@@ -161,9 +315,6 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
 	float a = (1.0f - epsilon)/nColFree;
 	cumProb = cumProb*a + epsilon;
 
-//	if (nodeID == 9)
-//		printf("cumProb[%d] TOTALE= %f\n", nodeID, cumProb);
-//
 	// sample the discrete distribution
 	float u = cumProb * curand_uniform(state);
 	cumProb = 0;
@@ -176,14 +327,14 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
 			cumProb += epsilon/(float)nColNotFree;
 			j++;
 			vicinato = 1;
-//			if (nodeID == 5)
-//				printf("VICINO: Prob[%d][%d] = %f\n", nodeID,c, epsilon/(float)nColNotFree);
+			// if (nodeID == 5)
+			// printf("VICINO: Prob[%d][%d] = %f\n", nodeID,c, epsilon/(float)nColNotFree);
 		} else {
 			cumProb += a * __expf(-lambda * (float)c);
 			vicinato = 0;
-//				printf("NON VICINO: Prob[%d][%d] = %f\n", nodeID,c, a * __expf(-lambda * (float)c));
+			// printf("NON VICINO: Prob[%d][%d] = %f\n", nodeID,c, a * __expf(-lambda * (float)c));
 		}
-//		printf("cumProb = %f -- u = %f -- vicinato = %d \n", cumProb,u,vicinato);
+			// printf("cumProb = %f -- u = %f -- vicinato = %d \n", cumProb,u,vicinato);
 
 		// choose bin
 		if (cumProb >= u) {
@@ -262,13 +413,13 @@ __global__ void ColoringMCMC_k::drawNewColoring(
 	}
 
 	if (nodeID < n) {
-		node_sz cumDeg = str->cumDegs[nodeID];
-		node_sz deg = str->cumDegs[nodeID + 1] - cumDeg;
+		node_sz cumulDeg = str->cumulDegs[nodeID];
+		node_sz deg = str->cumulDegs[nodeID + 1] - cumulDeg;
 		//		printf("deg [%d] = %d\n",nodeID,deg);
 		if (EVEN_ODD)
-			nConf = ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumDeg, C1_d);
+			nConf = ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumulDeg, C1_d);
 		else
-			nConf = ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumDeg, C2_d);
+			nConf = ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumulDeg, C2_d);
 		atomicAdd(numConflicts_d, nConf);
 		printf("num conflicts[%d] = %d\n",nodeID,nConf);
 
@@ -276,10 +427,10 @@ __global__ void ColoringMCMC_k::drawNewColoring(
 		if (nConf) {
 			if (RATIOFREEZED > curand_uniform(&states[nodeID])) {
 				if (EVEN_ODD)
-					C2_d[nodeID] = newFreeColor(states + nodeID, nodeID, deg,	str->neighs + cumDeg, C1_d, colSupport + cumDeg);
+					C2_d[nodeID] = newFreeColor(states + nodeID, nodeID, deg,	str->neighs + cumulDeg, C1_d, colSupport + cumulDeg);
 				else
-					C1_d[nodeID] = newFreeColor(states + nodeID, nodeID, deg,	str->neighs + cumDeg, C2_d, colSupport + cumDeg);
-//								printf("new color C2[%d] = %d   -- deg = %d  -- cumDeg = %d\n",nodeID,C2[nodeID],deg,cumDeg);
+					C1_d[nodeID] = newFreeColor(states + nodeID, nodeID, deg,	str->neighs + cumulDeg, C2_d, colSupport + cumulDeg);
+			// printf("new color C2[%d] = %d   -- deg = %d  -- cumulDeg = %d\n",nodeID,C2[nodeID],deg,cumulDeg);
 			} else {
 				if (EVEN_ODD)
 					C2_d[nodeID] = C1_d[nodeID];
@@ -291,66 +442,20 @@ __global__ void ColoringMCMC_k::drawNewColoring(
 		// CASE: NO conflicts
 		} else {
 			if (EVEN_ODD)
-				C2_d[nodeID] = fixColor(states + nodeID, str->neighs + cumDeg, C1_d[nodeID]);
+				C2_d[nodeID] = fixColor(states + nodeID, str->neighs + cumulDeg, C1_d[nodeID]);
 			else
-				C1_d[nodeID] = fixColor(states + nodeID, str->neighs + cumDeg, C2_d[nodeID]);
+				C1_d[nodeID] = fixColor(states + nodeID, str->neighs + cumulDeg, C2_d[nodeID]);
 			//			printf("fix C2[%d] = %d\n",nodeID,C2[nodeID]);
 		}
 	}
 }
 
-void print_C(col* C, unsigned n) {
-
-	for (int i= 0; i < n; i++) {
-		cout << "C[" << i <<  "] = " << C[i] << endl;
-	}
-}
 
 /**
  * Start the coloring on the graph
  */
-void ColoringMCMCGPU::run() {
-	GraphStruct<col, col>* str = graph->getStruct();
-	node_sz n = str->nNodes;
-	cudaEvent_t start, stop;
-	cudaEventCreate(&start);
-	cudaEventCreate(&stop);
-	cudaError cuSts;
-
-	int numThreads = 32;
-	dim3 block(numThreads);
-	dim3 grid((n + numThreads - 1) / numThreads);
-
-	// init curand
-	curandState* states;
-	cuSts = cudaMalloc((void **) &states, n * sizeof(curandState));
-	cudaCheck(cuSts, __FILE__, __LINE__);
-	long seed = 0;
-	GPURand_k::initCurand<<<grid, block>>>(states, seed, n);
-	cudaDeviceSynchronize();
-
-	// coloring
-	col_sz nCol = graph->getMaxNodeDeg() + 1;
-	col *C, *C1_d, *C2_d;
-	C = (col*)malloc(n * sizeof(col));
-	cuSts = cudaMalloc(&C1_d, n * sizeof(col)); cudaCheck(cuSts, __FILE__, __LINE__);
-	cuSts = cudaMalloc(&C2_d, n * sizeof(col)); cudaCheck(cuSts, __FILE__, __LINE__);
-//	cuSts = cudaMallocManaged(&C1, n * sizeof(col));
-//	cudaCheck(cuSts, __FILE__, __LINE__);
-//	cuSts = cudaMallocManaged(&C2, n * sizeof(col));
-//	cudaCheck(cuSts, __FILE__, __LINE__);
-
-	// neighborhood coloring
-	col* colNeigh;
-	cuSts = cudaMalloc(&colNeigh, str->cumDegs[n]*sizeof(col));
-	cudaCheck(cuSts, __FILE__, __LINE__);
-
-	// MCMC priori distribution parameters
-	param.nCol = nCol;
-	param.lambda = param.lambda/(float)nCol;
-	expCumulatedDiscreteDistribution dist;
-	dist.lambda = param.lambda;
-	CPURand::createExpDistribution(&dist, dist.lambda, nCol); // form: exp(-lambda*c/nCol), c = 1,2...
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::run() {
 
 
 	//	float* PHI;
@@ -372,24 +477,19 @@ void ColoringMCMCGPU::run() {
 	cudaMemcpyToSymbol(NCOLS, &(param.nCol), sizeof(col_sz));
 	cudaMemcpyToSymbol(EPSILON, &(param.epsilon), sizeof(float));
 	cudaMemcpyToSymbol(RATIOFREEZED, &(param.ratioFreezed), sizeof(float));
-	cudaMemcpyToSymbol(CUMSUMDIST, &(dist.CDF.prob[dist.CDF.length - 1]),
+	cudaMemcpyToSymbol(CUMULSUMDIST, &(dist.CDF.prob[dist.CDF.length - 1]),
 			sizeof(float));
 
 	// init coloring CPU
 	CPURand::discreteSampling(&(dist.CDF), C, n);
-	print_C(C,n);
-
-//	std::cout << "OKKIO "<< nCol <<  std::endl;
-//	for (int i= 0; i < n; i++)
-//		cout << "C[" << i <<  "] = " << C1[i] << endl;
 
 
 	// manage conflicts
 	unsigned int numConflictsOLD = 0;
 	for (int i = 0; i < n; i++) {
-		node_sz cumDeg = str->cumDegs[i];
-		node_sz deg = str->cumDegs[i + 1] - cumDeg;
-		unsigned int nc = ColoringMCMC_k::checkConflicts(i, deg, str->neighs + cumDeg, C);
+		node_sz cumulDeg = str->cumulDegs[i];
+		node_sz deg = str->cumulDegs[i + 1] - cumulDeg;
+		unsigned int nc = ColoringMCMC_k::checkConflicts(i, deg, str->neighs + cumulDeg, C);
 		numConflictsOLD += nc;
 	}
 	cout << "numConflicts init = " << numConflictsOLD << endl;
@@ -446,7 +546,6 @@ void ColoringMCMCGPU::run() {
 
 	// build coloring
 	buildColoring(C, n);
-//		print_C(C1,n);
 
 
 	cudaFree(states);
@@ -457,3 +556,28 @@ void ColoringMCMCGPU::run() {
 //	cudaDeviceReset();
 
 }
+
+// Stampa grafo
+template<typename nodeW, typename edgeW>
+__global__ void ColoringMCMC_k::print_graph_k( uint32_t nnodes, const node_sz * const cumulDegs, const node * const neighs ) {
+	uint32_t deg_i, offset;
+
+	printf( "numero nodi: %d", nnodes );
+	printf( "numero nodi 2: %d", nnodes );
+
+	for (uint32_t idx = 0; idx < nnodes; idx++) {
+		offset = cumulDegs[idx];
+		deg_i = cumulDegs[idx+1] - cumulDegs[idx];
+		printf( "Nodo %d - Neigh: ", idx );
+		for (uint32_t i = 0; i < deg_i; i++)
+			printf( "%d ", neighs[offset + i] );
+		printf( "\n" );
+	}
+	printf( "\n" );
+}
+
+
+//// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
+//// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
+template class ColoringMCMC<col, col>;
+template class ColoringMCMC<float, float>;

@@ -27,9 +27,9 @@ public:
 	Coloring	*	getColoringGPU();
 
 protected:
-	int				nnodes;
-	int				numOfColors;
-	int				coloredNodesCount;
+	uint32_t		nnodes;
+	uint32_t		numOfColors;
+	uint32_t		coloredNodesCount;
 
 	std::unique_ptr<int[]> coloring_h;
 
@@ -37,9 +37,9 @@ protected:
 	const GraphStruct<nodeW, edgeW>	* const	graphStruct_d;
 	std::unique_ptr<Coloring> outColoring_d;
 
-	int				threadId;
+	uint32_t		threadId;
 
-	int			*	coloring_d;		// each element denotes a color
+	uint32_t	*	coloring_d;		// each element denotes a color
 	bool		*	is_d;			// working array: IS candidate
 	bool		*	cands_d;		// working array: list of available nodes to be picked as candidate
 	bool		*	i_i_d;
@@ -47,9 +47,9 @@ protected:
 	bool		*	nodeLeft_d;
 	bool			uncoloredNodes_h;
 	bool		*	uncoloredNodes_d;
-	int			*	numOfColors_d;
+	uint32_t	*	numOfColors_d;
 
-	int			**	tempIS;			// Tiene traccia dei puntatori agli outColoring_d->IS[i]
+	uint32_t	**	tempIS;			// Tiene traccia dei puntatori agli outColoring_d->IS[i]
 									// Serve per la cudaFree!!!
 
 	cudaError_t		cuSts;
@@ -66,24 +66,24 @@ protected:
 // Global kernels
 namespace ColoringLuby_k {
 
-	__global__ void prune_eligible( const int nnodes, const int * const coloring_d, bool *const cands_d );
-	__global__ void set_initial_distr_k( int nnodes, curandState * states, const bool * const cands_d, bool * const i_i_d );
+	__global__ void prune_eligible( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d );
+	__global__ void set_initial_distr_k( uint32_t nnodes, curandState * states, const bool * const cands_d, bool * const i_i_d );
 	template<typename nodeW, typename edgeW>
-	__global__ void check_conflicts_k( int nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d );
+	__global__ void check_conflicts_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d );
 	template<typename nodeW, typename edgeW>
-	__global__ void update_eligible_k( int nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d );
-	__global__ void check_finished_k( int nnodes, const bool * const cands_d, bool * const nodeLeft_d );
-	__global__ void add_color_and_check_uncolored_k( int nnodes, int numOfColors, const bool * const is_d, bool * const uncoloredNodes_d, int * const coloring_d );
+	__global__ void update_eligible_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d );
+	__global__ void check_finished_k( uint32_t nnodes, const bool * const cands_d, bool * const nodeLeft_d );
+	__global__ void add_color_and_check_uncolored_k( uint32_t nnodes, uint32_t numOfColors, const bool * const is_d, bool * const uncoloredNodes_d, uint32_t * const coloring_d );
 
 	template<typename nodeW, typename edgeW>
-	__global__ void print_graph_k( int nnodes, const node_sz * const cumulSize, const node * const neighs );
+	__global__ void print_graph_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs );
 
-	__global__ void fast_colorer_k( int nnodes, const node_sz * const cumulSize, const node * const neighs, curandState * randStates,
-	bool * const uncolored_d, bool * const nodeLeft_d, bool * const i_i_d, bool * const is_d, bool * const cands_d,	int * const numOfColors_d,
-	int * const coloring_d );
+	__global__ void fast_colorer_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, curandState * randStates,
+	bool * const uncolored_d, bool * const nodeLeft_d, bool * const i_i_d, bool * const is_d, bool * const cands_d,	uint32_t * const numOfColors_d,
+	uint32_t * const coloring_d );
 
-	__global__ void prune_eligible_clear_is( const int nnodes, const int * const coloring_d, bool *const cands_d, bool * const is_d );
-	__global__ void check_conflicts_fast_k( int nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d );
-	__global__ void update_eligible_fast_k( int nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d );
+	__global__ void prune_eligible_clear_is( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d, bool * const is_d );
+	__global__ void check_conflicts_fast_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d );
+	__global__ void update_eligible_fast_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d );
 
 };
