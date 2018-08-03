@@ -90,6 +90,7 @@ public:
 	Graph( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F,
 		const float * const thresholds, bool GPUEnb );
+	Graph( Graph<nodeW, edgeW> * const fullGraph ); // takes a graph from CPU and copy to GPU
 	~Graph() {if (GPUEnabled) deleteMemGPU(); else delete str;};
 
 	void setup(node);

@@ -64,6 +64,8 @@ void Graph<nodeW, edgeW>::setupImporterGPU() {
 		tempW[i] = new std::list<edgeW>;
 	}
 
+	std::cout << "a" << std::endl;
+
 	// Leggo gli archi dal file del grafo
 	fImport->fRewind();
 	while (fImport->getNextEdge()) {
@@ -78,11 +80,15 @@ void Graph<nodeW, edgeW>::setupImporterGPU() {
 		}
 	}
 
+	std::cout << "b" << std::endl;
+
 	// Ora in tempN e tempW ho tutto quello che serve per costruire il grafo
 	// Inizio con i cumulDegs
 	std::fill( temp_cumulDegs.get(), temp_cumulDegs.get() + (nn + 1), 0);
 	for (uint32_t i = 1; i < (nn + 1); i++)
 		temp_cumulDegs[i] += ( temp_cumulDegs[i - 1] + (uint32_t)(tempN[i - 1]->size()) );
+
+	std::cout << "c" << std::endl;
 
 	setMemGPU( str->nEdges, GPUINIT_EDGES );
 	setMemGPU( str->nEdges, GPUINIT_EDGEW );
@@ -90,6 +96,8 @@ void Graph<nodeW, edgeW>::setupImporterGPU() {
 	std::unique_ptr<node[]>  temp_neighs( new node[str->nEdges] );
 	std::unique_ptr<edgeW[]> temp_edgeWeights( new edgeW[str->nEdges] );
 	std::unique_ptr<nodeW[]> temp_nodeThresholds( new nodeW[str->nNodes] );
+
+	std::cout << "d" << std::endl;
 
 	for (uint32_t i = 0; i < nn; i++) {
 		uint32_t j = 0;
@@ -104,15 +112,20 @@ void Graph<nodeW, edgeW>::setupImporterGPU() {
 		}
 	}
 
+	std::cout << "e" << std::endl;
+
 	// max, min, mean deg
 	maxDeg = 0;
 	minDeg = nn;
+	std::cout << "nn: " << nn << std::endl;
 	for (uint32_t i = 0; i < nn; i++) {
+		std::cout << maxDeg << " ";
 		if ((temp_cumulDegs[i + 1] - temp_cumulDegs[i]) > maxDeg)
 			maxDeg = (uint32_t)str->deg( i );
 		if ((temp_cumulDegs[i + 1] - temp_cumulDegs[i]) < minDeg)
 			minDeg = (uint32_t)str->deg( i );
 	}
+	std::cout << "f" << std::endl;
 	density = (float) str->nEdges / (float) (nn * (nn - 1) / 2);
 	meanDeg = (float) str->nEdges / (float) nn;
 	if (minDeg == 0)
@@ -120,11 +133,15 @@ void Graph<nodeW, edgeW>::setupImporterGPU() {
 	else
 		connected = true;
 
+
+
 	// Copio su GPU
 	cudaMemcpy( str->cumulDegs,      temp_cumulDegs.get(),      (str->nNodes + 1) * sizeof(node_sz), cudaMemcpyHostToDevice );
 	cudaMemcpy( str->neighs,         temp_neighs.get(),         str->nEdges * sizeof(node), cudaMemcpyHostToDevice );
 	cudaMemcpy( str->edgeWeights,    temp_edgeWeights.get(),    str->nEdges * sizeof(edgeW), cudaMemcpyHostToDevice );
 	cudaMemcpy( str->nodeThresholds, temp_nodeThresholds.get(), str->nNodes * sizeof(nodeW), cudaMemcpyHostToDevice );
+
+	std::cout << "g" << std::endl;
 
 	// elimino le strutture temporanee
 	for (uint32_t i = 0; i < nn; i++) {
@@ -133,6 +150,8 @@ void Graph<nodeW, edgeW>::setupImporterGPU() {
 	}
 	delete[] tempW;
 	delete[] tempN;
+
+	std::cout << "h" << std::endl;
 }
 
 
@@ -207,6 +226,19 @@ void Graph<nodeW, edgeW>::setupReduxGPU( const uint32_t * const unlabelled, cons
 	return;
 }
 
+template<typename nodeW, typename edgeW>
+Graph<nodeW, edgeW>::Graph( Graph<nodeW, edgeW> * const graph_h ) {
+	GraphStruct<nodeW, edgeW> * const graphStruct_h = graph_h->getStruct();
+	setMemGPU( graphStruct_h->nNodes, GPUINIT_NODES );
+	str->nNodes = graphStruct_h->nNodes;
+	str->nEdges = graphStruct_h->nEdges;
+	setMemGPU( graphStruct_h->nNodes, GPUINIT_EDGES );
+	cudaMemcpy( str->cumulDegs, graphStruct_h->cumulDegs, (str->nNodes + 1) * sizeof(node_sz), cudaMemcpyHostToDevice );
+	cudaMemcpy( str->neighs, graphStruct_h->neighs, str->nEdges * sizeof(node), cudaMemcpyHostToDevice );
+	maxDeg = graph_h->maxDeg;
+	minDeg = graph_h->minDeg;
+	meanDeg = graph_h->meanDeg;
+}
 
 
 
