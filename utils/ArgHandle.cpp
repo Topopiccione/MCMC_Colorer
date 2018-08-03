@@ -55,7 +55,7 @@ void ArgHandle::processCommandLine() {
 				double temp = std::stod( optarg );
 				if ((temp < 0) | (temp > 1)) {
 					std::cout << "\033[31;1mSimulation: probabilty of positive class must be 0 < prob < 1.\033[0m" << std::endl;
-					abort();
+					exit( -1 );
 				}
 				else {
 					prob = temp;
@@ -63,7 +63,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mArgument missing: specify the probabilty for positive class.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 		case 'd':
@@ -103,7 +103,7 @@ void ArgHandle::processCommandLine() {
 				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					std::cout << "\033[31;1mn must be a positive integer.\033[0m" << std::endl;
-					abort();
+					exit( -1 );
 				}
 				else {
 					n = temp;
@@ -111,7 +111,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mn must be a positive integer.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 
@@ -120,7 +120,7 @@ void ArgHandle::processCommandLine() {
 				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					std::cout << "\033[31;1mm must be a positive integer.\033[0m" << std::endl;
-					abort();
+					exit( -1 );
 				}
 				else {
 					m = temp;
@@ -128,7 +128,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mm must be a positive integer.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 		case 'N':
@@ -136,7 +136,7 @@ void ArgHandle::processCommandLine() {
 				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					std::cout << "\033[31;1mnFold argument must be a positive integer.\033[0m" << std::endl;
-					abort();
+					exit( -1 );
 				}
 				else {
 					nFolds = temp;
@@ -144,7 +144,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mnFold argument must be a positive integer.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 
@@ -155,7 +155,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mseed argument must be integer.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 
@@ -171,7 +171,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mensThrd argument must be integer.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 
@@ -182,7 +182,7 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mverbose-level argument must be integer.\033[0m" << std::endl;
-				abort();
+				exit( -1 );
 			}
 			break;
 
@@ -203,23 +203,23 @@ void ArgHandle::processCommandLine() {
 
 	if (simulate && (n == 0)) {
 		std::cout << "\033[31;1mSimualtion enabled: specify n (-n).\033[0m" << std::endl;
-		abort();
+		exit( -1 );
 	}
 
 	if (simulate && ((prob < 0) | (prob > 1))) {
 		std::cout << "\033[31;1mSimulation: probabilty of positive class must be 0 < prob < 1.\033[0m" << std::endl;
-		abort();
+		exit( -1 );
 	}
 
 	if (!simulate) {
 		if (dataFilename.empty()) {
 			std::cout << "\033[31;1mMatrix file undefined (--data).\033[0m" << std::endl;
-			abort();
+			exit( -1 );
 		}
 
 		if (labelFilename.empty()) {
 			std::cout << "\033[31;1mLabel file undefined (--label).\033[0m" << std::endl;
-			abort();
+			exit( -1 );
 		}
 
 		if (foldFilename.empty()) {
@@ -238,7 +238,7 @@ void ArgHandle::processCommandLine() {
 
 		if (geneOutFilename.empty()) {
 			std::cout << "\033[33;1mNo output gene names file name defined (--gene).\033[0m" << std::endl;
-			abort();
+			exit( -1 );
 		}
 	}
 
