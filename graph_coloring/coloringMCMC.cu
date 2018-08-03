@@ -10,13 +10,14 @@ __constant__ float RATIOFREEZED;
 
 
 template<typename nodeW, typename edgeW>
-ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandState * randStates ) :
+ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params ) :
 	Colorer<nodeW,edgeW>( inGraph_d ),
 	graphStruct_d( inGraph_d->getStruct() ),
 	nnodes( inGraph_d->getStruct()->nNodes ),
 	randStates( randStates ),
 	numOfColors( 0 ),
-	threadId( 0 ) {
+	threadId( 0 ),
+	param( params ) {
 
 	coloring_h = std::unique_ptr<int[]>( new int[nnodes] );
 
@@ -26,27 +27,24 @@ ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandS
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 
-	// TODO: le parti commentate sono le stesse usate in lubyGPU. Adedire a quest convenzione
 	// configuro la griglia e i blocchi
-	//threadsPerBlock = dim3( 128, 1, 1 );
-	//blocksPerGrid = dim3( (nnodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1 );
-	int numThreads = 32;
-	dim3 block(numThreads);
-	dim3 grid((nnodes + numThreads - 1) / numThreads);
+	numThreads = 32;
+	threadsPerBlock = dim3( numThreads, 1, 1 );
+	blocksPerGrid = dim3( (nnodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1 );
+
 
 	// init curand
 	// TODO: abbiamo già una classe che si occupa di gestire curand, megio usare quella! [cfr. lubyGPU]
-	curandState* states;
 	cuSts = cudaMalloc((void **) &states, nnodes * sizeof(curandState));
 	cudaCheck(cuSts, __FILE__, __LINE__);
 	long seed = 0;
-	GPURand_k::initCurand<<<grid, block>>>(states, seed, nnodes);
+	GPURand_k::initCurand<<<blocksPerGrid, threadsPerBlock>>>(states, seed, nnodes);
 	cudaDeviceSynchronize();
 
 	// coloring
 	// TODO: adeguare le strutture usate nella colorazione in modo che siano come in lubyGPU
 	// TODO: no malloc, sì new
-	/*col_sz*/ nCol = graphStruct_d->getMaxNodeDeg() + 1;
+	/*col_sz*/ nCol = inGraph_d->getMaxNodeDeg() + 1;
 	//col *C, *C1_d, *C2_d;
 	C = (col*)malloc(nnodes * sizeof(col));
 	cuSts = cudaMalloc(&C1_d, nnodes * sizeof(col)); cudaCheck(cuSts, __FILE__, __LINE__);
@@ -60,12 +58,12 @@ ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandS
 	// MCMC priori distribution parameters
 	param.nCol = nCol;
 	param.lambda = param.lambda/(float)nCol;
-	expCumulatedDiscreteDistribution dist;
 	dist.lambda = param.lambda;
 	CPURand::createExpDistribution(&dist, dist.lambda, nCol); // form: exp(-lambda*c/nCol), c = 1,2...
 
 }
 
+// TODO: eliminare tutto quello creato nel construttore per evitare memory leak
 template<typename nodeW, typename edgeW>
 ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cudaEventDestroy(stop);
@@ -197,8 +195,7 @@ void ColoringMCMC<nodeW, edgeW>::convert_to_standard_notation(){
  * @param dist the probability mass function (not normalized)
  * @param n the distribution size
  */
-__device__ int ColoringMCMC_k::discreteSampling(curandState* states,
-		discreteDistribution_st * dist) {
+__device__ int ColoringMCMC_k::discreteSampling(curandState* states, discreteDistribution_st * dist) {
 	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 	unsigned int n = dist->length;
 	printf("n = %d\n", n);
@@ -223,7 +220,7 @@ __global__ void ColoringMCMC_k::initColoring(curandState* state,
 	if (i < n) {
 		discreteDistribution_st d = dist->CDF;
 		printf("length = %d\n", d.length);
-		// C[i] = ColoringMCMC_k::discreteSampling(state, d);
+		// C[i] = ColoringMCMC_k::discreteSampling(state, &d);
 		printf("init_col[%d] = %d\n", i, C[i]);
 	}
 }
@@ -393,10 +390,11 @@ __inline__  __device__ col ColoringMCMC_k::fixColor(
  * @param numConflicts overall conflicts
  * @param PHI support distribution
  */
+ template<typename nodeW, typename edgeW>
 __global__ void ColoringMCMC_k::drawNewColoring(
 		unsigned int* numConflicts_d,
 		curandState* states,
-		GraphStruct<col, col>* str,
+		const GraphStruct<nodeW, edgeW> * str,
 		col* C1_d,
 		col* C2_d,
 		col* colSupport) {
@@ -471,7 +469,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 //		}
 //	}
 
-	cout << "lambda = " << param.lambda << endl;
+	std::cout << "lambda = " << param.lambda << std::endl;
 	// fill constant memory
 	cudaMemcpyToSymbol(LAMBDA, &(param.lambda), sizeof(float));
 	cudaMemcpyToSymbol(NCOLS, &(param.nCol), sizeof(col_sz));
@@ -481,35 +479,37 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 			sizeof(float));
 
 	// init coloring CPU
-	CPURand::discreteSampling(&(dist.CDF), C, n);
+	// TODO: quarto argomento è il seed
+	CPURand::discreteSampling(&(dist.CDF), C, nnodes, 0);
 
 
 	// manage conflicts
-	unsigned int numConflictsOLD = 0;
-	for (int i = 0; i < n; i++) {
-		node_sz cumulDeg = str->cumulDegs[i];
-		node_sz deg = str->cumulDegs[i + 1] - cumulDeg;
-		unsigned int nc = ColoringMCMC_k::checkConflicts(i, deg, str->neighs + cumulDeg, C);
+	uint32_t numConflictsOLD = 0;
+	for (int i = 0; i < nnodes; i++) {
+		// TODO: questo genererà dei segFault in esecuzione...
+		node_sz cumulDeg = graphStruct_d->cumulDegs[i];
+		node_sz deg = graphStruct_d->cumulDegs[i + 1] - cumulDeg;
+		uint32_t nc = ColoringMCMC_k::checkConflicts(i, deg, graphStruct_d->neighs + cumulDeg, C);
 		numConflictsOLD += nc;
 	}
-	cout << "numConflicts init = " << numConflictsOLD << endl;
-	cuSts = cudaMemcpy(C1_d, C, n*sizeof(col), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
-	unsigned int* numConflicts_d;
-	cuSts = cudaMalloc((void**)&numConflicts_d, sizeof(unsigned int)); cudaCheck(cuSts, __FILE__, __LINE__);
-	unsigned int numConflicts = 1;
+	std::cout << "numConflicts init = " << numConflictsOLD << std::endl;
+	cuSts = cudaMemcpy(C1_d, C, nnodes*sizeof(col), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
+	uint32_t * numConflicts_d;
+	cuSts = cudaMalloc((void**)&numConflicts_d, sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
+	uint32_t numConflicts = 1;
 
 	// start coloring
-	unsigned nRound = 0;
+	uint32_t nRound = 0;
 	bool STOP = 1;
 	cudaEventRecord(start);
 	while (STOP) {
 		nRound++;
-		cout << "ROUND # " << nRound << endl;
+		std::cout << "ROUND # " << nRound << std::endl;
 		cuSts = cudaMemcpy(numConflicts_d, &numConflicts, sizeof(unsigned int), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
-		ColoringMCMC_k::drawNewColoring<<<grid, block>>>(numConflicts_d, states, str, C1_d, C2_d, colNeigh);
+		ColoringMCMC_k::drawNewColoring<<<blocksPerGrid, threadsPerBlock>>>(numConflicts_d, states, graphStruct_d, C1_d, C2_d, colNeigh);
 		cuSts = cudaMemcpy(&numConflicts, numConflicts_d, sizeof(unsigned int), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		cudaDeviceSynchronize();
-		cout << "GPU num GLOBAL conflicts = " << numConflicts << endl;
+		std::cout << "GPU num GLOBAL conflicts = " << numConflicts << std::endl;
 
 		if (!numConflicts)
 			STOP = 0;
@@ -517,8 +517,8 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 			if (numConflicts > numConflictsOLD) {
 				if (param.ratioFreezed > 0.45) {
 					param.ratioFreezed = param.ratioFreezed-0.5;
-					cout << "numConflicts = " << numConflicts << "    numConflictsOLD = " << numConflictsOLD << endl;
-					cout << "freeze = " << param.ratioFreezed << endl;
+					std::cout << "numConflicts = " << numConflicts << "    numConflictsOLD = " << numConflictsOLD << std::endl;
+					std::cout << "freeze = " << param.ratioFreezed << std::endl;
 					cudaMemcpyToSymbol(RATIOFREEZED, &(param.ratioFreezed), sizeof(float));
 				}
 				else {
@@ -541,17 +541,18 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 	cudaEventSynchronize(stop);
 	float milliseconds = 0;
 	cudaEventElapsedTime(&milliseconds, start, stop);
-	elapsedTimeSec = milliseconds/1000.0f;
+	//float elapsedTimeSec = milliseconds/1000.0f;
 
 
 	// build coloring
-	buildColoring(C, n);
+	// TODO: penso sia l'analogo di convert_to_standard_notation()
+	//buildColoring(C, nnodes);
 
 
-	cudaFree(states);
-	cudaFree(C1_d);
-	cudaFree(C2_d);
-	cudaFree(colNeigh);
+	//cudaFree(states);
+	//cudaFree(C1_d);
+	//cudaFree(C2_d);
+	//cudaFree(colNeigh);
 //	cudaFree(numConflicts);
 //	cudaDeviceReset();
 
