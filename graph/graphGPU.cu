@@ -238,6 +238,9 @@ Graph<nodeW, edgeW>::Graph( Graph<nodeW, edgeW> * const graph_h ) {
 	maxDeg = graph_h->maxDeg;
 	minDeg = graph_h->minDeg;
 	meanDeg = graph_h->meanDeg;
+	density = graph_h->density;
+	connected = graph_h->connected;
+	GPUEnabled = true;
 }
 
 

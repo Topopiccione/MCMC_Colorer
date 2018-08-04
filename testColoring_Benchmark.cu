@@ -8,6 +8,7 @@
 #include "graph/graphCPU.cpp"
 #include "graph/graphGPU.cu"
 #include "graph_coloring/coloring.h"
+#include "graph_coloring/coloringLuby.h"
 #include "GPUutils/GPURandomizer.h"
 
 #define BENCHMARK 1
@@ -39,8 +40,16 @@ int main(int argc, char *argv[]) {
 	*/
 
 	fileImporter fImport( graphFileName, labelsFileName );
-	Graph<float, float> test( &fImport, GPUEnabled );
+	Graph<float, float> test( &fImport, !GPUEnabled );
 	std::cout << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges << std::endl;
+
+	Graph<float, float> graph_d( &test );
+
+	GPURand GPURandGen( test.getStruct()->nNodes, (long) commandLine.seed );
+	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
+	start = std::clock();
+	colLuby.run();
+	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 
 	/*for (auto it = fImport.inverseGeneMap.begin(); it != fImport.inverseGeneMap.end(); ++it) {
 		std::cout << it->first << " " << it->second << std::endl;
