@@ -8,12 +8,14 @@ option(sm52 "Activate nvcc compiling for 5.2 capability" OFF)
 option(sm50 "Activate nvcc compiling for 5.0 capability" ON)	# Default sul mio pc
 option(sm35 "Activate nvcc compiling for 3.5 capability" OFF)
 
+add_subdirectory(easyloggingpp)
+
 include_directories(.)
 include_directories(GPUutils)
 include_directories(graph)
 include_directories(graph_coloring)
 include_directories(utils)
-include_directories(easylogging)
+include_directories(easyloggingpp)
 
 include(FindCUDA)
 
@@ -53,10 +55,9 @@ SET(CUDA_NON_PROPAGATED_HOST_FLAGS ON)
 
 FIND_PACKAGE(CUDA REQUIRED QUIET)
 
-add_subdirectory(easyloggingpp)
-
 SET(SOURCESCPP      "graph/graphCPU.cpp"
 					"graph_coloring/colorer.cpp"
+					"graph_coloring/coloringMCMC_CPU.cpp"
 					"utils/ArgHandle.cpp"
 					"utils/fileImporter.cpp"
 #					"utils/fileExporter.cpp"
@@ -70,7 +71,7 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph_coloring/coloringMCMC.cu"
 					"testColoring_Benchmark.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
-FILE(GLOB LOGGINGPP "easyloggingpp/easylogging++.cc")
+SET(LOGGINGPP		"easyloggingpp/easyloggingpp/easylogging++.cc")
 
 cuda_add_executable(MCMC_Colorer ${SOURCESCUDA} ${SOURCESCPP} ${LOGGINGPP})
 add_executable(datasetGen ${SOURCEGEN})

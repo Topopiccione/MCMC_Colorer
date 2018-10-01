@@ -11,13 +11,6 @@
 #include "GPUutils/GPUutils.h"
 #include "GPUutils/GPURandomizer.h"
 
-struct ColoringMCMCParams {
-	col_sz			nCol;
-	float			lambda;
-	float			epsilon;
-	float			ratioFreezed;
-};
-
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
 public:

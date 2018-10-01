@@ -297,7 +297,7 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
 			}
 
 
-	// compute cumSum probability
+	// compute cumulSum probability
 	float cumProb = 0;
 	col j = 0;
 	for (col c = 1; c <= k; c++) {

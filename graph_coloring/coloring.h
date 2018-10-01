@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "graph/graph.h"
+#include "miscUtils.h"
 
 typedef uint32_t col;     // node color
 typedef uint32_t col_sz;     // node color
@@ -58,4 +59,12 @@ public:
 	ColoringGreedyCPU( Graph<nodeW, edgeW>* g );
 	void run();
 	~ColoringGreedyCPU();
+};
+
+////////////////////////////////////////////////
+struct ColoringMCMCParams {
+	col_sz			nCol;
+	float			lambda;
+	float			epsilon;
+	float			ratioFreezed;
 };
