@@ -13,6 +13,9 @@
 //#include <ctime>
 //#include "graph/graph.h"	// in realta' non serve!
 
+#define DUPLICATE_CHECK
+#define BIDIR_CHECK
+
 std::vector<std::string> generateRandomName( const int n );
 
 int main( int argc, char ** argv ) {
@@ -36,7 +39,10 @@ int main( int argc, char ** argv ) {
 	std::cout << "nNodes: " << nNodes << " - probDensity: " << probDensity << " - label: "
 		<< labelFileName << " - net: " << netFileName << std::endl;
 
-	std::default_random_engine eng( time( NULL ) );
+	auto seed = 10000;
+
+	//std::default_random_engine eng( time( NULL ) );
+	std::default_random_engine eng( seed );
 	std::uniform_real_distribution<> randR(0.0, 1.0);
 	std::normal_distribution<> randNorm(0, 0.1);
 
@@ -83,7 +89,7 @@ int main( int argc, char ** argv ) {
 	uint64_t	*	neighs;
 	float		*	weights;
 	uint64_t		nEdges = 0;
-	uint64_t		nodiIsolatiCorretti = 0;
+	// uint64_t		nodiIsolatiCorretti = 0;
 
 	std::fill(cumulDegs, cumulDegs + nNodes + 1, 0);
 	std::cout << "|--------------------|" << std::endl << "\033[F|";
@@ -102,16 +108,17 @@ int main( int argc, char ** argv ) {
 				nEdges += 1;// 2;
 				haiAlmenoUnArco = true;
 			}
-		if (!haiAlmenoUnArco) {
-			//std::cout << "Nodo isolato!" << std::endl;
-			uint32_t aa = (rand() % (nNodes - i)) + 1;
-			edges[i].push_back(aa);
-			//edges[aa].push_back(i);
-			cumulDegs[i + 1]++;
-			//cumulDegs[aa + 1]++;
-			nEdges += 1;// 2;
-			nodiIsolatiCorretti++;
-		}
+		// if (!haiAlmenoUnArco) {
+		// 	//std::cout << "Nodo isolato: " << i << std::endl;
+		// 	uint32_t aa = (rand() % (nNodes - i)) + 1;
+		// 	//std::cout << "Creato edge con: " << aa << std::endl;
+		// 	edges[i].push_back(aa);
+		// 	//edges[aa].push_back(i);
+		// 	cumulDegs[i + 1]++;
+		// 	//cumulDegs[aa + 1]++;
+		// 	nEdges += 1;// 2;
+		// 	nodiIsolatiCorretti++;
+		// }
 	}
 	cumulDegs[0] = 0;
 	for (uint32_t i = 0; i < nNodes; i++)
@@ -122,6 +129,45 @@ int main( int argc, char ** argv ) {
 	neighs = new uint64_t[nEdges];
 	for (uint32_t i = 0; i < nNodes; i++)
 		memcpy((neighs + cumulDegs[i]), edges[i].data(), sizeof(uint64_t) * edges[i].size());
+
+
+	// Controlli:
+	// Arco non deve apparire due volte
+	#ifdef DUPLICATE_CHECK
+	std::cout << "Checking for duplicate edges in neighbor lists..." << std::endl;
+	for (size_t i = 0; i < nNodes; i++) {
+		size_t nodeDeg = cumulDegs[i + 1] - cumulDegs[i];
+		auto neighIdx = neighs + cumulDegs[i];
+		auto aa = std::unique( neighIdx, neighIdx + nodeDeg );
+		if (aa != (neighs + cumulDegs[i + 1])) {
+			std::cout << "Aborting: duplicate in edge list of node " << i << std::endl;
+			exit( -1 );
+		}
+	}
+	#endif
+
+	// Grafo NON deve essere bidirezionale, perche' l'arco di ritorno viene aggiunto dal costruttore di Graph
+	#ifdef BIDIR_CHECK
+	for (size_t i = 0; i < nNodes; i++) {
+		size_t nodeDeg = cumulDegs[i + 1] - cumulDegs[i];
+		auto neighIdx = neighs + cumulDegs[i];
+		for  (size_t j = 0; j < nodeDeg; j++) {
+			auto neighNode = neighIdx[j];
+			auto neighNodeDeg = cumulDegs[neighNode + 1] - cumulDegs[neighNode];
+			auto neighNodeIdx = neighs + cumulDegs[neighNode];
+			// look for i in the neigh list of neighNode. There should be none;
+			auto aa = std::find(neighNodeIdx, neighNodeIdx + neighNodeDeg, i);
+			if (aa != neighNodeIdx + neighNodeDeg) {
+				std::cout << "Aborting: found bidirectional edge between nodes " << i << " and " << neighNode << std::endl;
+				std::cout << i << " neighs list: ";
+				std::for_each( neighIdx, neighIdx + nodeDeg, [&](uint32_t val) {std::cout << val << " ";} );
+				std::cout << std::endl << neighNode << " neighs list: ";
+				std::for_each( neighNodeIdx, neighNodeIdx + neighNodeDeg, [&](uint32_t val) {std::cout << val << " ";} );
+				exit( -1 );
+			}
+		}
+	}
+	#endif
 
 	std::cout << "Saving..." << std::endl;
 	std::cout << "|--------------------|" << std::endl << "\033[F|";
@@ -138,7 +184,7 @@ int main( int argc, char ** argv ) {
 	}
 
 	std::cout << std::endl;
-	std::cout << "Nodi Isolati corretti: " << nodiIsolatiCorretti << std::endl;
+	// std::cout << "Nodi Isolati: " << nodiIsolatiCorretti << std::endl;
 
 	netFile.close();
 	return 0;
