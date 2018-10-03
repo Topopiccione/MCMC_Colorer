@@ -18,4 +18,5 @@
 #define TXT_BIGRN ""
 #define TXT_BIRED ""
 #define TXT_NORML ""
+#define TXT_COLMC ""
 #endif

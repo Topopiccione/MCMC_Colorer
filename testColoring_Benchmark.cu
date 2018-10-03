@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 
 	////EasyLogging++
 	START_EASYLOGGINGPP(argc, argv);
-    el::Configurations conf("logger.conf");
+    el::Configurations conf("../logger.conf");
     el::Loggers::reconfigureLogger("default", conf);
     el::Loggers::reconfigureAllLoggers(conf);
 	// Commandline arguments
@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
 	uint32_t			seed			= commandLine.seed;
 	std::string			graphFileName	= commandLine.dataFilename;
 	std::string			labelsFileName	= commandLine.labelFilename;
+
+	//seed = 10000;
 
 	std::clock_t start;
 	double duration;
@@ -52,17 +54,21 @@ int main(int argc, char *argv[]) {
 
 	Graph<float, float> graph_d( &test );
 	//// GPU Luby coloring
-	// ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
-	// colLuby.run_fast();
+	GPURand GPURandGen( test.getStruct()->nNodes, (long) commandLine.seed );
+	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
+	start = std::clock();
+	colLuby.run_fast();
+	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+	std::cout << "LubyGPU elapsed time: " << duration << std::endl;
 
 	ColoringMCMCParams aa;
-	aa.nCol = 3;
-	aa.epsilon = 1e-3;
+	aa.nCol = 5;
+	aa.epsilon = 1e-5;
 	aa.lambda = 2.0f;
-	aa.ratioFreezed = 1e-2;
+	aa.ratioFreezed = 0.1f;
 
 	//// GPU MCMC coloring
-	// GPURand GPURandGen( test.getStruct()->nNodes, (long) commandLine.seed );
+
 	// ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, aa);
 	// start = std::clock();
 	// colMCMC.run();
@@ -73,7 +79,7 @@ int main(int argc, char *argv[]) {
 	mcmc_cpu.run();
 	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 
-	std::cout << "Elapsed time: " << duration << std::endl;
+	std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
 
 	return EXIT_SUCCESS;
 }

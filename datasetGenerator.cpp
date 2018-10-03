@@ -7,9 +7,11 @@
 #include <algorithm>
 #include <random>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <set>
-#include "graph/graph.h"	// in realta' non serve!
+//#include <ctime>
+//#include "graph/graph.h"	// in realta' non serve!
 
 std::vector<std::string> generateRandomName( const int n );
 
@@ -94,20 +96,20 @@ int main( int argc, char ** argv ) {
 		for (uint32_t j = i + 1; j < nNodes; j++)
 			if (randR(eng) < probDensity) {
 				edges[i].push_back(j);
-				edges[j].push_back(i);
+				//edges[j].push_back(i);
 				cumulDegs[i + 1]++;
-				cumulDegs[j + 1]++;
-				nEdges += 2;
+				//cumulDegs[j + 1]++;
+				nEdges += 1;// 2;
 				haiAlmenoUnArco = true;
 			}
 		if (!haiAlmenoUnArco) {
 			//std::cout << "Nodo isolato!" << std::endl;
 			uint32_t aa = (rand() % (nNodes - i)) + 1;
 			edges[i].push_back(aa);
-			edges[aa].push_back(i);
+			//edges[aa].push_back(i);
 			cumulDegs[i + 1]++;
-			cumulDegs[aa + 1]++;
-			nEdges += 2;
+			//cumulDegs[aa + 1]++;
+			nEdges += 1;// 2;
 			nodiIsolatiCorretti++;
 		}
 	}
@@ -123,6 +125,7 @@ int main( int argc, char ** argv ) {
 
 	std::cout << "Saving..." << std::endl;
 	std::cout << "|--------------------|" << std::endl << "\033[F|";
+	netFile << nNodes << "\t" << nEdges << std::endl;
 
 	for (uint32_t i = 0; i < nNodes; i++) {
 		if (i % (nNodes / 20) == 0)

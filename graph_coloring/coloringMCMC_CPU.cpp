@@ -2,7 +2,7 @@
 
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed ) :
-		Colorer<nodeW, edgeW>( g ), nNodes( g->getStruct()->nNodes ), nCol( params.nCol ), lambda( params.lambda ),
+		Colorer<nodeW, edgeW>( g ), str( g->getStruct() ), nNodes( g->getStruct()->nNodes ), nCol( params.nCol ), lambda( params.lambda ),
 		epsilon( params.epsilon ), ratioFreezed( params.ratioFreezed ), seed( seed ) {
 
 	LOG(TRACE) << TXT_COLMC << "Creating ColorerMCMC with parameters: nCol= " << nCol << " - lambda= " << lambda
@@ -18,10 +18,13 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, Colori
 	LOG(TRACE) << TXT_COLMC << "q: allocated " << q.size() << " x " << sizeof(float) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "qstar: allocated " << qstar.size() << " x " << sizeof(float) << TXT_NORML;
 
-	p = std::vector<float>( nNodes );
-	pstar = std::vector<float>( nNodes );
+	p = std::vector<float>( nCol );
+	pstar = std::vector<float>( nCol );
 	LOG(TRACE) << TXT_COLMC << "p: allocated " << p.size() << " x " << sizeof(float) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "pstar: allocated " << pstar.size() << " x " << sizeof(float) << TXT_NORML;
+
+	nodeProbab = std::vector<float>( nNodes );
+	LOG(TRACE) << TXT_COLMC << "nodeProbab: allocated " << nodeProbab.size() << " x " << sizeof(float) << TXT_NORML;
 
 	freezed = std::vector<bool>( nNodes );
 	LOG(TRACE) << TXT_COLMC << "freezed: allocated " << freezed.size() << " x " << sizeof(bool) << TXT_NORML;
@@ -29,8 +32,10 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, Colori
 	freeColors = std::vector<bool>( nCol );
 	LOG(TRACE) << TXT_COLMC << "freeColors: allocated " << freeColors.size() << " x " << sizeof(bool) << TXT_NORML;
 
-	nodeProbab = std::vector<float>( nNodes );
-	LOG(TRACE) << TXT_COLMC << "nodeProbab: allocated " << nodeProbab.size() << " x " << sizeof(float) << TXT_NORML;
+	Cviols = std::vector<bool>( nNodes );
+	Cstarviols = std::vector<bool>( nNodes );
+	LOG(TRACE) << TXT_COLMC << "Cviols: allocated " << Cviols.size() << " x " << sizeof(bool) << TXT_NORML;
+	LOG(TRACE) << TXT_COLMC << "Cstarviols: allocated " << Cstarviols.size() << " x " << sizeof(bool) << TXT_NORML;
 
 	// Starting the RNGs
 	gen				= std::default_random_engine( seed );
@@ -46,6 +51,8 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, Colori
 
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::~ColoringMCMC_CPU() {
+	LOG(TRACE) << TXT_COLMC << "Cstarviols: freeing " << Cstarviols.size() << " x " << sizeof(bool) << TXT_NORML;
+	LOG(TRACE) << TXT_COLMC << "Cviols: freeing " << Cviols.size() << " x " << sizeof(bool) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "nodeProbab: freeing " << nodeProbab.size() << " x " << sizeof(bool) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "freeColors: freeing " << freeColors.size() << " x " << sizeof(bool) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "freezed: freeing " << freezed.size() << " x " << sizeof(bool) << TXT_NORML;
@@ -60,58 +67,243 @@ ColoringMCMC_CPU<nodeW, edgeW>::~ColoringMCMC_CPU() {
 template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	LOG(TRACE) << TXT_COLMC << "Starting MCMC coloring..." << TXT_NORML;
+	size_t iter = 0;
+	size_t maxiter = 250;
+	// size_t idx = 0;
+
+	std::string logString;
+
+	// Count the number of violations on the extracted coloring
+	// Remember: 1: node is in a current violation state, 0: is not
+	Cviol = violation_count( C, Cviols );
+	LOG(TRACE) << TXT_BIBLU << "Initial violations: " << Cviol << TXT_NORML;
 
 	// Stay in the loop until there are no more violations
-	while (Cstarviol != 0) {
-		// Reset variables...
-		std::fill( std::begin(freeColors), std::end(freeColors), 0 );
-
+	while (Cviol != 0) {
+		LOG(TRACE) << TXT_BIRED << "iteration " << iter << TXT_NORML;
+		// Managed freezing nodes.
+		// Remember: 0 = evaluate new color, 1 = freezed
+		// std::fill( std::begin(freezed), std::end(freezed), 1 );
+		//std::for_each(std::begin(freezed), std::end(freezed), [&](bool &val) {val = bernieFreeze(gen); });
+		// NOTE: La lambda non funziona...
+		for (size_t i = 0; i < freezed.size(); i++) freezed[i] = bernieFreeze(gen);
 		// Extract in advance all the experiment probabilities
-		std::for_each( std::begin(nodeProbab), std::end(nodeProbab), [&] (float &val) {val = unifDistr(gen);} );
+		std::for_each( std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
+
+		Cviol = violation_count( C, Cviols );
+		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
+
+		// logString = "Violating nodes: ";
+		// std::for_each(Cviols.begin(), Cviols.end(), [&](bool val){if (val) logString = logString + std::to_string(idx++) + " ";} );
+		// LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
+		// idx = 0;
 
 		// Iternal loop 1: building Cstar
 		for (size_t i = 0; i < nNodes; i++) {
+			if (freezed[i]) {
+				Cstar[i] = C[i];
+				q[i] = 1.0f;
+				continue;
+			}
+
 			// Build list of free / occupied colors (and count them)
-			/// for_each... freeColors = is_color_free(...); // 0 = occupied, 1 = free
-			size_t Az = std::count( std::begin(freeColors), std::end(freeColors), 0 );
-			size_t Azcomp = nCol - Az;
+			size_t Zvcomp = count_free_colors( i, C, freeColors );
+			size_t Zv = nCol - Zvcomp;
 
-			// Fill vect p. Depends on C, freeColors
-			size_t idx = 0;
-			/// fill_p(...)
+			// Fill vect p.
+			fill_p( i, Zv );
 
-			// consider nodeProbab[i], build the CdF of p, get the new color and put it in Cstar[i]
-			// Save qi] for later use
+			// consider nodeProbab, build the CdF of p, get the new color and put it in Cstar[i]
+			extract_new_color( i, p, nodeProbab, q, Cstar );
 		}
+
+		// Count the violation of the new coloring Cstar; also fill the Cstarviols vector
+		Cstarviol = violation_count( Cstar, Cstarviols );
+		LOG(TRACE) << TXT_BIBLU << "Cstar violations: " << Cstarviol << TXT_NORML;
 
 		// Internal loop 2: building C
 		for (size_t i = 0; i < nNodes; i++) {
+			if (freezed[i]) {
+				qstar[i] = 1.0f;
+				continue;
+			}
 			// Build list of free / occupied colors (and count them)
-			/// for_each... freeColors = is_color_free(...); // 0 = occupied, 1 = free
-			size_t Azstar = std::count( std::begin(freeColors), std::end(freeColors), 0 );
-			size_t Azstarcomp = nCol - Azstar;
+			size_t Zvcomp = count_free_colors( i, Cstar, freeColors );
+			size_t Zv = nCol - Zvcomp;
 
 			// No need to do the experiment, just evaluate qstar[i]
+			fill_qstar( i, Zv, Cstar, C, freeColors, Cstarviols, q );
 		}
 
-		// Count the number of conflicts on both C and Cstar
-		// ...
-
 		// Cumulate q and qstar
-		// ...
+		float qsum = std::accumulate( std::begin(q), std::end(q), 0.0f );
+		float qstarsum = std::accumulate( std::begin(qstar), std::end(qstar), 0.0f );
 
 		// evaluate alpha
-		// ...
+		alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) + log(qsum) - log(qstarsum);
+		LOG(TRACE) << TXT_BIBLU << "alpha: " << alpha << TXT_NORML;
 
+		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
+		// if (...)
+		std::swap( C, Cstar );
+		// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
+		//       or swap operations on individual elements (it is what we want: it is like swapping
+		//       pointers, but on steroids)
+		// NOTE to the previous NOTE: it seems that std::swap( std::vector, std::vector ) automatically
+		//      invokes the specialized version std::vector::swap... So, for sake of readability we chose
+		//      the more general form
 
-
-
+	iter++;
+	if (iter > maxiter)
+		break;
 	}
-
-
 
 }
 
+// Arguments:
+//		currentColoring -> the coloring array being processed; can be C or Cstar
+//		violations -> boolean array stating if the current color of a node is currently violating an admissible coloration
+// Returns: total number of nodes whose color is in a violation state
+template<typename nodeW, typename edgeW>
+size_t ColoringMCMC_CPU<nodeW, edgeW>::violation_count( const std::vector<uint32_t> & currentColoring, std::vector<bool> & violations ) {
+	size_t viol = 0;
+	for (size_t i = 0; i < nNodes; i++) {
+		violations[i] = 0;
+		size_t nodeViolations = 0;
+		// Get the node color
+		const uint32_t nodeColor = currentColoring[i];
+		// Get the index and the number of the neighbours of node i
+		// TODO: this needs to be tested!!!!!!
+		const size_t nodeDeg  = str->cumulDegs[i + 1] - str->cumulDegs[i];
+		const size_t neighIdx = str->cumulDegs[i];
+		const node * neighPtr = str->neighs + neighIdx;
+
+		// Scan all the neighbours color and count the violations
+		nodeViolations = std::count_if( neighPtr,  neighPtr + nodeDeg,
+			[&](node neigh) {return nodeColor == currentColoring[neigh];} );
+
+		if (nodeViolations > 0) {
+			violations[i] = 1;
+			viol++;
+		}
+	}
+	return viol;
+}
+
+// This is executed for each node
+// Arguments:
+//		currentNode: the current node under processing
+//		currentColoring: the coloring vector that the current node color has to be tested against; can be C or Cstar
+// Returns:
+//		freeColors: a boolean array (size == nCol) which states is the i-th color is free (1) or not (0)
+//		Also returns the number of free colors
+template<typename nodeW, typename edgeW>
+size_t ColoringMCMC_CPU<nodeW, edgeW>::count_free_colors( const size_t currentNode, const std::vector<uint32_t> & currentColoring,
+		std::vector<bool> & freeColors ) {
+
+	// Resets the freeColors array: all colors are free at the beginning
+	std::fill( std::begin(freeColors), std::end(freeColors), 1 );
+
+	// Get node current color
+	const uint32_t nodeColor = currentColoring[currentNode];
+	// Get node deg and neighs
+	const size_t nodeDeg  = str->cumulDegs[currentNode + 1] - str->cumulDegs[currentNode];
+	const size_t neighIdx = str->cumulDegs[currentNode];
+	const node * neighPtr = str->neighs + neighIdx;
+
+	// Scan the neighborhood, and set 0 to all conflicting colors
+	for (size_t i = 0; i < nodeDeg; i++) {
+		node neigh = neighPtr[i];
+		//if (C[neigh] == nodeColor)
+		freeColors[currentColoring[neigh]] = 0;
+	}
+
+	// Returns the number of free colors
+	return std::count( std::begin(freeColors), std::end(freeColors), 1 );
+}
+
+
+// This is executed for each node
+// Arguments:
+//		currentNode: guess what
+//		Zv: number of conflicting colors for of the current node
+// Returns:
+//		nothing, but modifies p vector
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::fill_p( const size_t currentNode, const size_t Zv ) {
+	size_t idx = 0;
+	const size_t Zvcomp = nCol - Zv;
+	const uint32_t currentColor = C[currentNode];
+
+	// Scan the p vector (size = nCol) and fill with probabilities
+	// Discriminate wheter current node color is in conflict or not
+	if (Cviols[currentNode] == 1) { // Current color is in a violation state
+		std::for_each( std::begin(p), std::end(p), [&](float &val) {
+			if (freeColors[idx])
+				val = (1.0f - epsilon * Zv) / (float) Zvcomp;
+			else
+				val = epsilon;
+			idx++;
+		} );
+	} else { // Current color is NOT in a violation state
+		std::for_each( std::begin(p), std::end(p), [&](float &val) {
+			if (idx == currentColor)
+				val = 1.0f - (nCol - 1) * epsilon;
+			else
+				val = epsilon;
+			idx++;
+		} );
+	}
+}
+
+// This is executed for each node
+// Arguments:
+//		currentNode: guess what
+//		pVect: vector of probability (size = nCol) assembled by fill_p()
+//		experimentVect: vector of probability (size = nNodes) containing the experiment
+// Returns:
+//		qVect: modified in the currentNode position with p[extractedColor]
+//		newColoring: modified in the currentNode position with the new extracted color. Must be Cstar.
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::extract_new_color( const size_t currentNode, const std::vector<float> & pVect,
+		const std::vector<float> & experimentVect, std::vector<float> & qVect, std::vector<uint32_t> & newColoring ) {
+
+	float experimentThrsh = experimentVect[currentNode];
+	float cdf = 0;
+	size_t idx;
+
+	// Walk through pVect while building the cumulative distribution function
+	// Exit from the cycle as soon as cdf gets > experiemntThrs. Save the index that is the new color for Cstar
+	for (idx = 0; idx < pVect.size(); idx++) {
+		cdf += pVect[idx];
+		if (cdf > experimentThrsh)
+			break;
+	}
+
+	qVect[currentNode] = pVect[idx];
+	newColoring[currentNode] = idx;
+}
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::fill_qstar( const size_t currentNode, const size_t Zv, const std::vector<uint32_t> & newColoring,
+		const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
+		std::vector<float> & qVect ) {
+
+	const size_t Zvcomp = nCol - Zv;
+	const uint32_t currentColor = newColoring[currentNode];
+
+	if (newColoringViols[currentNode] == 1) { // New color is in a violation state
+		if (freeCols[currentColor])
+			qstar[currentNode] = (1.0f - epsilon * Zv) / (float) Zvcomp;
+		else
+			qstar[currentNode] = epsilon;
+	} else { // New color is NOT in a violation state
+		if (newColoring[currentNode] == oldColoring[currentNode])
+			qstar[currentNode] = 1.0f - (nCol - 1) * epsilon;
+		else
+			qstar[currentNode] = epsilon;
+	}
+}
 
 
 /////////////////////
