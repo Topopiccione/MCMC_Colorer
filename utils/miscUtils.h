@@ -20,3 +20,5 @@
 #define TXT_NORML ""
 #define TXT_COLMC ""
 #endif
+
+extern bool g_traceLogEn;

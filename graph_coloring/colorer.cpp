@@ -210,5 +210,7 @@ void ColoringGreedyCPU<nodeW,edgeW>::run() {
 
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
+template class Colorer<col,col>;
+template class Colorer<float,float>;
 template class ColoringGreedyCPU<col, col>;
 template class ColoringGreedyCPU<float, float>;

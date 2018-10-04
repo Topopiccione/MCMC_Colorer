@@ -21,7 +21,7 @@ template<typename nodeW, typename edgeW>
 void ColoringLuby<nodeW, edgeW>::run_fast() {
 
 #ifdef PRINTCOLORINGTITLE
-	std::cout << "\n\033[32;1m** Luby GPU fast colorer **\033[0m" << std::endl;
+	std::cout << TXT_BIGRN << "** Luby GPU fast colorer **" << TXT_NORML <<std::endl;
 #endif
 
 	// Preparo gli array per il primo giro
@@ -39,9 +39,9 @@ void ColoringLuby<nodeW, edgeW>::run_fast() {
 	cuSts = cudaMemcpy( coloring_h.get(), coloring_d, nnodes * sizeof( uint32_t ), cudaMemcpyDeviceToHost );  cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMemcpy( &numOfColors, numOfColors_d, sizeof( uint32_t ), cudaMemcpyDeviceToHost );  cudaCheck( cuSts, __FILE__, __LINE__ );
 
-//#ifdef VERBOSECOLORING
+#ifdef VERBOSECOLORING
 	std::cout << "Numero di colori trovati " << numOfColors << std::endl;
-//#endif
+#endif
 
 	convert_to_standard_notation();
 }

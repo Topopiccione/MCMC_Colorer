@@ -1,9 +1,12 @@
 #include "coloringMCMC_CPU.h"
+#include "miscUtils.h"
 
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed ) :
 		Colorer<nodeW, edgeW>( g ), str( g->getStruct() ), nNodes( g->getStruct()->nNodes ), nCol( params.nCol ), lambda( params.lambda ),
 		epsilon( params.epsilon ), ratioFreezed( params.ratioFreezed ), seed( seed ) {
+
+	std::cout << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML <<std::endl;
 
 	LOG(TRACE) << TXT_COLMC << "Creating ColorerMCMC with parameters: nCol= " << nCol << " - lambda= " << lambda
 		<< " - epsilon= " << epsilon << " - ratioFreezed= " << ratioFreezed << " - seed= " << seed << TXT_NORML;
@@ -67,11 +70,9 @@ ColoringMCMC_CPU<nodeW, edgeW>::~ColoringMCMC_CPU() {
 template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	LOG(TRACE) << TXT_COLMC << "Starting MCMC coloring..." << TXT_NORML;
+	auto bernie = [&](float p) {return ((double) rand() / (RAND_MAX)) >= p ? 0 : 1; };
 	size_t iter = 0;
 	size_t maxiter = 250;
-	// size_t idx = 0;
-
-	std::string logString;
 
 	// Count the number of violations on the extracted coloring
 	// Remember: 1: node is in a current violation state, 0: is not
@@ -83,20 +84,28 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		LOG(TRACE) << TXT_BIRED << "iteration " << iter << TXT_NORML;
 		// Managed freezing nodes.
 		// Remember: 0 = evaluate new color, 1 = freezed
-		// std::fill( std::begin(freezed), std::end(freezed), 1 );
-		//std::for_each(std::begin(freezed), std::end(freezed), [&](bool &val) {val = bernieFreeze(gen); });
-		// NOTE: La lambda non funziona...
-		for (size_t i = 0; i < freezed.size(); i++) freezed[i] = bernieFreeze(gen);
+		float freezingProb = 0.5f - exp( (-(int32_t)Cviol) / (float) nNodes ) * 0.5f;
+		LOG(TRACE) << TXT_BIBLU << "freezingProb: " << freezingProb << TXT_NORML;
+		// for (size_t i = 0; i < freezed.size(); i++) freezed[i] = bernieFreeze(gen);
+		for (size_t i = 0; i < freezed.size(); i++) freezed[i] = bernie(freezingProb);
+		if (g_traceLogEn) {
+			size_t tempVal = std::count( std::begin(freezed), std::end(freezed), 1 );
+			LOG(TRACE) << TXT_BIBLU << "Number of freezed nodes: " << tempVal << TXT_NORML;
+		}
+
 		// Extract in advance all the experiment probabilities
 		std::for_each( std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
 
 		Cviol = violation_count( C, Cviols );
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
 
-		// logString = "Violating nodes: ";
-		// std::for_each(Cviols.begin(), Cviols.end(), [&](bool val){if (val) logString = logString + std::to_string(idx++) + " ";} );
-		// LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
-		// idx = 0;
+		// if (g_traceLogEn) {
+		// 	size_t idx = 0;
+		// 	std::string logString;
+		// 	logString = "Violating nodes: ";
+		// 	std::for_each(Cviols.begin(), Cviols.end(), [&](bool val){if (val) logString = logString + std::to_string(idx++) + " ";} );
+		// 	LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
+		// }
 
 		// Iternal loop 1: building Cstar
 		for (size_t i = 0; i < nNodes; i++) {
@@ -135,16 +144,21 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			fill_qstar( i, Zv, Cstar, C, freeColors, Cstarviols, q );
 		}
 
-		// Cumulate q and qstar
-		float qsum = std::accumulate( std::begin(q), std::end(q), 0.0f );
-		float qstarsum = std::accumulate( std::begin(qstar), std::end(qstar), 0.0f );
+		// Apply log() to q and qstar; then, cumulate
+		std::for_each( std::begin(q), std::end(q), [](float & val) {val = log(val);} );
+		std::for_each( std::begin(qstar), std::end(qstar), [](float & val) {val = log(val);} );
+		float sumlogq = std::accumulate( std::begin(q), std::end(q), 0.0f );
+		float sumlogqstar = std::accumulate( std::begin(qstar), std::end(qstar), 0.0f );
 
 		// evaluate alpha
-		alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) + log(qsum) - log(qstarsum);
+		alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) + sumlogq - sumlogqstar;
+		LOG(TRACE) << TXT_BIBLU << "Cviol: " << Cviol << " - Cviolstar: " << Cstarviol << " - sumlogq: "<< sumlogq
+			<< " - sumlogqstar: "<< sumlogqstar << TXT_NORML;
 		LOG(TRACE) << TXT_BIBLU << "alpha: " << alpha << TXT_NORML;
 
 		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
 		// if (...)
+		// LOG(TRACE) << "Accepting / rejecting coloration: alpha, extractedProb"
 		std::swap( C, Cstar );
 		// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
 		//       or swap operations on individual elements (it is what we want: it is like swapping
@@ -153,12 +167,14 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		//      invokes the specialized version std::vector::swap... So, for sake of readability we chose
 		//      the more general form
 
-	iter++;
-	if (iter > maxiter)
-		break;
+		iter++;
+		if (iter > maxiter) {
+			LOG(TRACE) << TXT_BIRED << "Maximum iteration reached: exiting..." << TXT_NORML;
+			break;
+		}
 	}
-
 }
+
 
 // Arguments:
 //		currentColoring -> the coloring array being processed; can be C or Cstar
@@ -189,6 +205,7 @@ size_t ColoringMCMC_CPU<nodeW, edgeW>::violation_count( const std::vector<uint32
 	}
 	return viol;
 }
+
 
 // This is executed for each node
 // Arguments:
@@ -256,6 +273,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p( const size_t currentNode, const siz
 	}
 }
 
+
 // This is executed for each node
 // Arguments:
 //		currentNode: guess what
@@ -283,6 +301,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::extract_new_color( const size_t currentNode
 	qVect[currentNode] = pVect[idx];
 	newColoring[currentNode] = idx;
 }
+
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::fill_qstar( const size_t currentNode, const size_t Zv, const std::vector<uint32_t> & newColoring,

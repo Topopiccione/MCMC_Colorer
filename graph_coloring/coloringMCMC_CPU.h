@@ -22,7 +22,7 @@ public:
 	void			extract_new_color( const size_t currentNode, const std::vector<float> & pVect,
 						const std::vector<float> & experimentVect, std::vector<float> & qVect, std::vector<uint32_t> & newColoring );
 	void 			fill_qstar( const size_t currentNode, const size_t Zv, const std::vector<uint32_t> & newColoring,
-						const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols, 
+						const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
 						std::vector<float> & qVect );
 
 protected:

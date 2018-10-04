@@ -14,6 +14,8 @@
 #include "GPUutils/GPURandomizer.h"
 #include "easyloggingpp/easylogging++.h"
 
+bool g_traceLogEn;	// Declared in utils/miscUtils.h
+
 INITIALIZE_EASYLOGGINGPP
 
 int main(int argc, char *argv[]) {
@@ -23,6 +25,9 @@ int main(int argc, char *argv[]) {
     el::Configurations conf("../logger.conf");
     el::Loggers::reconfigureLogger("default", conf);
     el::Loggers::reconfigureAllLoggers(conf);
+
+	el::Configuration * loggerConf = conf.get( el::Level::Trace, el::ConfigurationType::Enabled );
+	g_traceLogEn = (loggerConf->value() == "true");
 	// Commandline arguments
 	ArgHandle commandLine( argc, argv );
 	commandLine.processCommandLine();
@@ -59,11 +64,12 @@ int main(int argc, char *argv[]) {
 	start = std::clock();
 	colLuby.run_fast();
 	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-	std::cout << "LubyGPU elapsed time: " << duration << std::endl;
+	LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
+	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMCParams aa;
-	aa.nCol = 5;
-	aa.epsilon = 1e-5;
+	aa.nCol = 250;
+	aa.epsilon = 1e-6;
 	aa.lambda = 2.0f;
 	aa.ratioFreezed = 0.1f;
 
@@ -79,7 +85,7 @@ int main(int argc, char *argv[]) {
 	mcmc_cpu.run();
 	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 
-	std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+	LOG(TRACE) << TXT_BIYLW  << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
 	return EXIT_SUCCESS;
 }
