@@ -25,6 +25,25 @@ public:
 						const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
 						std::vector<float> & qVect );
 
+// Just for class dbg...
+	std::vector<uint32_t>	*	getC() { return &C; }
+	std::vector<uint32_t> 	* 	getCstar() { return &Cstar; }
+	std::vector<float>		*	getp() { return &p; }
+	std::vector<float>		*	getpstar() { return &pstar; }
+	std::vector<float>		*	getq() { return &q; }
+	std::vector<float>		*	getqstar() { return &qstar; }
+	std::vector<float>		*	getnodeProbab() { return &nodeProbab; }
+	std::vector<bool>		*	getfreezed() { return &freezed; }
+	std::vector<bool>		*	getfreeColors() { return &freeColors; }
+	std::vector<bool>		*	getCviols() { return &Cviols; }
+	std::vector<bool>		*	getCstarviols() { return &Cstarviols; }
+	uint32_t				*	getnCol() { return &nCol; }
+	float					*	getlambda() { return &lambda; }
+	float					*	getepsilon() { return &epsilon; }
+	size_t					*	getCviol() { return &Cviol; }
+	size_t					*	getCstarviol() { return &Cstarviol; }
+	float					*	getalpha() { return &alpha; }
+
 protected:
 	// Main data containers
 	std::vector<uint32_t>						C;
@@ -45,7 +64,6 @@ protected:
 
 	// RNG
 	std::default_random_engine					gen;
-	//std::normal_distribution<> 			disxNeg;	// Don't need that
 	std::uniform_int_distribution<uint32_t>		unifInitColors;	// For initial coloring extraction
 	std::uniform_real_distribution<float>		unifDistr;		// Generic [0,1] extractor
 	std::bernoulli_distribution					bernieFreeze;	// For freezing nodes

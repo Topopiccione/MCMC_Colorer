@@ -1,12 +1,15 @@
 #include "coloringMCMC_CPU.h"
+#include "utils/dbg.h"
 #include "miscUtils.h"
+
+extern dbg * g_debugger;
 
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed ) :
 		Colorer<nodeW, edgeW>( g ), str( g->getStruct() ), nNodes( g->getStruct()->nNodes ), nCol( params.nCol ), lambda( params.lambda ),
 		epsilon( params.epsilon ), ratioFreezed( params.ratioFreezed ), seed( seed ) {
 
-	std::cout << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML <<std::endl;
+	std::cout << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 
 	LOG(TRACE) << TXT_COLMC << "Creating ColorerMCMC with parameters: nCol= " << nCol << " - lambda= " << lambda
 		<< " - epsilon= " << epsilon << " - ratioFreezed= " << ratioFreezed << " - seed= " << seed << TXT_NORML;
@@ -82,30 +85,35 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	// Stay in the loop until there are no more violations
 	while (Cviol != 0) {
 		LOG(TRACE) << TXT_BIRED << "iteration " << iter << TXT_NORML;
-		// Managed freezing nodes.
-		// Remember: 0 = evaluate new color, 1 = freezed
-		float freezingProb = 0.5f - exp( (-(int32_t)Cviol) / (float) nNodes ) * 0.5f;
-		LOG(TRACE) << TXT_BIBLU << "freezingProb: " << freezingProb << TXT_NORML;
-		// for (size_t i = 0; i < freezed.size(); i++) freezed[i] = bernieFreeze(gen);
-		for (size_t i = 0; i < freezed.size(); i++) freezed[i] = bernie(freezingProb);
-		if (g_traceLogEn) {
-			size_t tempVal = std::count( std::begin(freezed), std::end(freezed), 1 );
-			LOG(TRACE) << TXT_BIBLU << "Number of freezed nodes: " << tempVal << TXT_NORML;
-		}
-
 		// Extract in advance all the experiment probabilities
 		std::for_each( std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
 
 		Cviol = violation_count( C, Cviols );
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
+		if ((g_traceLogEn) & (Cviol < 40)) {
+			size_t idx = 0;
+			std::string logString;
+			logString = "Violating nodes: ";
+			std::for_each(Cviols.begin(), Cviols.end(), [&](bool val){if (val) logString = logString + std::to_string(idx) + " "; idx++;} );
+			LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
+		}
 
-		// if (g_traceLogEn) {
-		// 	size_t idx = 0;
-		// 	std::string logString;
-		// 	logString = "Violating nodes: ";
-		// 	std::for_each(Cviols.begin(), Cviols.end(), [&](bool val){if (val) logString = logString + std::to_string(idx++) + " ";} );
-		// 	LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
-		// }
+		// Managed freezing nodes.
+		// Remember: 0 = evaluate new color, 1 = freezed
+		//float freezingProb = 0.5f - exp( (-(int32_t)Cviol) / (float) nNodes ) * 0.5f;
+		//float freezingProb = 0.2f + exp( (-(int32_t)Cviol) / (float) nNodes ) / 2.5f;
+		float freezingProb = 0;
+		LOG(TRACE) << TXT_BIBLU << "freezingProb: " << freezingProb << TXT_NORML;
+		for (size_t i = 0; i < freezed.size(); i++) {
+			if (!Cviols[i])
+				freezed[i] = bernie(freezingProb);
+			else
+				freezed[i] = 0;
+		}
+		if (g_traceLogEn) {
+			size_t tempVal = std::count( std::begin(freezed), std::end(freezed), 1 );
+			LOG(TRACE) << TXT_BIBLU << "Number of freezed nodes: " << tempVal << TXT_NORML;
+		}
 
 		// Iternal loop 1: building Cstar
 		for (size_t i = 0; i < nNodes; i++) {
@@ -155,6 +163,9 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		LOG(TRACE) << TXT_BIBLU << "Cviol: " << Cviol << " - Cviolstar: " << Cstarviol << " - sumlogq: "<< sumlogq
 			<< " - sumlogqstar: "<< sumlogqstar << TXT_NORML;
 		LOG(TRACE) << TXT_BIBLU << "alpha: " << alpha << TXT_NORML;
+
+		if (g_debugger->check_F12keypress())
+			g_debugger->stop_and_debug();
 
 		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
 		// if (...)

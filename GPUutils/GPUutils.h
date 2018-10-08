@@ -4,7 +4,7 @@
 #include <iostream>
 #include <cinttypes>
 
-#define CHECK(call) \
+#define CUDACHECK(call) \
 {                                                                              \
     const cudaError_t error = call;                                            \
     if (error != cudaSuccess)                                                  \

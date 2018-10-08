@@ -4,6 +4,7 @@
 #include <ctime>
 #include "utils/ArgHandle.h"
 #include "utils/fileImporter.h"
+#include "utils/dbg.h"
 #include "graph/graph.h"
 #include "graph/graphCPU.cpp"
 #include "graph/graphGPU.cu"
@@ -14,7 +15,8 @@
 #include "GPUutils/GPURandomizer.h"
 #include "easyloggingpp/easylogging++.h"
 
-bool g_traceLogEn;	// Declared in utils/miscUtils.h
+bool		g_traceLogEn;	// Declared in utils/miscUtils.h
+dbg		*	g_debugger;
 
 INITIALIZE_EASYLOGGINGPP
 
@@ -28,6 +30,9 @@ int main(int argc, char *argv[]) {
 
 	el::Configuration * loggerConf = conf.get( el::Level::Trace, el::ConfigurationType::Enabled );
 	g_traceLogEn = (loggerConf->value() == "true");
+	// Debugger pre-init
+	g_debugger = nullptr;
+
 	// Commandline arguments
 	ArgHandle commandLine( argc, argv );
 	commandLine.processCommandLine();
@@ -69,7 +74,7 @@ int main(int argc, char *argv[]) {
 
 	ColoringMCMCParams aa;
 	aa.nCol = 250;
-	aa.epsilon = 1e-6;
+	aa.epsilon = 4 * 1e-5;
 	aa.lambda = 2.0f;
 	aa.ratioFreezed = 0.1f;
 
@@ -81,11 +86,15 @@ int main(int argc, char *argv[]) {
 	// duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 
 	ColoringMCMC_CPU<float, float> mcmc_cpu( &test, aa, seed );
+	g_debugger = new dbg( &test, &mcmc_cpu );
 	start = std::clock();
 	mcmc_cpu.run();
 	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
 
 	LOG(TRACE) << TXT_BIYLW  << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+
+	if (g_debugger != nullptr)
+		delete g_debugger;
 
 	return EXIT_SUCCESS;
 }

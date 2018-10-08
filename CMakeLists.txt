@@ -59,6 +59,7 @@ SET(SOURCESCPP      "graph/graphCPU.cpp"
 					"graph_coloring/colorer.cpp"
 					"graph_coloring/coloringMCMC_CPU.cpp"
 					"utils/ArgHandle.cpp"
+					"utils/dbg.cpp"
 					"utils/fileImporter.cpp"
 #					"utils/fileExporter.cpp"
 					"utils/timer.cpp")
