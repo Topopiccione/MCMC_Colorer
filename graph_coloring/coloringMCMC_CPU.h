@@ -82,5 +82,10 @@ protected:
 	size_t										Cstarviol;	// # of violation in Cstar
 	float										alpha;		// prob of rejecting the new coloration
 
+	// For stats...
+	size_t										Zvcomp_max;
+	size_t										Zvcomp_min;
+	size_t										Zvcomp_avg;
+
 
 };

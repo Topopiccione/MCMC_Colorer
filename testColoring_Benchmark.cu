@@ -53,7 +53,9 @@ int main(int argc, char *argv[]) {
 
 	fileImporter fImport( graphFileName, labelsFileName );
 	Graph<float, float> test( &fImport, !GPUEnabled );
-	std::cout << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges << std::endl;
+	LOG(TRACE) << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges;
+	LOG(TRACE) << "minDeg: " << test.getMinNodeDeg() << " - maxDeg: " << test.getMaxNodeDeg() << " - meanDeg: "
+		<< test.getMeanNodeDeg();
 
 	//// CPU greedy coloring
 	// Graph<col, col> graph( N, GPUEnabled );  	// random graph
@@ -73,8 +75,8 @@ int main(int argc, char *argv[]) {
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMCParams aa;
-	aa.nCol = 250;
-	aa.epsilon = 4 * 1e-5;
+	aa.nCol = 70;//test.getMaxNodeDeg() / 2.0f;
+	aa.epsilon = 1e-12;
 	aa.lambda = 2.0f;
 	aa.ratioFreezed = 0.1f;
 

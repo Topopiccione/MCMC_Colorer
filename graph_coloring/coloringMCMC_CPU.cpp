@@ -115,6 +115,10 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			LOG(TRACE) << TXT_BIBLU << "Number of freezed nodes: " << tempVal << TXT_NORML;
 		}
 
+		// reset stats...
+		Zvcomp_max = Zvcomp_avg = 0;
+		Zvcomp_min = nCol + 1;
+
 		// Iternal loop 1: building Cstar
 		for (size_t i = 0; i < nNodes; i++) {
 			if (freezed[i]) {
@@ -132,7 +136,16 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 
 			// consider nodeProbab, build the CdF of p, get the new color and put it in Cstar[i]
 			extract_new_color( i, p, nodeProbab, q, Cstar );
+
+			// update stats
+			Zvcomp_avg += Zvcomp;
+			Zvcomp_max = (Zvcomp > Zvcomp_max) ? Zvcomp : Zvcomp_max;
+			Zvcomp_min = (Zvcomp < Zvcomp_min) ? Zvcomp : Zvcomp_min;
 		}
+
+		// Log stats
+		LOG(TRACE) << TXT_BIBLU << "Zv max: " << Zvcomp_max << " - Zv min: " << Zvcomp_min << " - Zv avg: "
+			<< Zvcomp_avg / (float) nNodes << TXT_NORML;
 
 		// Count the violation of the new coloring Cstar; also fill the Cstarviols vector
 		Cstarviol = violation_count( Cstar, Cstarviols );

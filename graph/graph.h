@@ -111,6 +111,8 @@ public:
 	void deleteMemGPU();
 	bool isGPUEnabled() { return GPUEnabled; }
 	node getMaxNodeDeg() { return maxDeg; };
+	node getMinNodeDeg() { return minDeg; };
+	float getMeanNodeDeg() { return meanDeg; };
 	void efficiency();
 
 private:
