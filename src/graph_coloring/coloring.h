@@ -63,6 +63,7 @@ public:
 
 ////////////////////////////////////////////////
 struct ColoringMCMCParams {
+	uint32_t		maxRip;
 	col_sz			nCol;
 	float			lambda;
 	float			epsilon;

@@ -22,15 +22,15 @@ __global__ void GPURand_k::initCurand(curandState* states, uint32_t seed, uint32
 __device__ int GPURand_k::discreteSampling(curandState* states, discreteDistribution dist) {
 	uint32_t tid = threadIdx.x + blockDim.x * blockIdx.x;
 	uint32_t n = dist->length;
-	uint32_t l = 0, r = n-1;
+	uint32_t l = 0, r = n - 1;
 	float u = curand_uniform(&states[tid]);
-	float bin = dist->prob[n-1]*u;
+	float bin = dist->prob[n - 1] * u;
 	while (l < r) {
-		uint32_t m = floorf((l+r)/2);
+		uint32_t m = floorf((l + r) / 2);
 		if (bin < dist->prob[m])
 			r = m;
 		else
-			l = m+1;
+			l = m + 1;
 	}
 	return r;
 }
@@ -46,14 +46,14 @@ void CPURand::createExpDistribution(expDiscreteDistribution dist, float lambda, 
 	dist->CDF.length = nCol;
 	dist->CDF.normFactor = 0;
 	for (uint32_t i = 1; i <= nCol; i++) {
-		dist->CDF.prob[i-1] = expf(-lambda*i);
+		dist->CDF.prob[i - 1] = expf(-lambda * i);
 		dist->CDF.normFactor += dist->CDF.prob[i];
 	}
 }
 
 void CPURand::discreteSampling(discreteDistribution dist, uint32_t * C, uint32_t n, uint32_t seed) {
 	uint32_t nCol = dist->length;
-	std::default_random_engine eng {seed};
+	std::default_random_engine eng{ seed };
 	std::uniform_real_distribution<> randU(0.0, 1.0);
 
 	float* P = new float[nCol];
@@ -76,8 +76,8 @@ void CPURand::discreteSampling(discreteDistribution dist, uint32_t * C, uint32_t
 //			else
 //				l = m+1;
 //		}
-		C[i] = l+1;
-//		std::cout << C[i] << std::endl;
+		C[i] = l + 1;
+		//		std::cout << C[i] << std::endl;
 	}
 	delete[] P;
 }

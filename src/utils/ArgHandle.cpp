@@ -4,6 +4,7 @@
 // Alessandro Petrini, 2017
 #include "ArgHandle.h"
 #include <getopt.h>
+//#include "../getopt/getopt.h"
 
 ArgHandle::ArgHandle( int argc, char **argv ) :
 		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), geneOutFilename( "" ),

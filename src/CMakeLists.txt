@@ -61,7 +61,6 @@ SET(SOURCESCPP      "graph/graphCPU.cpp"
 					"utils/ArgHandle.cpp"
 					"utils/dbg.cpp"
 					"utils/fileImporter.cpp"
-#					"utils/fileExporter.cpp"
 					"utils/timer.cpp")
 SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
                 	"GPUutils/GPUStream.cu"
@@ -69,7 +68,7 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph/graphGPU.cu"
                 	"graph_coloring/coloringLuby.cu"
 					"graph_coloring/coloringLubyFast.cu"
-					"graph_coloring/coloringMCMC.cu"
+					"graph_coloring/newColoringMCMC.cu"
 					"testColoring_Benchmark.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
 SET(LOGGINGPP		"easyloggingpp/easyloggingpp/easylogging++.cc")
