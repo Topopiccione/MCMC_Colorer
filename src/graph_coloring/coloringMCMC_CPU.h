@@ -4,28 +4,28 @@
 #include <random>
 #include <numeric>
 
-#include "graph.h"
+#include "graph/graph.h"
 #include "coloring.h"
-#include "easyloggingpp/easylogging++.h"
+#include "easyloggingpp/easyloggingpp/easylogging++.h"
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC_CPU : public Colorer<nodeW, edgeW> {
 public:
-	ColoringMCMC_CPU( Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed );
+	ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed);
 	~ColoringMCMC_CPU();
 
 	void			run();
-// Sort of protected methods gone public for integration with GoogleTest
-	size_t			violation_count( const std::vector<uint32_t> & currentColoring, std::vector<bool> & violations );
-	size_t			count_free_colors( const size_t node, const std::vector<uint32_t> & currentColoring, std::vector<bool> & freeColors );
-	void			fill_p( const size_t currentNode, const size_t Zv );
-	void			extract_new_color( const size_t currentNode, const std::vector<float> & pVect,
-						const std::vector<float> & experimentVect, std::vector<float> & qVect, std::vector<uint32_t> & newColoring );
-	void 			fill_qstar( const size_t currentNode, const size_t Zv, const std::vector<uint32_t> & newColoring,
-						const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
-						std::vector<float> & qVect );
+	// Sort of protected methods gone public for integration with GoogleTest
+	size_t			violation_count(const std::vector<uint32_t> & currentColoring, std::vector<bool> & violations);
+	size_t			count_free_colors(const size_t node, const std::vector<uint32_t> & currentColoring, std::vector<bool> & freeColors);
+	void			fill_p(const size_t currentNode, const size_t Zv);
+	void			extract_new_color(const size_t currentNode, const std::vector<float> & pVect,
+		const std::vector<float> & experimentVect, std::vector<float> & qVect, std::vector<uint32_t> & newColoring);
+	void 			fill_qstar(const size_t currentNode, const size_t Zv, const std::vector<uint32_t> & newColoring,
+		const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
+		std::vector<float> & qVect);
 
-// Just for class dbg...
+	// Just for class dbg...
 	std::vector<uint32_t>	*	getC() { return &C; }
 	std::vector<uint32_t> 	* 	getCstar() { return &Cstar; }
 	std::vector<float>		*	getp() { return &p; }

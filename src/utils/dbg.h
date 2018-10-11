@@ -31,33 +31,32 @@ private:
 	std::vector<std::string>	split_str( std::string s );
 	uint32_t					parse_and_exec( std::vector<std::string> ss );
 	void 						print_var( std::vector<std::string> ss );
-	void 						edit_var( std::vector<std::string> ss );
 
 	Graph<float, float>		*	gr;
 	ColoringMCMC_CPU<float, float> * col;
 
 	// Get all the relevant vars and containers from graph and colorer
 	// graphStruct:
-	node						nNodes;			//
-	node_sz						nEdges;			//
-	node_sz					*	cumulDegs;		//
-	node					*	neighs;			//
+	node						nNodes;
+	node_sz						nEdges;
+	node_sz					*	cumulDegs;
+	node					*	neighs;
 	// colorer:
-	std::vector<uint32_t>	*	C;				//
-	std::vector<uint32_t>	*	Cstar;			//
-	std::vector<float>		*	p;				//
+	std::vector<uint32_t>	*	C;
+	std::vector<uint32_t>	*	Cstar;
+	std::vector<float>		*	p;
 	std::vector<float>		*	pstar;
 	std::vector<float>		*	q;
 	std::vector<float>		*	qstar;
-	std::vector<float>		*	nodeProbab;		//
-	std::vector<bool>		*	freezed;		//
-	std::vector<bool>		*	freeColors;		//
-	std::vector<bool>		*	Cviols;			//
-	std::vector<bool>		*	Cstarviols;		//
-	uint32_t				*	nCol;			//
-	float					*	lambda;			//
-	float					*	epsilon;		//
-	size_t					*	Cviol;			//
-	size_t					*	Cstarviol;		//
+	std::vector<float>		*	nodeProbab;
+	std::vector<bool>		*	freezed;
+	std::vector<bool>		*	freeColors;
+	std::vector<bool>		*	Cviols;
+	std::vector<bool>		*	Cstarviols;
+	uint32_t				*	nCol;
+	float					*	lambda;
+	float					*	epsilon;
+	size_t					*	Cviol;		// # of violation in C
+	size_t					*	Cstarviol;	// # of violation in Cstar
 	float					*	alpha;
 };

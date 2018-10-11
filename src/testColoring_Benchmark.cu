@@ -13,9 +13,9 @@
 #include "graph_coloring/coloringLuby.h"
 #include "graph_coloring/newColoringMCMC.h"
 #include "GPUutils/GPURandomizer.h"
-#include "easyloggingpp/easylogging++.h"
+#include "easyloggingpp/easyloggingpp/easylogging++.h"
 
-//#define INLINE_ARGS
+#define INLINE_ARGS
 //argomenti tipo : --data net.txt --label lab.txt --gene gene.txt
 
 bool		g_traceLogEn;	// Declared in utils/miscUtils.h
@@ -60,11 +60,11 @@ int main(int argc, char *argv[]) {
 
 	////EasyLogging++
 	START_EASYLOGGINGPP(argc, argv);
-    el::Configurations conf("../logger.conf");
-    el::Loggers::reconfigureLogger("default", conf);
-    el::Loggers::reconfigureAllLoggers(conf);
+	el::Configurations conf("../logger.conf");
+	el::Loggers::reconfigureLogger("default", conf);
+	el::Loggers::reconfigureAllLoggers(conf);
 
-	el::Configuration * loggerConf = conf.get( el::Level::Trace, el::ConfigurationType::Enabled );
+	el::Configuration * loggerConf = conf.get(el::Level::Trace, el::ConfigurationType::Enabled);
 	g_traceLogEn = (loggerConf->value() == "true");
 	// Debugger pre-init
 	g_debugger = nullptr;
@@ -80,15 +80,15 @@ int main(int argc, char *argv[]) {
 #endif // INLINE_ARGS
 
 	// Commandline arguments
-	ArgHandle commandLine( argc, argv );
+	ArgHandle commandLine(argc, argv);
 	commandLine.processCommandLine();
 
 	//uint32_t			N				= commandLine.n;
 	//uint32_t			M				= commandLine.m;
 	//float				prob			= (float) commandLine.prob;
-	uint32_t			seed			= commandLine.seed;
-	std::string			graphFileName	= commandLine.dataFilename;
-	std::string			labelsFileName	= commandLine.labelFilename;
+	uint32_t			seed = commandLine.seed;
+	std::string			graphFileName = commandLine.dataFilename;
+	std::string			labelsFileName = commandLine.labelFilename;
 
 	//seed = 10000;
 
@@ -97,8 +97,8 @@ int main(int argc, char *argv[]) {
 
 	bool GPUEnabled = 1;
 
-	fileImporter fImport( graphFileName, labelsFileName );
-	Graph<float, float> test( &fImport, !GPUEnabled );
+	fileImporter fImport(graphFileName, labelsFileName);
+	Graph<float, float> test(&fImport, !GPUEnabled);
 	LOG(TRACE) << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges;
 	LOG(TRACE) << "minDeg: " << test.getMinNodeDeg() << " - maxDeg: " << test.getMaxNodeDeg() << " - meanDeg: "
 		<< test.getMeanNodeDeg();
@@ -112,13 +112,13 @@ int main(int argc, char *argv[]) {
 	// cout << "Greedy-CPU coloring elapsed time: " << colGreedyCPU.getElapsedTime() << "(sec)" << endl;
 	//colGreedyCPU.print(0);
 
-	Graph<float, float> graph_d( &test );
+	Graph<float, float> graph_d(&test);
 	//// GPU Luby coloring
-	GPURand GPURandGen( test.getStruct()->nNodes, (long) commandLine.seed );
+	GPURand GPURandGen(test.getStruct()->nNodes, (long)commandLine.seed);
 	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
 	start = std::clock();
 	colLuby.run_fast();
-	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
@@ -129,13 +129,13 @@ int main(int argc, char *argv[]) {
 	params.ratioFreezed = 1e-2;
 	params.maxRip = 250;
 
-	ColoringMCMC_CPU<float, float> mcmc_cpu( &test, params, seed );
-	g_debugger = new dbg( &test, &mcmc_cpu );
+	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
+	g_debugger = new dbg(&test, &mcmc_cpu);
 	start = std::clock();
 	mcmc_cpu.run();
-	duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	LOG(TRACE) << TXT_BIYLW  << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
 	NewColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 

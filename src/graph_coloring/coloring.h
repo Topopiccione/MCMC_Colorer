@@ -2,7 +2,7 @@
 
 #include <memory>
 #include "graph/graph.h"
-#include "miscUtils.h"
+#include "utils/miscUtils.h"
 
 typedef uint32_t col;     // node color
 typedef uint32_t col_sz;     // node color
