@@ -1,0 +1,240 @@
+2018-10-10 18:17:12,895 TRACE [default] Nodi: 25000 - Archi: 6250886
+2018-10-10 18:17:12,897 TRACE [default] minDeg: 186 - maxDeg: 313 - meanDeg: 250.035
+2018-10-10 18:17:14,029 TRACE [default] LubyGPU - number of colors: 59
+2018-10-10 18:17:14,029 TRACE [default] LubyGPU elapsed time: 0.408
+2018-10-10 18:17:14,030 TRACE [default] Creating ColorerMCMC with parameters: nCol= 80 - lambda= 0.002 - epsilon= 1e-08 - ratioFreezed= 0.01 - seed= 1539188210
+2018-10-10 18:17:14,030 TRACE [default] C: allocated 25000 x 4
+2018-10-10 18:17:14,030 TRACE [default] Cstar: allocated 25000 x 4
+2018-10-10 18:17:14,031 TRACE [default] q: allocated 25000 x 4
+2018-10-10 18:17:14,031 TRACE [default] qstar: allocated 25000 x 4
+2018-10-10 18:17:14,031 TRACE [default] p: allocated 80 x 4
+2018-10-10 18:17:14,032 TRACE [default] pstar: allocated 80 x 4
+2018-10-10 18:17:14,032 TRACE [default] nodeProbab: allocated 25000 x 4
+2018-10-10 18:17:14,032 TRACE [default] freezed: allocated 25000 x 1
+2018-10-10 18:17:14,032 TRACE [default] freeColors: allocated 80 x 1
+2018-10-10 18:17:14,033 TRACE [default] Cviols: allocated 25000 x 1
+2018-10-10 18:17:14,033 TRACE [default] Cstarviols: allocated 25000 x 1
+2018-10-10 18:17:14,033 TRACE [default] Starting MCMC coloring...
+2018-10-10 18:17:14,040 TRACE [default] Initial violations: 23937
+2018-10-10 18:17:14,040 TRACE [default] iteration 0
+2018-10-10 18:17:14,048 TRACE [default] C violations: 23937
+2018-10-10 18:17:14,048 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,049 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:14,098 TRACE [default] Zv max: 14 - Zv min: 0 - Zv avg: 3.51304
+2018-10-10 18:17:14,119 TRACE [default] Cstar violations: 22713
+2018-10-10 18:17:14,158 TRACE [default] Cviol: 23937 - Cviolstar: 22713 - sumlogq: -27136.9 - sumlogqstar: -440810
+2018-10-10 18:17:14,158 TRACE [default] alpha: 413676
+2018-10-10 18:17:14,161 TRACE [default] iteration 1
+2018-10-10 18:17:14,181 TRACE [default] C violations: 22713
+2018-10-10 18:17:14,182 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,184 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:14,247 TRACE [default] Zv max: 15 - Zv min: 1 - Zv avg: 5.21836
+2018-10-10 18:17:14,262 TRACE [default] Cstar violations: 21324
+2018-10-10 18:17:14,301 TRACE [default] Cviol: 22713 - Cviolstar: 21324 - sumlogq: -35395.4 - sumlogqstar: -418281
+2018-10-10 18:17:14,302 TRACE [default] alpha: 382888
+2018-10-10 18:17:14,305 TRACE [default] iteration 2
+2018-10-10 18:17:14,328 TRACE [default] C violations: 21324
+2018-10-10 18:17:14,329 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,332 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:14,388 TRACE [default] Zv max: 18 - Zv min: 0 - Zv avg: 6.98848
+2018-10-10 18:17:14,404 TRACE [default] Cstar violations: 19727
+2018-10-10 18:17:14,449 TRACE [default] Cviol: 21324 - Cviolstar: 19727 - sumlogq: -39918.1 - sumlogqstar: -392715
+2018-10-10 18:17:14,450 TRACE [default] alpha: 352800
+2018-10-10 18:17:14,452 TRACE [default] iteration 3
+2018-10-10 18:17:14,470 TRACE [default] C violations: 19727
+2018-10-10 18:17:14,471 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,475 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:14,550 TRACE [default] Zv max: 26 - Zv min: 3 - Zv avg: 13.0286
+2018-10-10 18:17:14,566 TRACE [default] Cstar violations: 18500
+2018-10-10 18:17:14,605 TRACE [default] Cviol: 19727 - Cviolstar: 18500 - sumlogq: -49981.3 - sumlogqstar: -363320
+2018-10-10 18:17:14,606 TRACE [default] alpha: 313341
+2018-10-10 18:17:14,609 TRACE [default] iteration 4
+2018-10-10 18:17:14,627 TRACE [default] C violations: 18500
+2018-10-10 18:17:14,629 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,631 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:14,689 TRACE [default] Zv max: 29 - Zv min: 6 - Zv avg: 16.7844
+2018-10-10 18:17:14,712 TRACE [default] Cstar violations: 17584
+2018-10-10 18:17:14,764 TRACE [default] Cviol: 18500 - Cviolstar: 17584 - sumlogq: -51760.2 - sumlogqstar: -340735
+2018-10-10 18:17:14,765 TRACE [default] alpha: 288977
+2018-10-10 18:17:14,767 TRACE [default] iteration 5
+2018-10-10 18:17:14,789 TRACE [default] C violations: 17584
+2018-10-10 18:17:14,790 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,796 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:14,857 TRACE [default] Zv max: 27 - Zv min: 5 - Zv avg: 15.9254
+2018-10-10 18:17:14,872 TRACE [default] Cstar violations: 16757
+2018-10-10 18:17:14,916 TRACE [default] Cviol: 17584 - Cviolstar: 16757 - sumlogq: -48179.1 - sumlogqstar: -323875
+2018-10-10 18:17:14,917 TRACE [default] alpha: 275698
+2018-10-10 18:17:14,919 TRACE [default] iteration 6
+2018-10-10 18:17:14,947 TRACE [default] C violations: 16757
+2018-10-10 18:17:14,948 TRACE [default] freezingProb: 0
+2018-10-10 18:17:14,951 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,037 TRACE [default] Zv max: 31 - Zv min: 5 - Zv avg: 16.0396
+2018-10-10 18:17:15,054 TRACE [default] Cstar violations: 15967
+2018-10-10 18:17:15,099 TRACE [default] Cviol: 16757 - Cviolstar: 15967 - sumlogq: -46045.2 - sumlogqstar: -308653
+2018-10-10 18:17:15,100 TRACE [default] alpha: 262610
+2018-10-10 18:17:15,102 TRACE [default] iteration 7
+2018-10-10 18:17:15,127 TRACE [default] C violations: 15967
+2018-10-10 18:17:15,127 TRACE [default] freezingProb: 0
+2018-10-10 18:17:15,133 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,209 TRACE [default] Zv max: 28 - Zv min: 5 - Zv avg: 14.8066
+2018-10-10 18:17:15,228 TRACE [default] Cstar violations: 15135
+2018-10-10 18:17:15,265 TRACE [default] Cviol: 15967 - Cviolstar: 15135 - sumlogq: -42498 - sumlogqstar: -294112
+2018-10-10 18:17:15,266 TRACE [default] alpha: 251616
+2018-10-10 18:17:15,268 TRACE [default] iteration 8
+2018-10-10 18:17:15,287 TRACE [default] C violations: 15135
+2018-10-10 18:17:15,289 TRACE [default] freezingProb: 0
+2018-10-10 18:17:15,297 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,359 TRACE [default] Zv max: 26 - Zv min: 5 - Zv avg: 14.4691
+2018-10-10 18:17:15,376 TRACE [default] Cstar violations: 14195
+2018-10-10 18:17:15,415 TRACE [default] Cviol: 15135 - Cviolstar: 14195 - sumlogq: -39937 - sumlogqstar: -278798
+2018-10-10 18:17:15,416 TRACE [default] alpha: 238863
+2018-10-10 18:17:15,418 TRACE [default] iteration 9
+2018-10-10 18:17:15,437 TRACE [default] C violations: 14195
+2018-10-10 18:17:15,438 TRACE [default] freezingProb: 0
+2018-10-10 18:17:15,446 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,500 TRACE [default] Zv max: 25 - Zv min: 4 - Zv avg: 13.4687
+2018-10-10 18:17:15,516 TRACE [default] Cstar violations: 13257
+2018-10-10 18:17:15,561 TRACE [default] Cviol: 14195 - Cviolstar: 13257 - sumlogq: -36324.2 - sumlogqstar: -261496
+2018-10-10 18:17:15,561 TRACE [default] alpha: 225174
+2018-10-10 18:17:15,564 TRACE [default] iteration 10
+2018-10-10 18:17:15,587 TRACE [default] C violations: 13257
+2018-10-10 18:17:15,588 TRACE [default] freezingProb: 0
+2018-10-10 18:17:15,594 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,647 TRACE [default] Zv max: 25 - Zv min: 3 - Zv avg: 12.9219
+2018-10-10 18:17:15,663 TRACE [default] Cstar violations: 12241
+2018-10-10 18:17:15,700 TRACE [default] Cviol: 13257 - Cviolstar: 12241 - sumlogq: -33353.4 - sumlogqstar: -244216
+2018-10-10 18:17:15,701 TRACE [default] alpha: 210865
+2018-10-10 18:17:15,703 TRACE [default] iteration 11
+2018-10-10 18:17:15,724 TRACE [default] C violations: 12241
+2018-10-10 18:17:15,724 TRACE [default] freezingProb: 0
+2018-10-10 18:17:15,728 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,796 TRACE [default] Zv max: 24 - Zv min: 3 - Zv avg: 12.1343
+2018-10-10 18:17:15,813 TRACE [default] Cstar violations: 11206
+2018-10-10 18:17:15,851 TRACE [default] Cviol: 12241 - Cviolstar: 11206 - sumlogq: -29941.6 - sumlogqstar: -225500
+2018-10-10 18:17:15,851 TRACE [default] alpha: 195560
+2018-10-10 18:17:15,853 TRACE [default] iteration 12
+2018-10-10 18:17:15,873 TRACE [default] C violations: 11206
+2018-10-10 18:17:15,873 TRACE [default] freezingProb: 0
+2018-10-10 18:17:15,877 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:15,929 TRACE [default] Zv max: 24 - Zv min: 3 - Zv avg: 11.5551
+2018-10-10 18:17:15,948 TRACE [default] Cstar violations: 10119
+2018-10-10 18:17:15,995 TRACE [default] Cviol: 11206 - Cviolstar: 10119 - sumlogq: -26790.9 - sumlogqstar: -206433
+2018-10-10 18:17:15,996 TRACE [default] alpha: 179644
+2018-10-10 18:17:15,998 TRACE [default] iteration 13
+2018-10-10 18:17:16,019 TRACE [default] C violations: 10119
+2018-10-10 18:17:16,020 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,029 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,081 TRACE [default] Zv max: 22 - Zv min: 2 - Zv avg: 10.8438
+2018-10-10 18:17:16,098 TRACE [default] Cstar violations: 9104
+2018-10-10 18:17:16,136 TRACE [default] Cviol: 10119 - Cviolstar: 9104 - sumlogq: -23465.8 - sumlogqstar: -186408
+2018-10-10 18:17:16,136 TRACE [default] alpha: 162945
+2018-10-10 18:17:16,142 TRACE [default] iteration 14
+2018-10-10 18:17:16,165 TRACE [default] C violations: 9104
+2018-10-10 18:17:16,166 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,171 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,231 TRACE [default] Zv max: 22 - Zv min: 2 - Zv avg: 10.1477
+2018-10-10 18:17:16,250 TRACE [default] Cstar violations: 7946
+2018-10-10 18:17:16,289 TRACE [default] Cviol: 9104 - Cviolstar: 7946 - sumlogq: -20416.5 - sumlogqstar: -167710
+2018-10-10 18:17:16,289 TRACE [default] alpha: 147296
+2018-10-10 18:17:16,292 TRACE [default] iteration 15
+2018-10-10 18:17:16,311 TRACE [default] C violations: 7946
+2018-10-10 18:17:16,313 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,317 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,374 TRACE [default] Zv max: 20 - Zv min: 2 - Zv avg: 9.47388
+2018-10-10 18:17:16,402 TRACE [default] Cstar violations: 6745
+2018-10-10 18:17:16,447 TRACE [default] Cviol: 7946 - Cviolstar: 6745 - sumlogq: -17208.6 - sumlogqstar: -146378
+2018-10-10 18:17:16,448 TRACE [default] alpha: 129171
+2018-10-10 18:17:16,450 TRACE [default] iteration 16
+2018-10-10 18:17:16,471 TRACE [default] C violations: 6745
+2018-10-10 18:17:16,472 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,480 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,529 TRACE [default] Zv max: 22 - Zv min: 1 - Zv avg: 8.8264
+2018-10-10 18:17:16,544 TRACE [default] Cstar violations: 5477
+2018-10-10 18:17:16,584 TRACE [default] Cviol: 6745 - Cviolstar: 5477 - sumlogq: -14042.2 - sumlogqstar: -124253
+2018-10-10 18:17:16,585 TRACE [default] alpha: 110213
+2018-10-10 18:17:16,589 TRACE [default] iteration 17
+2018-10-10 18:17:16,612 TRACE [default] C violations: 5477
+2018-10-10 18:17:16,612 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,616 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,683 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 8.11352
+2018-10-10 18:17:16,699 TRACE [default] Cstar violations: 4228
+2018-10-10 18:17:16,736 TRACE [default] Cviol: 5477 - Cviolstar: 4228 - sumlogq: -10864 - sumlogqstar: -100894
+2018-10-10 18:17:16,738 TRACE [default] alpha: 90032.4
+2018-10-10 18:17:16,740 TRACE [default] iteration 18
+2018-10-10 18:17:16,757 TRACE [default] C violations: 4228
+2018-10-10 18:17:16,758 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,762 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,820 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 7.4528
+2018-10-10 18:17:16,837 TRACE [default] Cstar violations: 3042
+2018-10-10 18:17:16,874 TRACE [default] Cviol: 4228 - Cviolstar: 3042 - sumlogq: -7898.55 - sumlogqstar: -77885
+2018-10-10 18:17:16,875 TRACE [default] alpha: 69988.9
+2018-10-10 18:17:16,877 TRACE [default] iteration 19
+2018-10-10 18:17:16,898 TRACE [default] C violations: 3042
+2018-10-10 18:17:16,899 TRACE [default] freezingProb: 0
+2018-10-10 18:17:16,903 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:16,952 TRACE [default] Zv max: 17 - Zv min: 1 - Zv avg: 6.75724
+2018-10-10 18:17:16,967 TRACE [default] Cstar violations: 1911
+2018-10-10 18:17:17,011 TRACE [default] Cviol: 3042 - Cviolstar: 1911 - sumlogq: -5334.2 - sumlogqstar: -56036.7
+2018-10-10 18:17:17,012 TRACE [default] alpha: 50704.7
+2018-10-10 18:17:17,015 TRACE [default] iteration 20
+2018-10-10 18:17:17,041 TRACE [default] C violations: 1911
+2018-10-10 18:17:17,042 TRACE [default] freezingProb: 0
+2018-10-10 18:17:17,046 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:17,096 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 6.44744
+2018-10-10 18:17:17,112 TRACE [default] Cstar violations: 955
+2018-10-10 18:17:17,148 TRACE [default] Cviol: 1911 - Cviolstar: 955 - sumlogq: -3183.91 - sumlogqstar: -35201.5
+2018-10-10 18:17:17,149 TRACE [default] alpha: 32019.5
+2018-10-10 18:17:17,152 TRACE [default] iteration 21
+2018-10-10 18:17:17,171 TRACE [default] C violations: 955
+2018-10-10 18:17:17,171 TRACE [default] freezingProb: 0
+2018-10-10 18:17:17,176 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:17,230 TRACE [default] Zv max: 17 - Zv min: 1 - Zv avg: 6.02072
+2018-10-10 18:17:17,248 TRACE [default] Cstar violations: 369
+2018-10-10 18:17:17,286 TRACE [default] Cviol: 955 - Cviolstar: 369 - sumlogq: -1497.42 - sumlogqstar: -17591.8
+2018-10-10 18:17:17,286 TRACE [default] alpha: 16095.6
+2018-10-10 18:17:17,291 TRACE [default] iteration 22
+2018-10-10 18:17:17,309 TRACE [default] C violations: 369
+2018-10-10 18:17:17,310 TRACE [default] freezingProb: 0
+2018-10-10 18:17:17,313 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:17,342 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 5.97576
+2018-10-10 18:17:17,349 TRACE [default] Cstar violations: 82
+2018-10-10 18:17:17,366 TRACE [default] Cviol: 369 - Cviolstar: 82 - sumlogq: -555.917 - sumlogqstar: -6797.26
+2018-10-10 18:17:17,367 TRACE [default] alpha: 6241.92
+2018-10-10 18:17:17,368 TRACE [default] iteration 23
+2018-10-10 18:17:17,379 TRACE [default] C violations: 82
+2018-10-10 18:17:17,379 TRACE [default] freezingProb: 0
+2018-10-10 18:17:17,381 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:17,404 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 6.03028
+2018-10-10 18:17:17,413 TRACE [default] Cstar violations: 10
+2018-10-10 18:17:17,432 TRACE [default] Cviol: 82 - Cviolstar: 10 - sumlogq: -115.167 - sumlogqstar: -1510.5
+2018-10-10 18:17:17,433 TRACE [default] alpha: 1395.47
+2018-10-10 18:17:17,434 TRACE [default] iteration 24
+2018-10-10 18:17:17,445 TRACE [default] C violations: 10
+2018-10-10 18:17:17,446 TRACE [default] Violating nodes: 2686 3040 9904 13506 17447 18487 21483 23475 23680 23923 
+2018-10-10 18:17:17,446 TRACE [default] freezingProb: 0
+2018-10-10 18:17:17,450 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:17,474 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 6.02248
+2018-10-10 18:17:17,481 TRACE [default] Cstar violations: 0
+2018-10-10 18:17:17,498 TRACE [default] Cviol: 10 - Cviolstar: 0 - sumlogq: -16.3127 - sumlogqstar: -184.209
+2018-10-10 18:17:17,499 TRACE [default] alpha: 167.916
+2018-10-10 18:17:17,501 TRACE [default] iteration 25
+2018-10-10 18:17:17,509 TRACE [default] C violations: 0
+2018-10-10 18:17:17,510 TRACE [default] Violating nodes: 
+2018-10-10 18:17:17,510 TRACE [default] freezingProb: 0
+2018-10-10 18:17:17,514 TRACE [default] Number of freezed nodes: 0
+2018-10-10 18:17:17,536 TRACE [default] Zv max: 18 - Zv min: 1 - Zv avg: 6.02948
+2018-10-10 18:17:17,543 TRACE [default] Cstar violations: 0
+2018-10-10 18:17:17,560 TRACE [default] Cviol: 0 - Cviolstar: 0 - sumlogq: -2.03401 - sumlogqstar: -0.0193715
+2018-10-10 18:17:17,561 TRACE [default] alpha: -2.01464
+2018-10-10 18:17:17,563 TRACE [default] MCMC_CPU elapsed time: 3.529
+2018-10-10 18:17:18,936 TRACE [default] Cstarviols: freeing 25000 x 1
+2018-10-10 18:17:18,937 TRACE [default] Cviols: freeing 25000 x 1
+2018-10-10 18:17:18,938 TRACE [default] nodeProbab: freeing 25000 x 1
+2018-10-10 18:17:18,938 TRACE [default] freeColors: freeing 80 x 1
+2018-10-10 18:17:18,939 TRACE [default] freezed: freeing 25000 x 1
+2018-10-10 18:17:18,940 TRACE [default] qstar: freeing 25000 x 4
+2018-10-10 18:17:18,941 TRACE [default] q: freeing 25000 x 4
+2018-10-10 18:17:18,943 TRACE [default] pstar: freeing 80 x 4
+2018-10-10 18:17:18,943 TRACE [default] p: freeing 80 x 4
+2018-10-10 18:17:18,947 TRACE [default] Cstar: freeing 25000 x 4
+2018-10-10 18:17:18,947 TRACE [default] C: freeing 25000 x 4
