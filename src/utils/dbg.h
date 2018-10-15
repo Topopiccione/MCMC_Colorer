@@ -16,7 +16,7 @@ class ColoringMCMC_CPU;
 #include "graph_coloring/coloring.h"
 #include "graph_coloring/coloringMCMC_CPU.h"
 #include "graph_coloring/coloringLuby.h"
-#include "graph_coloring/coloringMCMC.h"
+//#include "graph_coloring/coloringMCMC.h"
 
 class dbg {
 public:
