@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
 	newComponents(&test);
 
 	//// CPU greedy coloring
+	//// Don't know if this still works...
 	// Graph<col, col> graph( N, GPUEnabled );  	// random graph
 	// ColoringGeedyCPU<col,col> colGreedyCPU(&graph);
 	// colGreedyCPU.run();
@@ -140,12 +141,10 @@ int main(int argc, char *argv[]) {
 	NewColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
 	start = std::clock();
-
 	colMCMC.run();
-
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	std::cout << "Elapsed time: " << duration << std::endl;
+	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
 
 	if (g_debugger != nullptr)
 		delete g_debugger;
