@@ -314,4 +314,7 @@ void Graph<nodeW, edgeW>::deleteMemGPU() {
 	}
 }
 
-template class Graph<float, float>;
+// This sucks... we need to fix template declarations
+#ifdef WIN32
+	template class Graph<float, float>;
+#endif

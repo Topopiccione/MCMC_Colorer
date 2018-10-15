@@ -3,8 +3,12 @@
 // COSnet - Commandline Argument Handler
 // Alessandro Petrini, 2017
 #include "ArgHandle.h"
-//#include <getopt.h>
-#include "getopt/getopt.h"
+#ifdef __unix
+	#include <getopt.h>
+#endif
+#ifdef WIN32
+	#include "getopt/getopt.h"
+#endif
 
 ArgHandle::ArgHandle(int argc, char **argv) :
 	dataFilename(""), foldFilename(""), labelFilename(""), outFilename(""), geneOutFilename(""),
