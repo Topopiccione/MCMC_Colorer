@@ -15,14 +15,14 @@
 
 #define DUPLICATE_CHECK
 #define BIDIR_CHECK
-#define INLINE_ARGS
+//#define INLINE_ARGS
 
 std::vector<std::string> generateRandomName( const int n );
 
 int main(int argc, char ** argv) {
 
 #ifdef INLINE_ARGS
-	argv[1] = "25000";
+	argv[1] = "25000" ;
 	argv[2] = "lab.txt";
 	argv[3] = "net.txt";
 	argv[4] = "0.01";
