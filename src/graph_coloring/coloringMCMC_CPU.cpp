@@ -47,7 +47,7 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	gen = std::default_random_engine(seed);
 	unifInitColors = std::uniform_int_distribution<uint32_t>(0, nCol - 1);
 	unifDistr = std::uniform_real_distribution<float>(0, 1);
-	bernieFreeze = std::bernoulli_distribution(ratioFreezed);
+	//bernieFreeze = std::bernoulli_distribution(ratioFreezed);
 
 	// Begin with a random coloration
 	// Colors range = [0, nCol-1]
@@ -184,6 +184,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		// if (...)
 		// LOG(TRACE) << "Accepting / rejecting coloration: alpha, extractedProb"
 		std::swap(C, Cstar);
+		Cviol = Cstarviol;
 		// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
 		//       or swap operations on individual elements (it is what we want: it is like swapping
 		//       pointers, but on steroids)

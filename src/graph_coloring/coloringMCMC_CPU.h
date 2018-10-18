@@ -66,7 +66,7 @@ protected:
 	std::default_random_engine					gen;
 	std::uniform_int_distribution<uint32_t>		unifInitColors;	// For initial coloring extraction
 	std::uniform_real_distribution<float>		unifDistr;		// Generic [0,1] extractor
-	std::bernoulli_distribution					bernieFreeze;	// For freezing nodes
+	//std::bernoulli_distribution					bernieFreeze;	// For freezing nodes
 
 	// Parameters
 	const GraphStruct<nodeW, edgeW> *	const	str;
