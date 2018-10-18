@@ -1,0 +1,17 @@
+build/*
+easyloggingpp/easyloggingpp/*.cc
+easyloggingpp/easyloggingpp/*.h
+test_01
+
+#Visual Studio
+.vs/
+.vs/config/
+x64/
+x86/
+ColorerProject/vc140.pdb
+ColorerProject/x86
+ColorerProject/x64
+DatasetGenerator/vc140.pdb
+DatasetGenerator/x64
+DatasetGenerator/x86
+
