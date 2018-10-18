@@ -1,0 +1,14 @@
+build/*
+easyloggingpp/easyloggingpp/*.cc
+easyloggingpp/easyloggingpp/*.h
+test_01
+
+**/lab.txt
+**/net.txt
+
+#Visual Studio
+.vs/
+.vs/config/
+**/x64/*
+**/x86/*
+**/vc140.pdb
