@@ -93,7 +93,7 @@
     <CudaCompile Include="..\src\graph_coloring\coloringLuby.cu" />
     <CudaCompile Include="..\src\graph_coloring\coloringLubyFast.cu" />
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC.cu" />
-    <CudaCompile Include="..\src\graph_coloring\newColoringMCMC.cu" />
+    <CudaCompile Include="..\src\graph_coloring\old_coloringMCMC.cu" />
     <CudaCompile Include="..\src\testColoring_Benchmark.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -108,7 +108,7 @@
     <ClInclude Include="..\src\graph_coloring\coloringLuby.h" />
     <ClInclude Include="..\src\graph_coloring\coloringMCMC.h" />
     <ClInclude Include="..\src\graph_coloring\coloringMCMC_CPU.h" />
-    <ClInclude Include="..\src\graph_coloring\newColoringMCMC.h" />
+    <ClInclude Include="..\src\graph_coloring\old_coloringMCMC.h" />
     <ClInclude Include="..\src\utils\ArgHandle.h" />
     <ClInclude Include="..\src\utils\dbg.h" />
     <ClInclude Include="..\src\utils\fileExporter.h">

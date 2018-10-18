@@ -1,6 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-#include "coloringMCMC.h"
+#include "old_coloringMCMC.h"
 
 __constant__ float LAMBDA;
 __constant__ col_sz NCOLS;
@@ -10,7 +10,7 @@ __constant__ float RATIOFREEZED;
 
 
 template<typename nodeW, typename edgeW>
-ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params ) :
+old_ColoringMCMC<nodeW,edgeW>::old_ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params ) :
 	Colorer<nodeW,edgeW>( inGraph_d ),
 	graphStruct_d( inGraph_d->getStruct() ),
 	nnodes( inGraph_d->getStruct()->nNodes ),
@@ -65,7 +65,7 @@ ColoringMCMC<nodeW,edgeW>::ColoringMCMC( Graph<nodeW,edgeW> * inGraph_d, curandS
 
 // TODO: eliminare tutto quello creato nel construttore per evitare memory leak
 template<typename nodeW, typename edgeW>
-ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
+old_ColoringMCMC<nodeW, edgeW>::~old_ColoringMCMC() {
 	cudaEventDestroy(stop);
 	cudaEventDestroy(start);
 	if (outColoring_d->colClass != nullptr) {
@@ -79,18 +79,18 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 }
 
 template<typename nodeW, typename edgeW>
-Coloring* ColoringMCMC<nodeW,edgeW>::getColoringGPU() {
+Coloring* old_ColoringMCMC<nodeW,edgeW>::getColoringGPU() {
 	return outColoring_d.get();
 }
 
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::printgraph() {
-	ColoringMCMC_k::print_graph_k<nodeW, edgeW> <<< 1, 1 >>> (nnodes, graphStruct_d->cumulDegs, graphStruct_d->neighs);
+void old_ColoringMCMC<nodeW, edgeW>::printgraph() {
+	old_ColoringMCMC_k::print_graph_k<nodeW, edgeW> <<< 1, 1 >>> (nnodes, graphStruct_d->cumulDegs, graphStruct_d->neighs);
 }
 
 
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::convert_to_standard_notation(){
+void old_ColoringMCMC<nodeW, edgeW>::convert_to_standard_notation(){
 	uint32_t idx;
 
 	uint32_t *	colClass =  new uint32_t[nnodes] ;
@@ -195,7 +195,7 @@ void ColoringMCMC<nodeW, edgeW>::convert_to_standard_notation(){
  * @param dist the probability mass function (not normalized)
  * @param n the distribution size
  */
-__device__ int ColoringMCMC_k::discreteSampling(curandState* states, discreteDistribution_st * dist) {
+__device__ int old_ColoringMCMC_k::discreteSampling(curandState* states, discreteDistribution_st * dist) {
 	unsigned int tid = threadIdx.x + blockDim.x * blockIdx.x;
 	unsigned int n = dist->length;
 	printf("n = %d\n", n);
@@ -213,14 +213,14 @@ __device__ int ColoringMCMC_k::discreteSampling(curandState* states, discreteDis
 	return r;
 }
 
-__global__ void ColoringMCMC_k::initColoring(curandState* state,
+__global__ void old_ColoringMCMC_k::initColoring(curandState* state,
 		expDiscreteDistribution_st * dist, col* C, col_sz nCol,
 		node_sz n) {
 	unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
 	if (i < n) {
 		discreteDistribution_st d = dist->CDF;
 		printf("length = %d\n", d.length);
-		// C[i] = ColoringMCMC_k::discreteSampling(state, &d);
+		// C[i] = old_ColoringMCMC_k::discreteSampling(state, &d);
 		printf("init_col[%d] = %d\n", i, C[i]);
 	}
 }
@@ -233,7 +233,7 @@ __global__ void ColoringMCMC_k::initColoring(curandState* state,
  * @param C the current coloring
  * @return the number of conflicts
  */
-__inline__ __host__ __device__ node_sz ColoringMCMC_k::checkConflicts(
+__inline__ __host__ __device__ node_sz old_ColoringMCMC_k::checkConflicts(
 		node nodeID,
 		node_sz deg,
 		node* neighs,
@@ -256,7 +256,7 @@ __inline__ __host__ __device__ node_sz ColoringMCMC_k::checkConflicts(
  * @param param
  * @return
  */
-__inline__  __device__ col ColoringMCMC_k::newFreeColor(
+__inline__  __device__ col old_ColoringMCMC_k::newFreeColor(
 		curandState *state,
 		node nodeID,
 		node_sz deg,
@@ -352,7 +352,7 @@ __inline__  __device__ col ColoringMCMC_k::newFreeColor(
  * @param param
  * @return
  */
-__inline__  __device__ col ColoringMCMC_k::fixColor(
+__inline__  __device__ col old_ColoringMCMC_k::fixColor(
 		curandState *state,
 		node* nodeNeighs,
 		col nodeCol) {
@@ -391,7 +391,7 @@ __inline__  __device__ col ColoringMCMC_k::fixColor(
  * @param PHI support distribution
  */
  template<typename nodeW, typename edgeW>
-__global__ void ColoringMCMC_k::drawNewColoring(
+__global__ void old_ColoringMCMC_k::drawNewColoring(
 		unsigned int* numConflicts_d,
 		curandState* states,
 		const GraphStruct<nodeW, edgeW> * str,
@@ -415,9 +415,9 @@ __global__ void ColoringMCMC_k::drawNewColoring(
 		node_sz deg = str->cumulDegs[nodeID + 1] - cumulDeg;
 		//		printf("deg [%d] = %d\n",nodeID,deg);
 		if (EVEN_ODD)
-			nConf = ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumulDeg, C1_d);
+			nConf = old_ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumulDeg, C1_d);
 		else
-			nConf = ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumulDeg, C2_d);
+			nConf = old_ColoringMCMC_k::checkConflicts(nodeID, deg,	str->neighs + cumulDeg, C2_d);
 		atomicAdd(numConflicts_d, nConf);
 		printf("num conflicts[%d] = %d\n",nodeID,nConf);
 
@@ -453,7 +453,7 @@ __global__ void ColoringMCMC_k::drawNewColoring(
  * Start the coloring on the graph
  */
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::run() {
+void old_ColoringMCMC<nodeW, edgeW>::run() {
 
 
 	//	float* PHI;
@@ -489,7 +489,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		// TODO: questo genererà dei segFault in esecuzione...
 		node_sz cumulDeg = graphStruct_d->cumulDegs[i];
 		node_sz deg = graphStruct_d->cumulDegs[i + 1] - cumulDeg;
-		uint32_t nc = ColoringMCMC_k::checkConflicts(i, deg, graphStruct_d->neighs + cumulDeg, C);
+		uint32_t nc = old_ColoringMCMC_k::checkConflicts(i, deg, graphStruct_d->neighs + cumulDeg, C);
 		numConflictsOLD += nc;
 	}
 	std::cout << "numConflicts init = " << numConflictsOLD << std::endl;
@@ -506,7 +506,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		nRound++;
 		std::cout << "ROUND # " << nRound << std::endl;
 		cuSts = cudaMemcpy(numConflicts_d, &numConflicts, sizeof(unsigned int), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
-		ColoringMCMC_k::drawNewColoring<<<blocksPerGrid, threadsPerBlock>>>(numConflicts_d, states, graphStruct_d, C1_d, C2_d, colNeigh);
+		old_ColoringMCMC_k::drawNewColoring<<<blocksPerGrid, threadsPerBlock>>>(numConflicts_d, states, graphStruct_d, C1_d, C2_d, colNeigh);
 		cuSts = cudaMemcpy(&numConflicts, numConflicts_d, sizeof(unsigned int), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		cudaDeviceSynchronize();
 		std::cout << "GPU num GLOBAL conflicts = " << numConflicts << std::endl;
@@ -560,7 +560,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 // Stampa grafo
 template<typename nodeW, typename edgeW>
-__global__ void ColoringMCMC_k::print_graph_k( uint32_t nnodes, const node_sz * const cumulDegs, const node * const neighs ) {
+__global__ void old_ColoringMCMC_k::print_graph_k( uint32_t nnodes, const node_sz * const cumulDegs, const node * const neighs ) {
 	uint32_t deg_i, offset;
 
 	printf( "numero nodi: %d", nnodes );
@@ -580,5 +580,5 @@ __global__ void ColoringMCMC_k::print_graph_k( uint32_t nnodes, const node_sz * 
 
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
-template class ColoringMCMC<col, col>;
-template class ColoringMCMC<float, float>;
+template class old_ColoringMCMC<col, col>;
+template class old_ColoringMCMC<float, float>;

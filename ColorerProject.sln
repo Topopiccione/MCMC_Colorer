@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ColorerProject", "ColorerPr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DatasetGenerator", "DatasetGenerator\DatasetGenerator.vcxproj", "{6F910F34-72B3-428A-B3E4-1D1370DE9742}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ColorerProject", "ColorerProject\ColorerProject_cuda 10.0.vcxproj", "{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,12 +29,6 @@ Global
 		{6F910F34-72B3-428A-B3E4-1D1370DE9742}.Release|x64.Build.0 = Release|x64
 		{6F910F34-72B3-428A-B3E4-1D1370DE9742}.Release|x86.ActiveCfg = Release|Win32
 		{6F910F34-72B3-428A-B3E4-1D1370DE9742}.Release|x86.Build.0 = Release|Win32
-		{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}.Debug|x64.ActiveCfg = Debug|x64
-		{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}.Debug|x64.Build.0 = Debug|x64
-		{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}.Debug|x86.ActiveCfg = Debug|x64
-		{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}.Release|x64.ActiveCfg = Release|x64
-		{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}.Release|x64.Build.0 = Release|x64
-		{EA34DE3B-9E7A-43B2-8059-7B50A9E243CF}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

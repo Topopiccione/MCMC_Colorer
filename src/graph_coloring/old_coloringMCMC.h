@@ -12,11 +12,11 @@
 #include "GPUutils/GPURandomizer.h"
 
 template<typename nodeW, typename edgeW>
-class ColoringMCMC : public Colorer<nodeW, edgeW> {
+class old_ColoringMCMC : public Colorer<nodeW, edgeW> {
 public:
 
-	ColoringMCMC( Graph<nodeW, edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params );
-	~ColoringMCMC();
+	old_ColoringMCMC( Graph<nodeW, edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params );
+	~old_ColoringMCMC();
 
 	void			run();
 
@@ -57,7 +57,7 @@ protected:
 };
 
 
-namespace ColoringMCMC_k {
+namespace old_ColoringMCMC_k {
 __global__ void initColoring(curandState*, expDiscreteDistribution_st *, col*, col_sz, node_sz);
 template<typename nodeW, typename edgeW>
 __global__ void drawNewColoring(unsigned int*, curandState*, const GraphStruct<nodeW, edgeW>*, col*, col*, col*);
