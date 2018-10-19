@@ -15,7 +15,7 @@
 #include "GPUutils/GPURandomizer.h"
 #include "easyloggingpp/easyloggingpp/easylogging++.h"
 
-#define INLINE_ARGS
+//#define INLINE_ARGS
 //argomenti tipo : --data net.txt --label lab.txt --gene gene.txt
 
 bool		g_traceLogEn;	// Declared in utils/miscUtils.h
