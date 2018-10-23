@@ -117,9 +117,10 @@ int main(int argc, char *argv[]) {
 	//colGreedyCPU.print(0);
 
 	Graph<float, float> graph_d(&test);
-	//// GPU Luby coloring
+
 	GPURand GPURandGen(test.getStruct()->nNodes, (long)commandLine.seed);
 
+	//// GPU Luby coloring
 	/*ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
 	start = std::clock();
 	colLuby.run_fast();
@@ -134,11 +135,11 @@ int main(int argc, char *argv[]) {
 	params.ratioFreezed = 1e-2;
 	params.maxRip = 250;
 
-	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
+	/*ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
 	g_debugger = new dbg(&test, &mcmc_cpu);
 	start = std::clock();
 	mcmc_cpu.run();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;*/
 
 	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 

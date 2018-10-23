@@ -13,3 +13,5 @@ test_01
 **/lab.txt
 **/net.txt
 istruzioni_accesso_remoto.txt
+
+**/*.log

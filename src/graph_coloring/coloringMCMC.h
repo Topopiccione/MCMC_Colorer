@@ -58,6 +58,10 @@ protected:
 	bool	*	colorsChecker_d;
 	uint32_t *	orderedColors_d;
 
+	uint32_t	*	statsFreeColors_h;
+	uint32_t	*	statsFreeColors_d;
+	uint32_t	statsFreeColors_max, statsFreeColors_min, statsFreeColors_avg;
+
 	uint32_t		threadId;
 
 	cudaError_t		cuSts;
@@ -72,11 +76,11 @@ protected:
 
 namespace ColoringMCMC_k {
 	__global__ void initColoring(uint32_t nnodes, uint32_t * coloring_d, float divider, curandState * states);
-	__global__ void conflictCounter(uint32_t nedges, uint32_t * counter_d, uint32_t * coloring_d, node_sz * edges);
+	__global__ void conflictChecker(uint32_t nedges, uint32_t * counter_d, uint32_t * coloring_d, node_sz * edges);
 	//template <uint32_t blockSize> 
 	__global__ void sumReduction(uint32_t nedges, uint32_t * counter_d);
 	//template <uint32_t blockSize> 
 	__device__ void warpReduction(volatile int *sdata, uint32_t tid, uint32_t blockSize);
-	__global__ void selectNewColoring(uint32_t nedges, uint32_t * newColoring_d, float * probNewColoring, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon);
+	__global__ void selectNewColoring(uint32_t nedges, uint32_t * newColoring_d, float * probNewColoring, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
 	__global__ void lookOldColoring(uint32_t nedges, float * probColoring_d, col_sz nCol, uint32_t * newColoring_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon);
 }
