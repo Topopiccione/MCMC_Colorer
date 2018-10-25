@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 	mcmc_cpu.run();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;*/
 
-	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+	//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 

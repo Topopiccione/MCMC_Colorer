@@ -20,6 +20,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	numThreads = 32;
 	threadsPerBlock = dim3(numThreads, 1, 1);
 	blocksPerGrid = dim3((nnodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
+	blocksPerGrid_half = dim3(((nnodes / 2) + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_edges = dim3((nedges + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_half_edges = dim3(((nedges / 2) + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 
@@ -33,8 +34,6 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 
 	counter_h = (uint32_t *)malloc(nedges * sizeof(uint32_t));
 	cuSts = cudaMalloc((void**)&counter_d, nedges * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
-	newCounter_h = (uint32_t *)malloc(nedges * sizeof(uint32_t));
-	cuSts = cudaMalloc((void**)&newCounter_d, nedges * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 
 	cuSts = cudaMalloc((void**)&colorsChecker_d, nnodes * param.nCol * sizeof(bool));	cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&orderedColors_d, nnodes * param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
@@ -56,12 +55,10 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(orderedColors_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 
 	cuSts = cudaFree(counter_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
-	cuSts = cudaFree(newCounter_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(probColoring_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(probNewColoring_d); 	cudaCheck(cuSts, __FILE__, __LINE__);
 
 	free(counter_h);
-	free(newCounter_h);
 	free(probColoring_h);
 	free(probNewColoring_h);
 
@@ -88,6 +85,18 @@ __global__ void ColoringMCMC_k::initColoring(uint32_t nnodes, uint32_t * colorin
 	coloring_d[idx] = color;
 	//coloring_d[idx] = 0;
 }
+/**
+* Apply logarithm to all values
+*/
+__global__ void ColoringMCMC_k::logarithmer(uint32_t nnodes, float * values) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes)
+		return;
+
+	values[idx] = log(values[idx]);
+}
+
 
 /**
 * For all the edges of the graph, set the value of counter_d to 0 or 1 if the nodes of the edge have the same color
@@ -114,8 +123,7 @@ __global__ void ColoringMCMC_k::conflictChecker(uint32_t nedges, uint32_t * coun
 /**
 * Parallel sum reduction inside a single warp
 */
-//template <uint32_t blockSize>
-__device__ void ColoringMCMC_k::warpReduction(volatile int *sdata, uint32_t tid, uint32_t blockSize) {
+__device__ void ColoringMCMC_k::warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize) {
 	if (blockSize >= 64) sdata[tid] += sdata[tid + 32];
 	if (blockSize >= 32) sdata[tid] += sdata[tid + 16];
 	if (blockSize >= 16) sdata[tid] += sdata[tid + 8];
@@ -130,15 +138,14 @@ __device__ void ColoringMCMC_k::warpReduction(volatile int *sdata, uint32_t tid,
 
 * refs: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
 */
-//template <uint32_t blockSize>
-__global__ void ColoringMCMC_k::sumReduction(uint32_t nedges, uint32_t * counter_d) {
+__global__ void ColoringMCMC_k::sumReduction(uint32_t nedges, float * counter_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nedges)
 		return;
 
-	extern	__shared__ int sdata[];
+	extern	__shared__ float sdata[];
 
 	uint32_t tid = threadIdx.x;
 	uint32_t blockSize = blockDim.x;
@@ -323,33 +330,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 		rip++;
 
-		// Original
-		/*ColoringMCMC_k::conflictChecker << < blocksPerGrid_edges, threadsPerBlock >> > (nedges, counter_d, coloring_d, graphStruct_d->edges);
-		cudaDeviceSynchronize();
-
-		cuSts = cudaMemcpy(counter_h, counter_d, nedges * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		counter = 0;
-		for (int i = 0; i < nedges; i++)
-			counter += counter_h[i];
-		*/
-		// End Original
-
-		// Parallel
-		ColoringMCMC_k::conflictChecker << < blocksPerGrid_edges, threadsPerBlock >> > (nedges, counter_d, coloring_d, graphStruct_d->edges);
-		cudaDeviceSynchronize();
-
-		// With Template
-		//ColoringMCMC_k::sumReduction <32><< < blocksPerGrid_half_edges, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nedges, counter_d);
-		ColoringMCMC_k::sumReduction << < blocksPerGrid_half_edges, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nedges, counter_d);
-		cudaDeviceSynchronize();
-
-		cuSts = cudaMemcpy(counter_h, counter_d, blocksPerGrid_half_edges.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		counter = 0;
-		for (int i = 0; i < blocksPerGrid_half_edges.x; i++)
-			counter += counter_h[i];
-		// End Parallel
+		calcConflicts(counter, coloring_d);
 
 		if (counter == 0)
 			break;
@@ -357,7 +338,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef PRINTS
 		std::cout << "***** Tentativo numero: " << rip << std::endl;
 		std::cout << "conflitti rilevati: " << counter << std::endl;
-#endif // PRINTS
+#endif
 
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
 		cudaMemset(orderedColors_d, 0, nnodes * param.nCol * sizeof(uint32_t));
@@ -369,110 +350,32 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		cudaDeviceSynchronize();
 
 #ifdef STATS
-		cuSts = cudaMemcpy(statsFreeColors_h, statsFreeColors_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		statsFreeColors_max = statsFreeColors_avg = 0;
-		statsFreeColors_min = param.nCol + 1;
-		for (uint32_t i = 0; i < nnodes; i++) {
-			uint32_t freeColors = statsFreeColors_h[i];
-			statsFreeColors_avg += freeColors;
-			statsFreeColors_max = (freeColors > statsFreeColors_max) ? freeColors : statsFreeColors_max;
-			statsFreeColors_min = (freeColors < statsFreeColors_min) ? freeColors : statsFreeColors_min;
-		}
-		statsFreeColors_avg /= (float)nnodes;
-		std::cout << "Max Free Colors: " << statsFreeColors_max << " - Min Free Colors: " << statsFreeColors_min << " - AVG Free Colors: " << statsFreeColors_avg << std::endl;
+		getStats();
 #endif
 
-		cuSts = cudaMemcpy(probNewColoring_h, probNewColoring_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		cuSts = cudaMemcpy(probColoring_h, probColoring_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		probColoring = 1;
-		probNewColoring = 1;
-		for (int i = 0; i < nnodes; i++)
-		{
-			probColoring *= probColoring_h[i];
-			probNewColoring *= probNewColoring_h[i];
-		}
-
-#ifdef PRINTS
-		//std::cout << "probColoring: " << probColoring << " probNewColoring: " << probNewColoring << std::endl;
-#endif // PRINTS
-
-		// Original
-		/*ColoringMCMC_k::conflictChecker << < blocksPerGrid_edges, threadsPerBlock >> > (nedges, newCounter_d, newColoring_d, graphStruct_d->edges);
-		cudaDeviceSynchronize();
-
-		cuSts = cudaMemcpy(newCounter_h, newCounter_d, nedges * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		newCounter = 0;
-		for (int i = 0; i < nedges; i++)
-			newCounter += newCounter_h[i];
-		*/
-		// End Original
-
-		// Parallel
-		ColoringMCMC_k::conflictChecker << < blocksPerGrid_edges, threadsPerBlock >> > (nedges, newCounter_d, newColoring_d, graphStruct_d->edges);
-		cudaDeviceSynchronize();
-
-		//ColoringMCMC_k::sumReduction <32><< < blocksPerGrid_half_edges, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nedges, newCounter_d);
-		ColoringMCMC_k::sumReduction << < blocksPerGrid_half_edges, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nedges, newCounter_d);
-		cudaDeviceSynchronize();
-
-		cuSts = cudaMemcpy(newCounter_h, newCounter_d, blocksPerGrid_half_edges.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		newCounter = 0;
-		for (int i = 0; i < blocksPerGrid_half_edges.x; i++)
-			newCounter += newCounter_h[i];
-		// End Parallel
+		calcConflicts(newCounter, newColoring_d);
 
 #ifdef PRINTS
 		std::cout << "nuovi conflitti rilevati: " << newCounter << std::endl;
-#endif // PRINTS
+#endif
 
-		result = exp(-param.lambda * ((int64_t)newCounter - (int64_t)counter));		//exp(n) = e ^ (n)
+		calcProbs();
 
-#ifdef PRINTS
-		//std::cout << "result:" << result << " lambda:" << param.lambda << " newCounter:" << newCounter << " counter:" << counter << std::endl;
-#endif // PRINTS 
-
-		result = (result * probNewColoring) / probColoring;
-
-#ifdef PRINTS
-		//std::cout << "result: " << result << std::endl;
-#endif // PRINTS
-
-		result = result > 1 ? 1 : result;
-
-#ifdef PRINTS
-		//std::cout << "result: " << result << std::endl;
-#endif // PRINTS
-
-		//********************************************************************** LOG
-		//probColoring = 0;
-		//probNewColoring = 0;
-		//for (int i = 0; i < nnodes; i++)
-		//{
-			//probColoring += log(probColoring_h[i]);
-			//probNewColoring += log(probNewColoring_h[i]);
-		//}
-		//result = -param.lambda * ((int64_t)newCounter - (int64_t)counter) + probColoring - probNewColoring;
+		result = -param.lambda * ((int64_t)newCounter - (int64_t)counter) + probNewColoring - probColoring;
 		//result = exp(result);
-
-#ifdef PRINTS
-		//std::cout << "result log: " << result << std::endl;
-#endif // PRINTS
-
-		//**********************************************************************
 
 		random = ((float)rand() / (float)RAND_MAX);
 
 #ifdef PRINTS
+		//std::cout << "probs new: " << probNewColoring << " old:" << probColoring << std::endl;
+		std::cout << "result: " << result << std::endl;
 		//std::cout << "random: " << random << std::endl;
-#endif // PRINTS
+#endif
 
 		//if (random < result) {
 #ifdef PRINTS
 		std::cout << "CHANGE" << std::endl;
-#endif // PRINTS
+#endif
 		temp = coloring_d;
 		coloring_d = newColoring_d;
 		newColoring_d = temp;
@@ -482,7 +385,88 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 }
 
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::calcConflicts(int &counter, uint32_t * coloring_d) {
+	ColoringMCMC_k::conflictChecker << < blocksPerGrid_edges, threadsPerBlock >> > (nedges, counter_d, coloring_d, graphStruct_d->edges);
+	cudaDeviceSynchronize();
+
+	ColoringMCMC_k::sumReduction << < blocksPerGrid_half_edges, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nedges, (float*)counter_d);
+	cudaDeviceSynchronize();
+
+	cuSts = cudaMemcpy(counter_h, counter_d, blocksPerGrid_half_edges.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+
+	counter = 0;
+	for (int i = 0; i < blocksPerGrid_half_edges.x; i++)
+		counter += counter_h[i];
+}
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::getStats() {
+	cuSts = cudaMemcpy(statsFreeColors_h, statsFreeColors_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+	statsFreeColors_max = statsFreeColors_avg = 0;
+	statsFreeColors_min = param.nCol + 1;
+	for (uint32_t i = 0; i < nnodes; i++) {
+		uint32_t freeColors = statsFreeColors_h[i];
+		statsFreeColors_avg += freeColors;
+		statsFreeColors_max = (freeColors > statsFreeColors_max) ? freeColors : statsFreeColors_max;
+		statsFreeColors_min = (freeColors < statsFreeColors_min) ? freeColors : statsFreeColors_min;
+	}
+	statsFreeColors_avg /= (float)nnodes;
+	std::cout << "Max Free Colors: " << statsFreeColors_max << " - Min Free Colors: " << statsFreeColors_min << " - AVG Free Colors: " << statsFreeColors_avg << std::endl;
+}
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::calcProbs() {
+	ColoringMCMC_k::logarithmer << < blocksPerGrid, threadsPerBlock >> > (nnodes, probNewColoring_d);
+	ColoringMCMC_k::logarithmer << < blocksPerGrid, threadsPerBlock >> > (nnodes, probColoring_d);
+	cudaDeviceSynchronize();
+
+	ColoringMCMC_k::sumReduction << < blocksPerGrid_half, threadsPerBlock, threadsPerBlock.x * sizeof(float) >> > (nedges, probNewColoring_d);
+	ColoringMCMC_k::sumReduction << < blocksPerGrid_half, threadsPerBlock, threadsPerBlock.x * sizeof(float) >> > (nedges, probColoring_d);
+	cudaDeviceSynchronize();
+
+	cuSts = cudaMemcpy(probNewColoring_h, probNewColoring_d, blocksPerGrid_half.x * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+	cuSts = cudaMemcpy(probColoring_h, probColoring_d, blocksPerGrid_half.x * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+
+	probNewColoring = 0;
+	probColoring = 0;
+	for (int i = 0; i < blocksPerGrid_half.x; i++)
+	{
+		probNewColoring += probNewColoring_h[i];
+		probColoring += probColoring_h[i];
+	}
+}
+
+
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
 template class ColoringMCMC<col, col>;
 template class ColoringMCMC<float, float>;
+
+// Original Counter
+/*ColoringMCMC_k::conflictChecker << < blocksPerGrid_edges, threadsPerBlock >> > (nedges, newCounter_d, newColoring_d, graphStruct_d->edges);
+cudaDeviceSynchronize();
+
+cuSts = cudaMemcpy(newCounter_h, newCounter_d, nedges * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+
+newCounter = 0;
+for (int i = 0; i < nedges; i++)
+	newCounter += newCounter_h[i];
+*/
+// End Original
+
+// Original Prob Calc
+/*
+cuSts = cudaMemcpy(probNewColoring_h, probNewColoring_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+cuSts = cudaMemcpy(probColoring_h, probColoring_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+
+probNewColoring = 0;
+probColoring = 0;
+for (int i = 0; i < nnodes; i++)
+{
+	probNewColoring += log(probNewColoring_h[i]);
+	probColoring += log(probColoring_h[i]);
+}
+
+std::cout << "probs new: " << probNewColoring << " old:" << probColoring << std::endl;
+*/
