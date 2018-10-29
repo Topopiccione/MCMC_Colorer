@@ -277,6 +277,18 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 	const size_t Zvcomp = nCol - Zv;
 	const uint32_t currentColor = C[currentNode];
 
+	// Manage the special case when there are no free colors
+	if (Zvcomp == 0) {
+		std::for_each(std::begin(p), std::end(p), [&](float &val) {
+			if (idx == currentColor)
+				val = 1.0f;
+			else
+				val = 0;
+			idx++;
+		});
+		return;
+	}
+
 	// Scan the p vector (size = nCol) and fill with probabilities
 	// Discriminate wheter current node color is in conflict or not
 	if (Cviols[currentNode] == 1) { // Current color is in a violation state
