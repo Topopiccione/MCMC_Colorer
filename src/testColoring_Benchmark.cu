@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 	// ColoringGeedyCPU<col,col> colGreedyCPU(&graph);
 	// colGreedyCPU.run();
 	// cout << "Greedy-CPU coloring elapsed time: " << colGreedyCPU.getElapsedTime() << "(sec)" << endl;
-	//colGreedyCPU.print(0);
+	// colGreedyCPU.print(0);
 
 	Graph<float, float> graph_d(&test);
 
@@ -131,17 +131,18 @@ int main(int argc, char *argv[]) {
 	ColoringMCMCParams params;
 	params.nCol = 80;	//test.getMaxNodeDeg() / 2.0f;
 	params.epsilon = 1e-8f;
-	params.lambda = 0.002f;
+	//params.lambda = 0.002f;
+	params.lambda = test.getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
 	params.maxRip = 250;
 
-	/*ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
+	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
 	g_debugger = new dbg(&test, &mcmc_cpu);
 	start = std::clock();
 	mcmc_cpu.run();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;*/
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 

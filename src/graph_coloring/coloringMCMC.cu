@@ -367,7 +367,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		random = ((float)rand() / (float)RAND_MAX);
 
 #ifdef PRINTS
-		//std::cout << "probs new: " << probNewColoring << " old:" << probColoring << std::endl;
+		std::cout << "probs new: " << probNewColoring << " old:" << probColoring << std::endl;
 		std::cout << "result: " << result << std::endl;
 		//std::cout << "random: " << random << std::endl;
 #endif
