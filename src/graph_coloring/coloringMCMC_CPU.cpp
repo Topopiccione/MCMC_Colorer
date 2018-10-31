@@ -190,7 +190,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			g_debugger->stop_and_debug();
 
 		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
-		auto minAlpha = std::min( alpha, 0 );
+		auto minAlpha = std::min( alpha, 0.0f );
 		if (alpha != 0) {
 			if (bernie(minAlpha)) {
 				LOG(TRACE) << "Rejecting coloration!" << std::endl;

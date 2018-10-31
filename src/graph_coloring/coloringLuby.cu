@@ -31,11 +31,11 @@ ColoringLuby<nodeW,edgeW>::ColoringLuby( Graph<nodeW,edgeW> * inGraph_d, curandS
 	coloring_h = std::unique_ptr<int[]>( new int[nnodes] );
 
 	cuSts = cudaMalloc( (void**)&coloring_d, nnodes * sizeof( uint32_t ) );	cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMalloc( (void**)&is_d, nnodes * sizeof( bool ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMalloc( (void**)&i_i_d, nnodes * sizeof( bool ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMalloc( (void**)&cands_d, nnodes * sizeof( bool ) ); 	cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMalloc( (void**)&nodeLeft_d, sizeof( bool ) ); 			cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMalloc( (void**)&uncoloredNodes_d, sizeof( bool ) ); 	cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&is_d, nnodes * sizeof( bool ) ); 			cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&i_i_d, nnodes * sizeof( bool ) ); 			cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&cands_d, nnodes * sizeof( bool ) );		cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&nodeLeft_d, sizeof( bool ) ); 				cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMalloc( (void**)&uncoloredNodes_d, sizeof( bool ) );		cudaCheck( cuSts, __FILE__, __LINE__ );
 	cuSts = cudaMalloc( (void**)&numOfColors_d, sizeof( uint32_t ) ); 		cudaCheck( cuSts, __FILE__, __LINE__ );
 
 	// pointer per il Coloring in output
@@ -91,11 +91,11 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 	memset( cumulSize, 0, (numOfColors+1)*sizeof(uint32_t) );
 
 	// Ciclo sui colori
-	for(uint32_t c=0; c<numOfColors; c++){
+	for(uint32_t c = 0; c<numOfColors; c++){
 		// NB: i colori in luby vanno da 1 a numOfColors
 
 		// Ciclo sui nodi
-		for(uint32_t i=0; i<nnodes; i++){
+		for(uint32_t i = 0; i<nnodes; i++){
 			if(coloring_h[i]==(c+1)){
 				colClass[idx]=i;
 				idx++;
@@ -318,23 +318,6 @@ __global__ void ColoringLuby_k::print_graph_k( uint32_t nnodes, const node_sz * 
 }
 
 
-/*
-	Corpo della generazione colorazione Luby
-	FLOW:
-		cudaMemset inizializzo array interni
-		CICLO_1(finchè tutti i nodi non sono colorati)
-			rimuovo da array candidati cands_d i nodi già colorati
-			azzero is_d
-			CICLO_2(finchè ci sono ancora nodi in cands_d)
-				scelta casuale (non controllata) tra i nodi non ancora colorati
-				controllo i conflitti e li elimino (nodi adiacenti nella scelta)
-				segno i candicati su is_d e rimuovo loro+vicini da cands_d
-				controllo se cands_d è vuoto
-			RIPETO CICLO_2
-			creo un nuovo colore, coloro i candidati del CICLO2 e controllo se ci sono ancora nodi non colorati
-		RIPETO CICLO_1
-
-*/
 template<typename nodeW, typename edgeW>
 void ColoringLuby<nodeW,edgeW>::run() {
 
@@ -343,11 +326,11 @@ void ColoringLuby<nodeW,edgeW>::run() {
 #endif
 
 	// Inizializzo gli array per il primo ciclo
-	cuSts = cudaMemset( is_d, 0, nnodes * sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( i_i_d, 0, nnodes * sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( cands_d, 1, nnodes * sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( coloring_d, 0, nnodes * sizeof( uint32_t ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
-	cuSts = cudaMemset( uncoloredNodes_d, 1, sizeof( bool ) ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( is_d, 0, nnodes * sizeof( bool ) );				cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( i_i_d, 0, nnodes * sizeof( bool ) );			cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( cands_d, 1, nnodes * sizeof( bool ) );			cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( coloring_d, 0, nnodes * sizeof( uint32_t ) );	cudaCheck( cuSts, __FILE__, __LINE__ );
+	cuSts = cudaMemset( uncoloredNodes_d, 1, sizeof( bool ) );			cudaCheck( cuSts, __FILE__, __LINE__ );
 
 	std::unique_ptr<bool[]> tempPrint( new bool[nnodes] );
 
