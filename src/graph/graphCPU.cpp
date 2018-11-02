@@ -16,7 +16,7 @@ void Graph<nodeW, edgeW>::setup(node nn) {
 }
 
 template<typename nodeW, typename edgeW>
-Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb }, fImport{ imp } {
+Graph<nodeW, edgeW>::Graph( fileImporter * imp, bool GPUEnb ) : GPUEnabled{ GPUEnb }, fImport{ imp } {
 	if (!GPUEnabled)
 		setupImporter();
 	else
@@ -25,13 +25,13 @@ Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb
 
 
 template<typename nodeW, typename edgeW>
-Graph<nodeW, edgeW>::Graph(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
-	GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F,
-	const float * const thresholds, bool GPUEnb) : GPUEnabled{ GPUEnb } {
+Graph<nodeW, edgeW>::Graph( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
+		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F,
+		const float * const thresholds, bool GPUEnb ) : GPUEnabled{ GPUEnb } {
 	if (!GPUEnabled)
-		setupRedux(unlabelled, unlabSize, labels, fullGraphStruct, f2R, r2F, thresholds);
+		setupRedux( unlabelled, unlabSize, labels, fullGraphStruct, f2R, r2F, thresholds );
 	else
-		setupReduxGPU(unlabelled, unlabSize, labels, fullGraphStruct, f2R, r2F, thresholds);
+		setupReduxGPU( unlabelled, unlabSize, labels, fullGraphStruct, f2R, r2F, thresholds );
 }
 
 
@@ -56,21 +56,21 @@ void Graph<nodeW, edgeW>::setupImporter() {
 	fImport->fRewind();
 	while (fImport->getNextEdge()) {
 		if (fImport->edgeIsValid) {
-			tempN[fImport->srcIdx]->push_back(fImport->dstIdx);
-			tempW[fImport->srcIdx]->push_back((edgeW)fImport->edgeWgh);
+			tempN[fImport->srcIdx]->push_back( fImport->dstIdx );
+			tempW[fImport->srcIdx]->push_back( (edgeW)fImport->edgeWgh );
 			str->nEdges++;
 			// anche l'arco di ritorno!
-			tempN[fImport->dstIdx]->push_back(fImport->srcIdx);
-			tempW[fImport->dstIdx]->push_back((edgeW)fImport->edgeWgh);
+			tempN[fImport->dstIdx]->push_back( fImport->srcIdx );
+			tempW[fImport->dstIdx]->push_back( (edgeW)fImport->edgeWgh );
 			str->nEdges++;
 		}
 	}
 
 	// Ora in tempN e tempW ho tutto quello che serve per costruire il grafo
 	// Inizio con i cumulDegs
-	std::fill(str->cumulDegs, str->cumulDegs + (nn + 1), 0);
+	std::fill( str->cumulDegs, str->cumulDegs + (nn + 1), 0 );
 	for (uint32_t i = 1; i < (nn + 1); i++)
-		str->cumulDegs[i] += (str->cumulDegs[i - 1] + (node_sz)(tempN[i - 1]->size()));
+		str->cumulDegs[i] += ( str->cumulDegs[i - 1] + (node_sz)(tempN[i - 1]->size()) );
 
 	str->neighs = new node[str->nEdges];
 	str->edgeWeights = new edgeW[str->nEdges];
@@ -93,13 +93,13 @@ void Graph<nodeW, edgeW>::setupImporter() {
 	maxDeg = 0;
 	minDeg = nn;
 	for (uint32_t i = 0; i < nn; i++) {
-		if (str->deg(i) > maxDeg)
-			maxDeg = (uint32_t)str->deg(i);
-		if (str->deg(i) < minDeg)
-			minDeg = (uint32_t)str->deg(i);
+		if (str->deg( i ) > maxDeg)
+			maxDeg = (uint32_t)str->deg( i );
+		if (str->deg( i ) < minDeg)
+			minDeg = (uint32_t)str->deg( i );
 	}
-	density = (float)str->nEdges / (float)(nn * (nn - 1) / 2);
-	meanDeg = (float)str->nEdges / (float)nn;
+	density = (float) str->nEdges / (float) (nn * (nn - 1) / 2);
+	meanDeg = (float) str->nEdges / (float) nn;
 	if (minDeg == 0)
 		connected = false;
 	else
@@ -117,8 +117,8 @@ void Graph<nodeW, edgeW>::setupImporter() {
 
 // Questo setup è su con lo sputo. E' un miracolo se funziona.
 template<typename nodeW, typename edgeW>
-void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
-	GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds) {
+void Graph<nodeW, edgeW>::setupRedux( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
+	GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds ) {
 
 	str = new GraphStruct<nodeW, edgeW>;
 	str->nNodes = unlabSize;
@@ -126,11 +126,11 @@ void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const ui
 	str->cumulDegs = new node_sz[str->nNodes + 1];
 
 
-	std::fill(str->cumulDegs, str->cumulDegs + str->nNodes + 1, 0);
+	std::fill( str->cumulDegs, str->cumulDegs + str->nNodes + 1, 0 );
 
 	for (uint32_t i = 0; i < unlabSize; i++) {
 		uint32_t nodeInFullGraph = unlabelled[i];
-		uint32_t nodeInFullGraphDeg = fullGraphStruct->deg(nodeInFullGraph);
+		uint32_t nodeInFullGraphDeg = fullGraphStruct->deg( nodeInFullGraph );
 		uint32_t neighIdxInFullGraphStruct = fullGraphStruct->cumulDegs[nodeInFullGraph];
 
 		// Nuova valutazione dei gradi del grafo redux
@@ -152,7 +152,7 @@ void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const ui
 	// Altro ciclo per riempire la lista dei vicini e dei pesi degli archi associati
 	for (uint32_t i = 0; i < unlabSize; i++) {
 		uint32_t nodeInFullGraph = unlabelled[i];
-		uint32_t nodeInFullGraphDeg = fullGraphStruct->deg(nodeInFullGraph);
+		uint32_t nodeInFullGraphDeg = fullGraphStruct->deg( nodeInFullGraph );
 		uint32_t neighIdxInFullGraphStruct = fullGraphStruct->cumulDegs[nodeInFullGraph];
 
 		uint32_t tempNeighIdx = str->cumulDegs[i];
@@ -181,11 +181,9 @@ void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const ui
  */
  // TODO: adeguare alla rimozione della Unified Memory
 template<typename nodeW, typename edgeW>
-void Graph<nodeW, edgeW>::randGraphUnweighted(float prob,
-	std::default_random_engine & eng) {
+void Graph<nodeW, edgeW>::randGraphUnweighted(float prob, std::default_random_engine & eng) {
 	if (prob < 0 || prob > 1) {
 		printf("[Graph] Warning: Probability not valid (set p = 0.5)!!\n");
-		//		throw GraphStruct<nodeW,edgeW>::Invalid{};
 	}
 	uniform_real_distribution<> randR(0.0, 1.0);
 	node n = str->nNodes;
@@ -211,12 +209,12 @@ void Graph<nodeW, edgeW>::randGraphUnweighted(float prob,
 	minDeg = n;
 	for (uint32_t i = 0; i < n; i++) {
 		if (str->deg(i) > maxDeg)
-			maxDeg = (uint32_t)str->deg(i);
+			maxDeg = (uint32_t) str->deg(i);
 		if (str->deg(i) < minDeg)
-			minDeg = (uint32_t)str->deg(i);
+			minDeg = (uint32_t) str->deg(i);
 	}
-	density = (float)str->nEdges / (float)(n * (n - 1) / 2);
-	meanDeg = (float)str->nEdges / (float)n;
+	density = (float) str->nEdges / (float) (n * (n - 1)/2);
+	meanDeg = (float) str->nEdges / (float) n;
 	if (minDeg == 0)
 		connected = false;
 	else
@@ -226,11 +224,10 @@ void Graph<nodeW, edgeW>::randGraphUnweighted(float prob,
 	if (GPUEnabled)
 		setMemGPU(str->nEdges, GPUINIT_EDGES);
 	else
-		str->neighs = new node[str->nEdges]{};
+		str->neighs = new node[str->nEdges] {};
 
 	for (uint32_t i = 0; i < n; i++)
-		memcpy((str->neighs + str->cumulDegs[i]), edges[i].data(),
-			sizeof(int) * edges[i].size());
+		memcpy((str->neighs + str->cumulDegs[i]), edges[i].data(), sizeof(int) * edges[i].size());
 
 	// free resources
 	delete[] edges;
@@ -252,8 +249,7 @@ void Graph<nodeW, edgeW>::print(bool verbose) {
 	cout << "   - connected: " << connected << endl;
 	if (verbose) {
 		for (uint32_t i = 0; i < n; i++) {
-			cout << "   node(" << i << ")" << "["
-				<< str->cumulDegs[i + 1] - str->cumulDegs[i] << "]-> ";
+			cout << "   node(" << i << ")" << "[" << str->cumulDegs[i + 1] - str->cumulDegs[i] << "]-> ";
 			for (uint32_t j = 0; j < str->cumulDegs[i + 1] - str->cumulDegs[i]; j++) {
 				cout << str->neighs[str->cumulDegs[i] + j] << " ";
 			}

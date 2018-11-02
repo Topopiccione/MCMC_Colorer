@@ -10,8 +10,6 @@
 #include <cstring>
 #include <vector>
 #include <set>
-//#include <ctime>
-//#include "graph/graph.h"	// in realta' non serve!
 
 #define DUPLICATE_CHECK
 #define BIDIR_CHECK
@@ -43,12 +41,12 @@ int main(int argc, const char ** argv) {
 	// 2: nome label
 	// 3: nome rete
 	// 4: densita'
-	uint32_t		nNodes = atoi(argv[1]);
-	uint32_t		nClasses = 5;
-	std::string		labelFileName(argv[2]);
-	std::string		netFileName(argv[3]);
-	float			probLabels = 0.01f;
-	float			probDensity = atof(argv[4]);
+	uint32_t		nNodes = atoi( argv[1] );
+	uint32_t		nClasses = 15;
+	std::string		labelFileName( argv[2] );
+	std::string		netFileName( argv[3] );
+	float			probLabels	= 0.01f;
+	float			probDensity	= atof( argv[4] );
 
 	std::cout << "nNodes: " << nNodes << " - probDensity: " << probDensity << " - label: "
 		<< labelFileName << " - net: " << netFileName << std::endl;
@@ -60,8 +58,8 @@ int main(int argc, const char ** argv) {
 	std::uniform_real_distribution<> randR(0.0, 1.0);
 	std::normal_distribution<> randNorm(0, 0.1);
 
-	std::ofstream labelFile(labelFileName.c_str(), std::ios::out);
-	std::ofstream netFile(netFileName.c_str(), std::ios::out);
+	std::ofstream labelFile( labelFileName.c_str(), std::ios::out );
+	std::ofstream netFile( netFileName.c_str(), std::ios::out );
 
 	if (!labelFile.is_open()) {
 		std::cerr << "errore aperture file etichette" << std::endl;
@@ -74,7 +72,7 @@ int main(int argc, const char ** argv) {
 	}
 
 	// Richiama generateRandomNames per generare il vettore dei nomi dei nodi
-	std::vector<std::string> nodeNames = generateRandomName(nNodes);
+	std::vector<std::string> nodeNames = generateRandomName( nNodes );
 
 	std::string classBaseName("GO::00");
 	// Ciclo for da 0 a nClasses per generare le etichettature
@@ -82,7 +80,7 @@ int main(int argc, const char ** argv) {
 	// esempio: "GO::001", poi "GO::002", ecc...
 	// Nel file devono essere salvati solo i nomi dei nodi positivi
 	for (uint32_t i = 0; i < nClasses; i++) {
-		std::string currentClassName(classBaseName + std::to_string(i));
+		std::string currentClassName( classBaseName + std::to_string( i ) );
 		for (uint32_t j = 0; j < nNodes; j++) {
 			// estrazione di un numero random
 			// se estrazione ha successo
@@ -190,10 +188,10 @@ int main(int argc, const char ** argv) {
 	for (uint32_t i = 0; i < nNodes; i++) {
 		if (i % (nNodes / 20) == 0)
 			std::cout << "#" << std::flush;
-		for (uint64_t j = cumulDegs[i]; j < cumulDegs[i + 1]; j++) {
-			netFile << nodeNames[i] << "\t" << nodeNames[neighs[j]] << "\t" << randR(eng) << std::endl;
+		for (uint64_t j = cumulDegs[i]; j < cumulDegs[i+1]; j++) {
+			netFile << nodeNames[i] << "\t" << nodeNames[neighs[j]] << "\t" << randR( eng ) << std::endl;
 			//netFile << nodeNames[i] << "\t" << nodeNames[neighs[j]] << "\t" << fabs( randNorm( eng ) ) << std::endl;
-		//netFile << i << "\t" << neighs[j] << "\t" <<  fabs( randNorm( eng ) ) << std::endl;
+			//netFile << i << "\t" << neighs[j] << "\t" <<  fabs( randNorm( eng ) ) << std::endl;
 		}
 	}
 
@@ -206,7 +204,7 @@ int main(int argc, const char ** argv) {
 }
 
 
-std::vector<std::string> generateRandomName(const int n) {
+std::vector<std::string> generateRandomName( const int n ) {
 	const char alphanum[] =
 		"0123456789"
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -218,12 +216,12 @@ std::vector<std::string> generateRandomName(const int n) {
 	stringa[slen] = 0;
 
 	while (tempSet.size() < n) {
-		std::for_each(stringa, stringa + slen, [alphanum](char &c) {c = alphanum[rand() % (sizeof(alphanum) - 1)]; });
-		tempSet.emplace(stringa);
+		std::for_each( stringa, stringa + slen, [alphanum](char &c) {c = alphanum[rand() % (sizeof(alphanum) - 1)];} );
+		tempSet.emplace( stringa );
 	}
 
 	for (auto it = tempSet.begin(); it != tempSet.end(); it++) {
-		out.push_back(std::string(*it));
+		out.push_back( std::string( *it ) );
 	}
 
 	/*for (int i = 0; i < n; i++) {

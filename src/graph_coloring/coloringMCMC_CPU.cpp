@@ -90,6 +90,10 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 
 		Cviol = violation_count(C, Cviols);
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
+
+		// auto maxC = std::max_element( std::begin(C), std::end(C) );
+		// std::cout << "max C: " << *maxC << std::endl;
+
 		if ((g_traceLogEn) & (Cviol < 40)) {
 			size_t idx = 0;
 			std::string logString;
@@ -137,6 +141,11 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			// consider nodeProbab, build the CdF of p, get the new color and put it in Cstar[i]
 			extract_new_color(i, p, nodeProbab, q, Cstar);
 
+			// if (Cstar[i] == 80) {
+			// 	std::cout << "Current node " << i << " exceeded the number of available colors..." << std::endl;
+			// 	g_debugger->stop_and_debug();
+			// }
+
 			// update stats
 			Zvcomp_avg += Zvcomp;
 			Zvcomp_max = (Zvcomp > Zvcomp_max) ? Zvcomp : Zvcomp_max;
@@ -172,7 +181,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		float sumlogqstar = std::accumulate(std::begin(qstar), std::end(qstar), 0.0f);
 
 		// evaluate alpha
-		alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) + sumlogq - sumlogqstar;
+		alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) - sumlogq + sumlogqstar;
 		LOG(TRACE) << TXT_BIBLU << "Cviol: " << Cviol << " - Cviolstar: " << Cstarviol << " - sumlogq: " << sumlogq
 			<< " - sumlogqstar: " << sumlogqstar << TXT_NORML;
 		LOG(TRACE) << TXT_BIBLU << "alpha: " << alpha << TXT_NORML;
@@ -181,16 +190,22 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			g_debugger->stop_and_debug();
 
 		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
-		// if (...)
-		// LOG(TRACE) << "Accepting / rejecting coloration: alpha, extractedProb"
-		std::swap(C, Cstar);
-		Cviol = Cstarviol;
-		// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
-		//       or swap operations on individual elements (it is what we want: it is like swapping
-		//       pointers, but on steroids)
-		// NOTE to the previous NOTE: it seems that std::swap( std::vector, std::vector ) automatically
-		//      invokes the specialized version std::vector::swap... So, for sake of readability we chose
-		//      the more general form
+		auto minAlpha = std::min( alpha, 0.0f );
+		if (alpha != 0) {
+			if (bernie(minAlpha)) {
+				LOG(TRACE) << "Rejecting coloration!" << std::endl;
+			} else {
+				std::swap(C, Cstar);
+				Cviol = Cstarviol;
+				// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
+				//       or swap operations on individual elements (it is what we want: it is like swapping
+				//       pointers, but on steroids)
+				// NOTE to the previous NOTE: it seems that std::swap( std::vector, std::vector ) automatically
+				//      invokes the specialized version std::vector::swap... So, for sake of readability we chose
+				//      the more general form
+			}
+		}
+
 
 		iter++;
 		if (iter > maxiter) {
@@ -280,6 +295,18 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 	// Scan the p vector (size = nCol) and fill with probabilities
 	// Discriminate wheter current node color is in conflict or not
 	if (Cviols[currentNode] == 1) { // Current color is in a violation state
+		// Handle the special case of nodes conflicting and not having free colors to choose from
+		auto nFreeColors = std::accumulate( std::begin(freeColors), std::end(freeColors), 0 );
+		if ( nFreeColors == 0 ) {
+			std::for_each(std::begin(p), std::end(p), [&](float &val) {
+				if (idx == currentColor)
+					val = 1.0f - (nCol - 1) * epsilon;
+				else
+					val = epsilon;
+				idx++;
+			});
+			return;
+		}
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
 			if (freeColors[idx])
 				val = (1.0f - epsilon * Zv) / (float)Zvcomp;
