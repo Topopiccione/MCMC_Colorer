@@ -1,0 +1,5 @@
+﻿
+- Batch
+- Aggiungere nuovo algoritmo per calcolo dei conflitti che non utilizzi gli archi singoli
+- Bilanciare Hastings
+- Utilizzare probabilità diverse per i colori in modo da cercare di ridurre il numero di colori utilizzati
