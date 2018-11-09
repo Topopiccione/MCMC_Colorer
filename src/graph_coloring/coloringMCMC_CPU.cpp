@@ -378,6 +378,33 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_qstar(const size_t currentNode, const 
 	}
 }
 
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::show_histogram() {
+	std::vector<size_t> histBins(nCol, 0);
+	// Initial check: each value should be 0 <= val < nCol
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { if ((val < 0) | (val >= nCol)) std::cout << "Error in output coloring. Exiting..." << std::endl; return;} );
+
+	// Filling histogram bins
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+
+	// finding the correct scaler, so that the maximum bin get printed 80 times (ignoring rounding errors...)
+	auto max_val = std::max_element( std::begin(histBins), std::end(histBins) );
+	size_t scaler = *max_val / 80;
+
+	// Printing the histogram.
+	for (size_t i = 0; i < histBins.size(); i++) {
+		std::cout << i << ": ";
+		// Do not print anything if the bin is empty
+		if (histBins[i] == 0)
+			continue;
+		// Print one "*" if there is at least one node
+		size_t howMany = 1 + (histBins[i] / scaler);
+		for (size_t j = 0; j < howMany; j++)
+			std::cout << "*";
+		std::cout << std::endl;
+	}
+}
+
 
 /////////////////////
 template class Graph<float, float>;

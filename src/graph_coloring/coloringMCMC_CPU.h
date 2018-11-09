@@ -15,6 +15,7 @@ public:
 	~ColoringMCMC_CPU();
 
 	void			run();
+	void			show_histogram();
 	// Sort of protected methods gone public for integration with GoogleTest
 	size_t			violation_count(const std::vector<uint32_t> & currentColoring, std::vector<bool> & violations);
 	size_t			count_free_colors(const size_t node, const std::vector<uint32_t> & currentColoring, std::vector<bool> & freeColors);
