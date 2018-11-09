@@ -68,7 +68,11 @@ void Graph<nodeW, edgeW>::setupImporter() {
 
 	// Ora in tempN e tempW ho tutto quello che serve per costruire il grafo
 	// Inizio con i cumulDegs
+<<<<<<< HEAD
+	std::fill( str->cumulDegs, str->cumulDegs + (nn + 1), 0);
+=======
 	std::fill( str->cumulDegs, str->cumulDegs + (nn + 1), 0 );
+>>>>>>> a47af475c27fbfd0acc878ec3f9044569c03aae1
 	for (uint32_t i = 1; i < (nn + 1); i++)
 		str->cumulDegs[i] += ( str->cumulDegs[i - 1] + (node_sz)(tempN[i - 1]->size()) );
 

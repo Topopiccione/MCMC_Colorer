@@ -10,13 +10,13 @@
 	#include "getopt/getopt.h"
 #endif
 
-ArgHandle::ArgHandle(int argc, char **argv) :
-	dataFilename(""), foldFilename(""), labelFilename(""), outFilename(""), geneOutFilename(""),
-	statesOutFilename(""), foldsOutFilename(""), timeOutFilename(""),
-	m(0), n(0), prob(0.0),
-	nFolds(0), seed(0), verboseLevel(0),
-	nThreads(0),
-	generateRandomFold(false), simulate(false), argc(argc), argv(argv) {
+ArgHandle::ArgHandle( int argc, char **argv ) :
+		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), geneOutFilename( "" ),
+		statesOutFilename( "" ), foldsOutFilename( "" ), timeOutFilename( "" ),
+		m( 0 ), n( 0 ), prob( 0.0 ),
+		nFolds( 0 ), seed( 0 ), verboseLevel(0),
+		nThreads( 0 ),
+		generateRandomFold( false ), simulate( false ), argc( argc ), argv( argv ) {
 }
 
 ArgHandle::~ArgHandle() {}
@@ -26,28 +26,28 @@ void ArgHandle::processCommandLine() {
 	char const *short_options = "d:l:f:m:n:s:N:o:g:u:j:S:q:t:v:h";
 	const struct option long_options[] = {
 
-		{ "data", required_argument, 0, 'd' },
-	{ "labels", required_argument, 0, 'l' },
-	{ "folds", required_argument, 0, 'f' },
-	{ "features", required_argument, 0, 'm' },
-	{ "variables", required_argument, 0, 'n' },
-	{ "simulate", required_argument, 0, 's' },
-	{ "nFolds", required_argument, 0, 'N' },
-	{ "out", required_argument, 0, 'o' },
-	{ "geneOut", required_argument, 0, 'g' },
-	{ "foldsOut", required_argument, 0, 'u' },
-	{ "statesOut", required_argument, 0, 'j' },
-	{ "seed", required_argument, 0, 'S' },
-	{ "nThrd", required_argument, 0, 'q' },
-	{ "tttt", required_argument, 0, 't' },
-	{ "verbose-level", required_argument, 0, 'v' },
-	{ "help", no_argument, 0, 'h' },
-	{ 0, 0, 0, 0 }
+		{ "data",			required_argument, 0, 'd' },
+		{ "labels",			required_argument, 0, 'l' },
+		{ "folds",			required_argument, 0, 'f' },
+		{ "features",		required_argument, 0, 'm' },
+		{ "variables",		required_argument, 0, 'n' },
+		{ "simulate",		required_argument, 0, 's' },
+		{ "nFolds",			required_argument, 0, 'N' },
+		{ "out",			required_argument, 0, 'o' },
+		{ "geneOut",		required_argument, 0, 'g' },
+		{ "foldsOut",		required_argument, 0, 'u' },
+		{ "statesOut",		required_argument, 0, 'j' },
+		{ "seed",			required_argument, 0, 'S' },
+		{ "nThrd",			required_argument, 0, 'q' },
+		{ "tttt",			required_argument, 0, 't' },
+		{ "verbose-level",	required_argument, 0, 'v' },
+		{ "help",			no_argument,	   0, 'h' },
+		{ 0, 0, 0, 0 }
 	};
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, short_options, long_options, &option_index);
+		int c = getopt_long( argc, argv, short_options, long_options, &option_index );
 
 		if (c == -1) {
 			break;
@@ -57,10 +57,10 @@ void ArgHandle::processCommandLine() {
 		case 's':
 			simulate = true;
 			try {
-				double temp = std::stod(optarg);
+				double temp = std::stod( optarg );
 				if ((temp < 0) | (temp > 1)) {
 					std::cout << "\033[31;1mSimulation: probabilty of positive class must be 0 < prob < 1.\033[0m" << std::endl;
-					exit(-1);
+					exit( -1 );
 				}
 				else {
 					prob = temp;
@@ -68,47 +68,47 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mArgument missing: specify the probabilty for positive class.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 		case 'd':
-			dataFilename = std::string(optarg);
+			dataFilename = std::string( optarg );
 			break;
 
 		case 'l':
-			labelFilename = std::string(optarg);
+			labelFilename = std::string( optarg );
 			break;
 
 		case 'f':
-			foldFilename = std::string(optarg);
+			foldFilename = std::string( optarg );
 			break;
 
 		case 'o':
-			outFilename = std::string(optarg);
+			outFilename = std::string( optarg );
 			break;
 
 		case 'g':
-			geneOutFilename = std::string(optarg);
+			geneOutFilename = std::string( optarg );
 			break;
 
 		case 'u':
-			foldsOutFilename = std::string(optarg);
+			foldsOutFilename = std::string( optarg );
 			break;
 
 		case 'j':
-			statesOutFilename = std::string(optarg);
+			statesOutFilename = std::string( optarg );
 			break;
 
 		case 't':
-			timeOutFilename = std::string(optarg);
+			timeOutFilename = std::string( optarg );
 			break;
 
 		case 'n':
 			try {
-				int temp = std::stoi(optarg);
+				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					std::cout << "\033[31;1mn must be a positive integer.\033[0m" << std::endl;
-					exit(-1);
+					exit( -1 );
 				}
 				else {
 					n = temp;
@@ -116,16 +116,16 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mn must be a positive integer.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 
 		case 'm':
 			try {
-				int temp = std::stoi(optarg);
+				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					std::cout << "\033[31;1mm must be a positive integer.\033[0m" << std::endl;
-					exit(-1);
+					exit( -1 );
 				}
 				else {
 					m = temp;
@@ -133,15 +133,15 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mm must be a positive integer.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 		case 'N':
 			try {
-				int temp = std::stoi(optarg);
+				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					std::cout << "\033[31;1mnFold argument must be a positive integer.\033[0m" << std::endl;
-					exit(-1);
+					exit( -1 );
 				}
 				else {
 					nFolds = temp;
@@ -149,24 +149,24 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mnFold argument must be a positive integer.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 
 		case 'S':
 			try {
-				int temp = std::stoi(optarg);
+				int temp = std::stoi( optarg );
 				seed = temp;
 			}
 			catch (...) {
 				std::cout << "\033[31;1mseed argument must be integer.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 
 		case 'q':
 			try {
-				int temp = std::stoi(optarg);
+				int temp = std::stoi( optarg );
 				if (temp < 1) {
 					temp = 0;
 				}
@@ -176,24 +176,24 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mensThrd argument must be integer.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 
 		case 'v':
 			try {
-				int temp = std::stoi(optarg);
+				int temp = std::stoi( optarg );
 				verboseLevel = temp;
 			}
 			catch (...) {
 				std::cout << "\033[31;1mverbose-level argument must be integer.\033[0m" << std::endl;
-				exit(-1);
+				exit( -1 );
 			}
 			break;
 
 		case 'h':
 			displayHelp();
-			exit(0);
+			exit( 0 );
 			break;
 
 		default:
@@ -203,28 +203,28 @@ void ArgHandle::processCommandLine() {
 
 	if (outFilename.empty()) {
 		std::cout << "\033[33;1mNo output file name defined. Default used (--out).\033[0m" << std::endl;
-		outFilename = std::string("output.txt");
+		outFilename = std::string( "output.txt" );
 	}
 
 	if (simulate && (n == 0)) {
 		std::cout << "\033[31;1mSimualtion enabled: specify n (-n).\033[0m" << std::endl;
-		exit(-1);
+		exit( -1 );
 	}
 
 	if (simulate && ((prob < 0) | (prob > 1))) {
 		std::cout << "\033[31;1mSimulation: probabilty of positive class must be 0 < prob < 1.\033[0m" << std::endl;
-		exit(-1);
+		exit( -1 );
 	}
 
 	if (!simulate) {
 		if (dataFilename.empty()) {
 			std::cout << "\033[31;1mMatrix file undefined (--data).\033[0m" << std::endl;
-			exit(-1);
+			exit( -1 );
 		}
 
 		if (labelFilename.empty()) {
 			std::cout << "\033[31;1mLabel file undefined (--label).\033[0m" << std::endl;
-			exit(-1);
+			exit( -1 );
 		}
 
 		if (foldFilename.empty()) {
@@ -243,7 +243,7 @@ void ArgHandle::processCommandLine() {
 
 		if (geneOutFilename.empty()) {
 			std::cout << "\033[33;1mNo output gene names file name defined (--gene).\033[0m" << std::endl;
-			exit(-1);
+			exit( -1 );
 		}
 	}
 
@@ -253,9 +253,9 @@ void ArgHandle::processCommandLine() {
 	}
 
 	if (seed == 0) {
-		seed = (uint32_t)time(NULL);
+		seed = (uint32_t) time( NULL );
 		std::cout << "\033[33;1mNo seed specified. Generating a random seed: " << seed << " (--seed).\033[0m" << std::endl;
-		srand(seed);
+		srand( seed );
 	}
 
 	if (nThreads <= 0) {
@@ -276,7 +276,7 @@ void ArgHandle::processCommandLine() {
 
 
 void ArgHandle::displayHelp() {
-	std::cout << " **** TITLE! ****" << std::endl;
+	std::cout << " **** CosNET-GPU ****" << std::endl;
 	std::cout << "( --- qui bisogna scrivere qualcosa tipo i nomi degli autori e una descrizione dell'applicazione --- )" << std::endl;
 
 	std::cout << "Usage: " << std::endl;
@@ -286,6 +286,8 @@ void ArgHandle::displayHelp() {
 	std::cout << "Options:" << std::endl;
 	std::cout << "    " << "--help               Print this help." << std::endl;
 	std::cout << "    " << "--out file.txt       Output file. Is a space-separated value text file." << std::endl;
+	std::cout << "    " << "--statesOut file.txt Optional output file containing the states of each node at the end of execution" <<std::endl;
+	std::cout << "    " << "                     of the Hopfield dynamics." << std::endl;
 	std::cout << "    " << "--label file.txt     Labelling input file. Must be a space-separated value text file." << std::endl;
 	std::cout << "    " << "                     Each 1 in the label file represent a minor class candidate, 0 otherwise." << std::endl;
 	std::cout << "    " << "                     Parameter 'n' is assigned by reading this file." << std::endl;
