@@ -77,7 +77,7 @@ void CPURand::discreteSampling(discreteDistribution dist, uint32_t * C, uint32_t
 //				l = m+1;
 //		}
 		C[i] = l + 1;
-		//		std::cout << C[i] << std::endl;
+//		std::cout << C[i] << std::endl;
 	}
 	delete[] P;
 }

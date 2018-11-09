@@ -30,9 +30,9 @@ enum GPUMEMINITTYPES {
  * Base structure (array 1D format) of a graph with weighted nodes/edges
  */
 template<typename nodeW, typename edgeW> struct GraphStruct {
-	node			nNodes{ 0 };					// num of graph nodes
-	node_sz			nEdges{ 0 };					// num of graph edges
-	node_sz			nCleanEdges{ 0 };					// num of graph clean edges
+	node			nNodes{ 0 };				// num of graph nodes
+	node_sz			nEdges{ 0 };				// num of graph edges
+	node_sz			nCleanEdges{ 0 };			// num of graph clean edges
 	node_sz		*	cumulDegs{ nullptr };		// cumsum of node degrees
 	node		*	neighs{ nullptr };			// list of neighbors for all nodes (edges)
 	node_sz		*	edges{ nullptr };			// list of edges

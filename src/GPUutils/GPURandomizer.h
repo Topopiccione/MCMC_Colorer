@@ -45,8 +45,8 @@ public:
 	GPURand( uint32_t n, long seed );
 	~GPURand();
 
-	uint32_t				num;
-	uint32_t				seed;
+	uint32_t		num;
+	uint32_t		seed;
 	cudaError_t             cuSts;
 	curandStatus_t          curandSts;
 	curandState         *   randStates;

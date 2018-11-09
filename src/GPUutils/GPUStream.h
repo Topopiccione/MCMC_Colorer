@@ -15,7 +15,7 @@ public:
 	GPUStream( uint32_t n );
 	~GPUStream();
 
-	uint32_t			numThreads;
+	uint32_t		numThreads;
 	cudaStream_t	*	streams;
 
 };
