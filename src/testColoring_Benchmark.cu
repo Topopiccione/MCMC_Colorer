@@ -129,8 +129,8 @@ int main(int argc, char *argv[]) {
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;*/
 
 	ColoringMCMCParams params;
-	params.nCol = 80;	//test.getMaxNodeDeg() / 2.0f;
-	params.epsilon = 1e-8f;
+	params.nCol = 100;	//test.getMaxNodeDeg() / 2.0f;
+	params.epsilon = 1e-10f;
 	//params.lambda = 0.002f;
 	params.lambda = test.getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
@@ -143,14 +143,15 @@ int main(int argc, char *argv[]) {
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
 	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+	mcmc_cpu.show_histogram();
 
-	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
-
-	start = std::clock();
-	colMCMC.run();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-
-	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+	// ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+	//
+	// start = std::clock();
+	// colMCMC.run();
+	// duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	//
+	// LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
 
 	if (g_debugger != nullptr)
 		delete g_debugger;

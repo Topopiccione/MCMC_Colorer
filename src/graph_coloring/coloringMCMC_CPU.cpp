@@ -49,9 +49,23 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	unifDistr = std::uniform_real_distribution<float>(0, 1);
 	//bernieFreeze = std::bernoulli_distribution(ratioFreezed);
 
-	// Begin with a random coloration
-	// Colors range = [0, nCol-1]
-	std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
+	// Begin with a random coloration (colors range = [0, nCol-1])
+	////////////// Baseline
+	//std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
+	////////////// Non-uniform probabilities
+	// Filling p with color distribution
+	float divider = nCol * (nCol + 1);
+	size_t idx = 0;
+	std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		val = 2.0f * (float)(idx + 1) / divider;
+		idx++;
+	} );
+	// Extract in advance all the experiment probabilities
+	std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
+	// Run extract_new_color on each node (q vector in ignored)
+	for (idx = 0; idx < nNodes; idx++)
+		extract_new_color(idx, p, nodeProbab, q, C);
+	//////////////
 
 }
 
@@ -74,6 +88,7 @@ template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	LOG(TRACE) << TXT_COLMC << "Starting MCMC coloring..." << TXT_NORML;
 	auto bernie = [&](float p) {return ((double)rand() / (RAND_MAX)) >= p ? 0 : 1; };
+
 	size_t iter = 0;
 	size_t maxiter = 250;
 
@@ -307,13 +322,44 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 			});
 			return;
 		}
+		////////// Baseline
+		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		// 	if (freeColors[idx])
+		// 		val = (1.0f - epsilon * Zv) / (float)Zvcomp;
+		// 	else
+		// 		val = epsilon;
+		// 	idx++;
+		// });
+
+		////////// Non-uniform probabilities
+		float divider = nCol * (nCol + 1);
+		float reminder = 0;
+		size_t nOccup = 0;
+		// Start filling the probabilites and accumulating the reminder
+		idx = 0;
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
 			if (freeColors[idx])
-				val = (1.0f - epsilon * Zv) / (float)Zvcomp;
-			else
+				val = 2.0f * (float)(idx + 1) / divider;
+			else {
 				val = epsilon;
+				reminder += (2.0f * (float)(idx + 1) / divider) - epsilon;
+				nOccup++;
+			}
 			idx++;
 		});
+		// Redistributing the reminder on the free colors
+		idx = 0;
+		std::for_each(std::begin(p), std::end(p), [&](float &val) {
+			if (freeColors[idx])
+				val += (reminder / (float) (nCol - nOccup));
+			idx++;
+		});
+		////////////////
+		//auto aa = std::accumulate( std::begin(p), std::end(p), 0.0f );
+		// if ( aa < 1.0f ) {
+		// 	std::cout << currentNode << " - " << aa << " ";
+		// 	getchar();
+		// }
 	}
 	else { // Current color is NOT in a violation state
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
@@ -403,6 +449,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::show_histogram() {
 			std::cout << "*";
 		std::cout << std::endl;
 	}
+	std::cout << "Each '*' = " << scaler << " nodes" << std::endl;
 }
 
 
