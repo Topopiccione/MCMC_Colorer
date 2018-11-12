@@ -57,7 +57,8 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	float divider = nCol * (nCol + 1);
 	size_t idx = 0;
 	std::for_each(std::begin(p), std::end(p), [&](float &val) {
-		val = 2.0f * (float)(idx + 1) / divider;
+		//val = 2.0f * (float)(idx + 1) / divider;
+		val = 2.0f * (float)(nCol - idx) / divider;
 		idx++;
 	} );
 	// Extract in advance all the experiment probabilities
@@ -66,6 +67,9 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	for (idx = 0; idx < nNodes; idx++)
 		extract_new_color(idx, p, nodeProbab, q, C);
 	//////////////
+
+	// Show istogram of the initial distribution
+	show_histogram();
 
 }
 
@@ -339,10 +343,12 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 		idx = 0;
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
 			if (freeColors[idx])
-				val = 2.0f * (float)(idx + 1) / divider;
+				//val = 2.0f * (float)(idx + 1) / divider;
+				val = 2.0f * (float)(nCol - idx) / divider;
 			else {
 				val = epsilon;
-				reminder += (2.0f * (float)(idx + 1) / divider) - epsilon;
+				//reminder += (2.0f * (float)(idx + 1) / divider) - epsilon;
+				reminder += (2.0f * (float)(nCol - idx) / divider) - epsilon;
 				nOccup++;
 			}
 			idx++;
