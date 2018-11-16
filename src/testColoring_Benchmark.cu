@@ -121,18 +121,18 @@ int main(int argc, char *argv[]) {
 	GPURand GPURandGen(test.getStruct()->nNodes, (long)commandLine.seed);
 
 	//// GPU Luby coloring
-	/*ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
+	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
 	start = std::clock();
 	colLuby.run_fast();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;*/
+	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMCParams params;
-	params.nCol = 80;	//test.getMaxNodeDeg() / 2.0f;
+	params.nCol = 200;	//test.getMaxNodeDeg() / 2.0f;
 	params.epsilon = 1e-8f;
-	//params.lambda = 0.002f;
-	params.lambda = test.getStruct()->nNodes * log(params.epsilon);
+	params.lambda = 1.2f;
+	//params.lambda = test.getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
 	//params.maxRip = 4;
 	params.maxRip = 250;
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 	start = std::clock();
 	mcmc_cpu.run();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-
+	mcmc_cpu.show_histogram();
 	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;*/
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);

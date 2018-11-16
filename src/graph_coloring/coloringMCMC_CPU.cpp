@@ -43,15 +43,34 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	LOG(TRACE) << TXT_COLMC << "Cviols: allocated " << Cviols.size() << " x " << sizeof(bool) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "Cstarviols: allocated " << Cstarviols.size() << " x " << sizeof(bool) << TXT_NORML;
 
+	colorIdx = std::vector<size_t>( nCol );
+
 	// Starting the RNGs
 	gen = std::default_random_engine(seed);
 	unifInitColors = std::uniform_int_distribution<uint32_t>(0, nCol - 1);
 	unifDistr = std::uniform_real_distribution<float>(0, 1);
 	//bernieFreeze = std::bernoulli_distribution(ratioFreezed);
 
-	// Begin with a random coloration
-	// Colors range = [0, nCol-1]
-	std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
+	// Begin with a random coloration (colors range = [0, nCol-1])
+	size_t idx = 0;
+	////////////// Baseline
+	//std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
+	////////////// Non-uniform probabilities
+	// Filling p with color distribution
+	float divider = nCol * (nCol + 1);
+	std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		val = 2.0f * (float)(nCol - idx) / divider;
+		idx++;
+	} );
+	//Extract in advance all the experiment probabilities
+	std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
+	// Run extract_new_color on each node (q vector in ignored)
+	for (idx = 0; idx < nNodes; idx++)
+		extract_new_color(idx, p, nodeProbab, q, C);
+	//////////////
+
+	// Show istogram of the initial distribution
+	show_histogram();
 
 }
 
@@ -74,6 +93,12 @@ template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	LOG(TRACE) << TXT_COLMC << "Starting MCMC coloring..." << TXT_NORML;
 	auto bernie = [&](float p) {return ((double)rand() / (RAND_MAX)) >= p ? 0 : 1; };
+
+	//std::vector<size_t> colorIdx( nCol );
+	std::vector<size_t> histBins( nCol );
+	//size_t ii = 0;
+	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+
 	size_t iter = 0;
 	size_t maxiter = 250;
 
@@ -88,11 +113,15 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		// Extract in advance all the experiment probabilities
 		std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
 
+		// Filling histogram bins and the idx array
+		std::fill( std::begin(histBins), std::end(histBins), 0 );
+		size_t ii = 0;
+		std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+		std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+		std::sort( std::begin(colorIdx), std::end(colorIdx), [&](int i,int j) {return histBins[i] > histBins[j]; } );
+
 		Cviol = violation_count(C, Cviols);
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
-
-		// auto maxC = std::max_element( std::begin(C), std::end(C) );
-		// std::cout << "max C: " << *maxC << std::endl;
 
 		if ((g_traceLogEn) & (Cviol < 40)) {
 			size_t idx = 0;
@@ -140,11 +169,6 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 
 			// consider nodeProbab, build the CdF of p, get the new color and put it in Cstar[i]
 			extract_new_color(i, p, nodeProbab, q, Cstar);
-
-			// if (Cstar[i] == 80) {
-			// 	std::cout << "Current node " << i << " exceeded the number of available colors..." << std::endl;
-			// 	g_debugger->stop_and_debug();
-			// }
 
 			// update stats
 			Zvcomp_avg += Zvcomp;
@@ -198,15 +222,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			else {
 				std::swap(C, Cstar);
 				Cviol = Cstarviol;
-				// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
-				//       or swap operations on individual elements (it is what we want: it is like swapping
-				//       pointers, but on steroids)
-				// NOTE to the previous NOTE: it seems that std::swap( std::vector, std::vector ) automatically
-				//      invokes the specialized version std::vector::swap... So, for sake of readability we chose
-				//      the more general form
 			}
 		}
-
 
 		iter++;
 		if (iter > maxiter) {
@@ -230,7 +247,6 @@ size_t ColoringMCMC_CPU<nodeW, edgeW>::violation_count(const std::vector<uint32_
 		// Get the node color
 		const uint32_t nodeColor = currentColoring[i];
 		// Get the index and the number of the neighbours of node i
-		// TODO: this needs to be tested!!!!!!
 		const size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
 		const size_t neighIdx = str->cumulDegs[i];
 		const node * neighPtr = str->neighs + neighIdx;
@@ -272,7 +288,6 @@ size_t ColoringMCMC_CPU<nodeW, edgeW>::count_free_colors(const size_t currentNod
 	// Scan the neighborhood, and set 0 to all conflicting colors
 	for (size_t i = 0; i < nodeDeg; i++) {
 		node neigh = neighPtr[i];
-		//if (C[neigh] == nodeColor)
 		freeColors[currentColoring[neigh]] = 0;
 	}
 
@@ -308,17 +323,44 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 			});
 			return;
 		}
+		////////// Baseline
+		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		// 	if (freeColors[idx])
+		// 		val = (1.0f - epsilon * Zv) / (float)Zvcomp;
+		// 	else
+		// 		val = epsilon;
+		// 	idx++;
+		// });
+		////////// Non-uniform probabilities
+		float divider = nCol * (nCol + 1);
+		float reminder = 0;
+		size_t nOccup = 0;
+		// Start filling the probabilites and accumulating the reminder
+		idx = 0;
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (freeColors[idx])
-				val = (1.0f - epsilon * Zv) / (float)Zvcomp;
-			else
+			if (freeColors[colorIdx[idx]])
+				//val = 2.0f * (float)(idx + 1) / divider;
+				val = 2.0f * (float)(nCol - colorIdx[idx]) / divider;
+			else {
 				val = epsilon;
+				//reminder += (2.0f * (float)(idx + 1) / divider) - epsilon;
+				reminder += (2.0f * (float)(nCol - colorIdx[idx]) / divider) - epsilon;
+				nOccup++;
+			}
 			idx++;
 		});
+		// Redistributing the reminder on the free colors
+		idx = 0;
+		std::for_each(std::begin(p), std::end(p), [&](float &val) {
+			if (freeColors[colorIdx[idx]])
+				val += (reminder / (float) (nCol - nOccup));
+			idx++;
+		});
+		////////////////
 	}
 	else { // Current color is NOT in a violation state
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (idx == currentColor)
+			if (colorIdx[idx] == currentColor)
 				val = 1.0f - (nCol - 1) * epsilon;
 			else
 				val = epsilon;
@@ -377,6 +419,35 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_qstar(const size_t currentNode, const 
 		else
 			qstar[currentNode] = epsilon;
 	}
+}
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::show_histogram() {
+	std::vector<size_t> histBins(nCol, 0);
+	// Initial check: each value should be 0 <= val < nCol
+	size_t idx = 0;
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { if ((val < 0) | (val >= nCol)) std::cout << "Error in color " << idx << ". Exiting..." << std::endl; idx++;} );
+
+	// Filling histogram bins
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+
+	// finding the correct scaler, so that the maximum bin get printed 80 times (ignoring rounding errors...)
+	auto max_val = std::max_element( std::begin(histBins), std::end(histBins) );
+	size_t scaler = *max_val / 80;
+
+	// Printing the histogram.
+	for (size_t i = 0; i < histBins.size(); i++) {
+		std::cout << i << ": ";
+		// Do not print anything if the bin is empty
+		if (histBins[i] == 0)
+			continue;
+		// Print one "*" if there is at least one node
+		size_t howMany = 1 + (histBins[i] / scaler);
+		for (size_t j = 0; j < howMany; j++)
+			std::cout << "*";
+		std::cout << std::endl;
+	}
+	std::cout << "Each '*' = " << scaler << " nodes" << std::endl;
 }
 
 
