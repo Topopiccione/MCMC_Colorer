@@ -12,6 +12,8 @@ test_01
 
 **/lab.txt
 **/net.txt
+**/lab100000.txt
+**/net100000.txt
 istruzioni_accesso_remoto.txt
 
 **/*.log

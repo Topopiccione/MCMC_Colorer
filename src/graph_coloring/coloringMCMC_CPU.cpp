@@ -190,11 +190,12 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			g_debugger->stop_and_debug();
 
 		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
-		auto minAlpha = std::min( alpha, 0.0f );
+		auto minAlpha = min(alpha, 0.0f);
 		if (alpha != 0) {
 			if (bernie(minAlpha)) {
 				LOG(TRACE) << "Rejecting coloration!" << std::endl;
-			} else {
+			}
+			else {
 				std::swap(C, Cstar);
 				Cviol = Cstarviol;
 				// NOTE: std::vector::swap only swaps the containers. It does NOT invoke any move, copy,
@@ -296,8 +297,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 	// Discriminate wheter current node color is in conflict or not
 	if (Cviols[currentNode] == 1) { // Current color is in a violation state
 		// Handle the special case of nodes conflicting and not having free colors to choose from
-		auto nFreeColors = std::accumulate( std::begin(freeColors), std::end(freeColors), 0 );
-		if ( nFreeColors == 0 ) {
+		auto nFreeColors = std::accumulate(std::begin(freeColors), std::end(freeColors), 0);
+		if (nFreeColors == 0) {
 			std::for_each(std::begin(p), std::end(p), [&](float &val) {
 				if (idx == currentColor)
 					val = 1.0f - (nCol - 1) * epsilon;

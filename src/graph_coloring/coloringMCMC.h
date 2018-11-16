@@ -59,7 +59,9 @@ protected:
 	bool		*	colorsChecker_d;
 	uint32_t	*	orderedColors_d;
 
-	uint32_t	*	statsFreeColors_h;
+	// STATS
+	uint32_t	*	coloring_h;			// each element denotes a color
+	uint32_t	*	statsColors_h;
 	uint32_t	*	statsFreeColors_d;
 	uint32_t		statsFreeColors_max, statsFreeColors_min, statsFreeColors_avg;
 
@@ -87,5 +89,6 @@ namespace ColoringMCMC_k {
 	__global__ void sumReduction(uint32_t nedges, float * conflictCounter_d);
 	__device__ void warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize);
 	__global__ void selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
+	__global__ void selectStarColoringBETA(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
 	__global__ void lookOldColoring(uint32_t nnodes, float * q_d, col_sz nCol, uint32_t * starColoring_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon);
 }
