@@ -43,6 +43,8 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	LOG(TRACE) << TXT_COLMC << "Cviols: allocated " << Cviols.size() << " x " << sizeof(bool) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "Cstarviols: allocated " << Cstarviols.size() << " x " << sizeof(bool) << TXT_NORML;
 
+	colorIdx = std::vector<size_t>( nCol );
+
 	// Starting the RNGs
 	gen = std::default_random_engine(seed);
 	unifInitColors = std::uniform_int_distribution<uint32_t>(0, nCol - 1);
@@ -50,18 +52,18 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	//bernieFreeze = std::bernoulli_distribution(ratioFreezed);
 
 	// Begin with a random coloration (colors range = [0, nCol-1])
+	size_t idx = 0;
 	////////////// Baseline
 	//std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
 	////////////// Non-uniform probabilities
 	// Filling p with color distribution
 	float divider = nCol * (nCol + 1);
-	size_t idx = 0;
 	std::for_each(std::begin(p), std::end(p), [&](float &val) {
 		//val = 2.0f * (float)(idx + 1) / divider;
 		val = 2.0f * (float)(nCol - idx) / divider;
 		idx++;
 	} );
-	// Extract in advance all the experiment probabilities
+	//Extract in advance all the experiment probabilities
 	std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
 	// Run extract_new_color on each node (q vector in ignored)
 	for (idx = 0; idx < nNodes; idx++)
@@ -93,6 +95,11 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	LOG(TRACE) << TXT_COLMC << "Starting MCMC coloring..." << TXT_NORML;
 	auto bernie = [&](float p) {return ((double)rand() / (RAND_MAX)) >= p ? 0 : 1; };
 
+	//std::vector<size_t> colorIdx( nCol );
+	std::vector<size_t> histBins( nCol );
+	//size_t ii = 0;
+	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+
 	size_t iter = 0;
 	size_t maxiter = 250;
 
@@ -106,6 +113,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		LOG(TRACE) << TXT_BIRED << "iteration " << iter << TXT_NORML;
 		// Extract in advance all the experiment probabilities
 		std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
+
+		// Filling histogram bins
+		std::fill( std::begin(histBins), std::end(histBins), 0 );
+		size_t ii = 0;
+		std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+		std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+		std::sort( std::begin(colorIdx), std::end(colorIdx), [&](int i,int j) {return histBins[i] < histBins[j]; } );
 
 		Cviol = violation_count(C, Cviols);
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
@@ -225,7 +239,6 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			}
 		}
 
-
 		iter++;
 		if (iter > maxiter) {
 			LOG(TRACE) << TXT_BIRED << "Maximum iteration reached: exiting..." << TXT_NORML;
@@ -342,13 +355,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 		// Start filling the probabilites and accumulating the reminder
 		idx = 0;
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (freeColors[idx])
+			if (freeColors[colorIdx[idx]])
 				//val = 2.0f * (float)(idx + 1) / divider;
-				val = 2.0f * (float)(nCol - idx) / divider;
+				val = 2.0f * (float)(nCol - colorIdx[idx]) / divider;
 			else {
 				val = epsilon;
 				//reminder += (2.0f * (float)(idx + 1) / divider) - epsilon;
-				reminder += (2.0f * (float)(nCol - idx) / divider) - epsilon;
+				reminder += (2.0f * (float)(nCol - colorIdx[idx]) / divider) - epsilon;
 				nOccup++;
 			}
 			idx++;
@@ -356,7 +369,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 		// Redistributing the reminder on the free colors
 		idx = 0;
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (freeColors[idx])
+			if (freeColors[colorIdx[idx]])
 				val += (reminder / (float) (nCol - nOccup));
 			idx++;
 		});
@@ -369,7 +382,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 	}
 	else { // Current color is NOT in a violation state
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (idx == currentColor)
+			if (colorIdx[idx] == currentColor)
 				val = 1.0f - (nCol - 1) * epsilon;
 			else
 				val = epsilon;
@@ -434,7 +447,8 @@ template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::show_histogram() {
 	std::vector<size_t> histBins(nCol, 0);
 	// Initial check: each value should be 0 <= val < nCol
-	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { if ((val < 0) | (val >= nCol)) std::cout << "Error in output coloring. Exiting..." << std::endl; return;} );
+	size_t idx = 0;
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { if ((val < 0) | (val >= nCol)) std::cout << "Error in color " << idx << ". Exiting..." << std::endl; idx++;} );
 
 	// Filling histogram bins
 	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );

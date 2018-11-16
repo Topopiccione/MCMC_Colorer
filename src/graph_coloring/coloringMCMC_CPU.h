@@ -63,6 +63,8 @@ protected:
 	std::vector<bool>							Cviols;
 	std::vector<bool>							Cstarviols;
 
+	std::vector<size_t>							colorIdx;
+
 	// RNG
 	std::default_random_engine					gen;
 	std::uniform_int_distribution<uint32_t>		unifInitColors;	// For initial coloring extraction
