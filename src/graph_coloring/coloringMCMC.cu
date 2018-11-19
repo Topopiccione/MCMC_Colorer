@@ -47,9 +47,9 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cuSts = cudaMalloc((void**)&orderedColors_d, nnodes * param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	//std::cout << "orderedColors_d:" << nnodes * param.nCol * sizeof(uint32_t) << std::endl;
 #endif // STANDARD
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 	cuSts = cudaMalloc((void**)&probDistribution_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
-#endif // DISTRIBUTION_INIT
+#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
 
 #ifdef STATS
@@ -71,9 +71,9 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #ifdef STANDARD
 	cuSts = cudaFree(orderedColors_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // STANDARD
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 	cuSts = cudaFree(probDistribution_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
-#endif // DISTRIBUTION_INIT
+#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
 	cuSts = cudaFree(conflictCounter_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(q_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
@@ -90,7 +90,7 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #endif // STATS
 }
 
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 __global__ void ColoringMCMC_k::initDistribution(float nCol, float * probDistribution_d) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -99,7 +99,7 @@ __global__ void ColoringMCMC_k::initDistribution(float nCol, float * probDistrib
 
 	probDistribution_d[idx] = 2.0f * (float)(nCol - idx) / (nCol * (nCol + 1));
 }
-#endif // DISTRIBUTION_INIT
+#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
 /**
 * Set coloring_d with random colors
@@ -501,9 +501,11 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef STANDARD_INIT
 	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, randStates);
 #endif // STANDARD_INIT
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 	ColoringMCMC_k::initDistribution << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, probDistribution_d);
 	cudaDeviceSynchronize();
+#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
+#ifdef DISTRIBUTION_INIT
 	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistribution_d, randStates);
 #endif // DISTRIBUTION_INIT
 
@@ -614,11 +616,9 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 	} while (rip < param.maxRip);
 
-#ifdef PRINTS
-#ifdef STATS
+#if defined(PRINTS) && defined(STATS)
 	getStatsNumColors();
-#endif // STATS
-#endif // PRINTS
+#endif // PRINTS && STATS
 }
 
 template<typename nodeW, typename edgeW>

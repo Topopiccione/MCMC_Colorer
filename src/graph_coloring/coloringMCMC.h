@@ -15,13 +15,19 @@
 #define STATS
 #define PRINTS
 
+/**
+* choose one to indicate how to initialize the colors
+*/
 //#define STANDARD_INIT
 #define DISTRIBUTION_INIT
 
+/**
+* choose one to indicate the desired colorer
+*/
 //#define STANDARD
 //#define STANDARD_CUMULATIVE						TODO
-//#define COLOR_BALANCE_ON_NODE_CUMULATIVE
-#define COLOR_DECREASE_LINE_CUMULATIVE
+#define COLOR_BALANCE_ON_NODE_CUMULATIVE
+//#define COLOR_DECREASE_LINE_CUMULATIVE
 //#define COLOR_DECREASE_EXPONENT_CUMULATIVE		TODO
 //#define COLOR_BALANCE_LINE_CUMULATIVE				TODO
 //#define COLOR_BALANCE_EXPONENT_CUMULATIVE			TODO
@@ -73,9 +79,9 @@ protected:
 #ifdef STANDARD
 	uint32_t	*	orderedColors_d;
 #endif // STANDARD
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 	float		*	probDistribution_d;
-#endif // DISTRIBUTION_INIT
+#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
 	// STATS
 	uint32_t	*	coloring_h;			// each element denotes a color
@@ -108,10 +114,12 @@ namespace ColoringMCMC_k {
 	__global__ void initColoring(uint32_t nnodes, uint32_t * coloring_d, float nCol, curandState * states);
 #endif // STANDARD_INIT
 
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 	__global__ void initDistribution(float nCol, float * probDistribution_d);
+#endif
+#ifdef DISTRIBUTION_INIT
 	__global__ void initColoringWithDistribution(uint32_t nnodes, uint32_t * coloring_d, float nCol, float * probDistribution_d, curandState * states);
-#endif // DISTRIBUTION_INIT
+#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
 	__global__ void logarithmer(uint32_t nnodes, float * values);
 	__global__ void conflictChecker(uint32_t nedges, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * edges);
