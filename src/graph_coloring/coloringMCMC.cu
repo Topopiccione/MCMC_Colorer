@@ -91,13 +91,13 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 }
 
 #if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
-__global__ void ColoringMCMC_k::initDistribution(float nCol, float * probDistribution_d) {
+__global__ void ColoringMCMC_k::initDistribution(float nCol, float denom, float lambda, float * probDistribution_d) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nCol)
 		return;
 
-	probDistribution_d[idx] = 2.0f * (float)(nCol - idx) / (nCol * (nCol + 1));
+	probDistribution_d[idx] = (float)(nCol - lambda * idx) / denom;
 }
 #endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
@@ -502,7 +502,15 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, randStates);
 #endif // STANDARD_INIT
 #if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
-	ColoringMCMC_k::initDistribution << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, probDistribution_d);
+	float denom = 0;
+	for (int i = 0; i < param.nCol; i++)
+	{
+		denom += param.nCol - param.lambda * i;
+	}
+#ifdef PRINTS
+	std::cout << "denom = " << denom << std::endl;
+#endif // PRINTS
+	ColoringMCMC_k::initDistribution << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, denom, param.lambda, probDistribution_d);
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 #ifdef DISTRIBUTION_INIT

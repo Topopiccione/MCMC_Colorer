@@ -26,8 +26,8 @@
 */
 //#define STANDARD
 //#define STANDARD_CUMULATIVE						TODO
-#define COLOR_BALANCE_ON_NODE_CUMULATIVE
-//#define COLOR_DECREASE_LINE_CUMULATIVE
+//#define COLOR_BALANCE_ON_NODE_CUMULATIVE
+#define COLOR_DECREASE_LINE_CUMULATIVE
 //#define COLOR_DECREASE_EXPONENT_CUMULATIVE		TODO
 //#define COLOR_BALANCE_LINE_CUMULATIVE				TODO
 //#define COLOR_BALANCE_EXPONENT_CUMULATIVE			TODO
@@ -115,7 +115,7 @@ namespace ColoringMCMC_k {
 #endif // STANDARD_INIT
 
 #if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
-	__global__ void initDistribution(float nCol, float * probDistribution_d);
+	__global__ void initDistribution(float nCol, float denom, float lambda, float * probDistribution_d);
 #endif
 #ifdef DISTRIBUTION_INIT
 	__global__ void initColoringWithDistribution(uint32_t nnodes, uint32_t * coloring_d, float nCol, float * probDistribution_d, curandState * states);
