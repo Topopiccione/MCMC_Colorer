@@ -130,12 +130,13 @@ int main(int argc, char *argv[]) {
 
 	ColoringMCMCParams params;
 	params.nCol = 200;	//test.getMaxNodeDeg() / 2.0f;
+	//params.nCol = 80;
 	params.epsilon = 1e-8f;
 	params.lambda = 1.2f;
 	//params.lambda = test.getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
-	//params.maxRip = 4;
 	params.maxRip = 250;
+	//params.maxRip = 4;
 
 	/*ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
 	g_debugger = new dbg(&test, &mcmc_cpu);
@@ -152,40 +153,6 @@ int main(int argc, char *argv[]) {
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
 	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
-
-	float cont = 0;
-	float nneighs = 10;
-	float nCol = 7;
-	float epsilon = 0.001;
-	float Zp = 3, Zn = 4;
-	float a[7] = { 2, 0, 2, 5, 0, 0, 1 };
-
-	for (int i = 0; i < 7; i++)
-	{
-		float q = (1 - (a[i] / nneighs)) / (nCol - 1);
-		std::cout << q << std::endl;
-		cont += q;
-	}
-	std::cout << "res: " << cont << std::endl;
-
-	cont = 0;
-	for (int i = 0; i < 7; i++)
-	{
-		//float n = nCol;
-		float n = 2;
-		float q = (1 - (a[i] / nneighs)) / (nCol - 1);
-		q /= n;
-
-		//float q = a[i] / nneighs;
-		//std::cout << q << std::endl;
-		if (a[i] == 0)
-			q += ((n - 1) / n) / Zp;
-		//else
-			//q /= 2.;
-		std::cout << "---" << q << std::endl;
-		cont += q;
-	}
-	std::cout << "res: " << cont << std::endl;
 
 	if (g_debugger != nullptr)
 		delete g_debugger;

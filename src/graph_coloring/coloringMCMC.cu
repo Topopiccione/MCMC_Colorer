@@ -2,10 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "coloringMCMC.h"
 
-#define STATS
-#define PRINTS
-#define BETA 
-
 template<typename nodeW, typename edgeW>
 ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params) :
 	Colorer<nodeW, edgeW>(inGraph_d),
@@ -21,6 +17,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	numThreads = 32;
 	threadsPerBlock = dim3(numThreads, 1, 1);
 	blocksPerGrid = dim3((nnodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
+	blocksPerGrid_nCol = dim3((param.nCol + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_half = dim3(((nnodes / 2) + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_edges = dim3((nedges + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_half_edges = dim3(((nedges / 2) + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
@@ -45,9 +42,14 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 
 
 	cuSts = cudaMalloc((void**)&colorsChecker_d, nnodes * param.nCol * sizeof(bool));	cudaCheck(cuSts, __FILE__, __LINE__);
-	cuSts = cudaMalloc((void**)&orderedColors_d, nnodes * param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	//std::cout << "colorsChecker_d: " << nnodes * param.nCol * sizeof(bool) << std::endl;
+#ifdef STANDARD
+	cuSts = cudaMalloc((void**)&orderedColors_d, nnodes * param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	//std::cout << "orderedColors_d:" << nnodes * param.nCol * sizeof(uint32_t) << std::endl;
+#endif // STANDARD
+#ifdef DISTRIBUTION_INIT
+	cuSts = cudaMalloc((void**)&probDistribution_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // DISTRIBUTION_INIT
 
 
 #ifdef STATS
@@ -55,8 +57,6 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	statsColors_h = (uint32_t *)malloc(nnodes * sizeof(uint32_t));
 	cuSts = cudaMalloc((void**)&statsFreeColors_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif
-
-	divider = 1 / ((float)params.nCol);
 
 	/*cudaMemGetInfo(&free_mem, &total_mem);
 	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;*/
@@ -68,7 +68,12 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(starColoring_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 
 	cuSts = cudaFree(colorsChecker_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
+#ifdef STANDARD
 	cuSts = cudaFree(orderedColors_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // STANDARD
+#ifdef DISTRIBUTION_INIT
+	cuSts = cudaFree(probDistribution_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // DISTRIBUTION_INIT
 
 	cuSts = cudaFree(conflictCounter_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(q_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
@@ -82,13 +87,25 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #ifdef STATS
 	free(statsColors_h);
 	cuSts = cudaFree(statsFreeColors_d);	cudaCheck(cuSts, __FILE__, __LINE__);
-#endif
+#endif // STATS
 }
+
+#ifdef DISTRIBUTION_INIT
+__global__ void ColoringMCMC_k::initDistribution(float nCol, float * probDistribution_d) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nCol)
+		return;
+
+	probDistribution_d[idx] = 2.0f * (float)(nCol - idx) / (nCol * (nCol + 1));
+}
+#endif // DISTRIBUTION_INIT
 
 /**
 * Set coloring_d with random colors
 */
-__global__ void ColoringMCMC_k::initColoring(uint32_t nnodes, uint32_t * coloring_d, float divider, curandState * states) {
+#ifdef STANDARD_INIT
+__global__ void ColoringMCMC_k::initColoring(uint32_t nnodes, uint32_t * coloring_d, float nCol, curandState * states) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -97,11 +114,38 @@ __global__ void ColoringMCMC_k::initColoring(uint32_t nnodes, uint32_t * colorin
 
 	float randnum = curand_uniform(&states[idx]);
 
-	int color = (int)(randnum / divider);
+	int color = (int)(randnum * nCol);
 
 	coloring_d[idx] = color;
 	//coloring_d[idx] = 0;
 }
+#endif // STANDARD_INIT
+
+/**
+* Set coloring_d with random colors
+*/
+#ifdef DISTRIBUTION_INIT
+__global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, uint32_t * coloring_d, float nCol, float * probDistribution_d, curandState * states) {
+
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes)
+		return;
+
+	float randnum = curand_uniform(&states[idx]);
+
+	int color = 0;
+	float threshold = 0;
+	while (threshold < randnum)
+	{
+		threshold += probDistribution_d[color];
+		color++;
+	}
+
+	coloring_d[idx] = color - 1;
+}
+#endif // DISTRIBUTION_INIT
+
 /**
 * Apply logarithm to all values
 */
@@ -210,6 +254,7 @@ __global__ void ColoringMCMC_k::sumReduction(uint32_t nedges, float * conflictCo
 * For every node, look at neighbors and select a new color.
 * This will be write in starColoring_d and the probability of the chosen color will be write in qStar_d
 */
+#ifdef STANDARD
 __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -239,7 +284,7 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 
 #ifdef STATS
 	statsFreeColors_d[idx] = Zp;
-#endif
+#endif // STATS
 
 	if (!Zp)													//manage exception of no free colors
 	{
@@ -284,8 +329,10 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 		}
 	}
 }
+#endif // STANDARD
 
-__global__ void ColoringMCMC_k::selectStarColoringBETA(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
+#ifdef COLOR_BALANCE_ON_NODE_CUMULATIVE
+__global__ void ColoringMCMC_k::selectStarColoringBalanceOnNode_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float partition, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -297,66 +344,11 @@ __global__ void ColoringMCMC_k::selectStarColoringBETA(uint32_t nnodes, uint32_t
 
 	uint32_t nodeCol = coloring_d[idx];							//node color
 
-	bool * colorsChecker = &(colorsChecker_d[idx * nCol]);		//array used to set to count how many times a color is used from the neighbors
+	bool * colorsChecker = &(colorsChecker_d[idx * nCol]);		//array used to count how many times a color is used from the neighbors
 	for (int i = 0; i < nneighs; i++) {
 		colorsChecker[coloring_d[neighs[index + i]]]++;
 	}
 
-	//**************************** TENTATIVO 1
-	////if (colorsChecker[nodeCol] > 0) {
-	//float randnum = curand_uniform(&states[idx]);				//random number
-
-	//float threshold = 0;
-	//float q;
-	//int i = 0;
-	//do {
-	//	q = (1 - ((float)colorsChecker[i] / (float)nneighs)) / ((float)nCol - 1);
-	//	threshold += q;
-	//	i++;
-	//} while (threshold < randnum);
-
-	//qStar_d[idx] = q;											//save the probability of the color chosen
-	//starColoring_d[idx] = i - 1;
-	////}
-	////else {
-	//	//qStar_d[idx] = (1 - ((float)colorsChecker[nodeCol] / (float)nneighs)) / ((float)nCol - 1);
-	//	//starColoring_d[idx] = nodeCol;
-	////}
-
-	////**************************** TENTATIVO 2
-	//uint32_t Zp = nCol, Zn = 0;									//number of free colors (p) and occupied colors (n)
-	//for (int i = 0; i < nCol; i++)
-	//{
-	//	Zn += colorsChecker[i] != 0;
-	//}
-	//Zp = nCol - Zn;
-
-	////if (colorsChecker[nodeCol] > 0) {
-	//float randnum = curand_uniform(&states[idx]);				//random number
-
-	//float threshold = 0;
-	//float q;
-	//int i = 0;
-	//do {
-	//	q = 1 - ((float)colorsChecker[i] / (float)nneighs);
-	//	if (colorsChecker[i] == 0)
-	//		q += (1 - epsilon * Zn) / Zp;
-	//	else
-	//		q += epsilon;
-	//	q /= nCol;
-	//	threshold += q;
-	//	i++;
-	//} while (threshold < randnum);
-
-	//qStar_d[idx] = q;											//save the probability of the color chosen
-	//starColoring_d[idx] = i - 1;
-	////}
-	////else {
-	//	//qStar_d[idx] = (1 - ((float)colorsChecker[nodeCol] / (float)nneighs)) / ((float)nCol - 1);
-	//	//starColoring_d[idx] = nodeCol;
-	////}
-
-	//**************************** TENTATIVO 3
 	if (colorsChecker[nodeCol] > 0) {
 		float randnum = curand_uniform(&states[idx]);				//random number
 
@@ -370,7 +362,6 @@ __global__ void ColoringMCMC_k::selectStarColoringBETA(uint32_t nnodes, uint32_t
 
 		float threshold = 0;
 		float q;
-		float partition = 15;
 		int i = 0;
 		do {
 			q = (1 - ((float)colorsChecker[i] / (float)nneighs)) / ((float)nCol - 1);
@@ -389,15 +380,68 @@ __global__ void ColoringMCMC_k::selectStarColoringBETA(uint32_t nnodes, uint32_t
 		qStar_d[idx] = (1 - ((float)colorsChecker[nodeCol] / (float)nneighs)) / ((float)nCol - 1);
 		starColoring_d[idx] = nodeCol;
 	}
-	/*if (idx == 0) {
-		printf("randnum %f\n", randnum);
-		printf("colorsChecker[i] %d\n", colorsChecker[i]);
-		printf("nneighs %d\n", nneighs);
-		printf("q %f\n", q);
-		printf("threshold %f\n", threshold);
-		printf("i %d\n", i);
-	}*/
 }
+#endif // COLOR_BALANCE_ON_NODE_CUMULATIVE
+
+#ifdef COLOR_DECREASE_LINE_CUMULATIVE
+__global__ void ColoringMCMC_k::selectStarColoringDecreaseLine_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
+
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes)
+		return;
+
+	uint32_t index = cumulDegs[idx];							//index of the node in neighs
+	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
+
+	uint32_t nodeCol = coloring_d[idx];							//node color
+
+	bool * colorsChecker = &(colorsChecker_d[idx * nCol]);		//array used to set if a color is used from the neighbors
+	for (int i = 0; i < nneighs; i++) {
+		colorsChecker[coloring_d[neighs[index + i]]] = 1;
+	}
+
+	float reminder = 0;
+	uint32_t Zn = 0, Zp = nCol;									//number of free colors (p) and occupied colors (n)
+	for (int i = 0; i < nCol; i++)
+	{
+		Zn += colorsChecker[i] != 0;
+		reminder += (colorsChecker[i] != 0) * (probDistribution_d[i] - epsilon);
+	}
+	Zp -= Zn;
+	reminder /= Zp;
+
+	if (!Zp)													//manage exception of no free colors
+	{
+		starColoring_d[idx] = nodeCol;
+		qStar_d[idx] = 1;
+		return;
+	}
+
+	int i = 0;
+	float q;
+	float threshold = 0;
+	float randnum = curand_uniform(&states[idx]);				//random number
+	if (colorsChecker[nodeCol])									//if node color is used by neighbors
+	{
+		do {
+			q = (probDistribution_d[i] + reminder) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
+			threshold += q;
+			i++;
+		} while (threshold < randnum);
+	}
+	else
+	{
+		do {
+			q = (1.0f - (nCol - 1) * epsilon) * (nodeCol == i) + (epsilon) * (nodeCol != i);
+			threshold += q;
+			i++;
+		} while (threshold < randnum);
+	}
+	qStar_d[idx] = q;											//save the probability of the color chosen
+	starColoring_d[idx] = i - 1;
+}
+#endif // COLOR_DECREASE_LINE_CUMULATIVE
 
 /**
 * For every node, look at neighbors.
@@ -454,7 +498,17 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 	cuSts = cudaMemset(coloring_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
 
-	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, divider, randStates);
+#ifdef STANDARD_INIT
+	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, randStates);
+#endif // STANDARD_INIT
+#ifdef DISTRIBUTION_INIT
+	ColoringMCMC_k::initDistribution << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, probDistribution_d);
+	cudaDeviceSynchronize();
+	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistribution_d, randStates);
+#endif // DISTRIBUTION_INIT
+
+	getStatsNumColors();
+
 	cudaDeviceSynchronize();
 
 	do {
@@ -469,17 +523,22 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef PRINTS
 		std::cout << "***** Tentativo numero: " << rip << std::endl;
 		std::cout << "conflitti rilevati: " << conflictCounter << std::endl;
-#endif
+#endif // PRINTS
 
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
+
+#ifdef STANDARD
 		cudaMemset(orderedColors_d, 0, nnodes * param.nCol * sizeof(uint32_t));
-
-
-#ifdef BETA
-		ColoringMCMC_k::selectStarColoringBETA << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, orderedColors_d, randStates, param.epsilon, statsFreeColors_d);
-#else
 		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, orderedColors_d, randStates, param.epsilon, statsFreeColors_d);
-#endif // !BETA
+#endif // STANDARD
+#ifdef COLOR_BALANCE_ON_NODE_CUMULATIVE
+		float partition = 15;
+		ColoringMCMC_k::selectStarColoringBalanceOnNode_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, randStates, partition, param.epsilon, statsFreeColors_d);
+#endif // COLOR_BALANCE_ON_NODE_CUMULATIVE
+#ifdef COLOR_DECREASE_LINE_CUMULATIVE
+		ColoringMCMC_k::selectStarColoringDecreaseLine_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistribution_d, randStates, param.epsilon, statsFreeColors_d);
+#endif // COLOR_DECREASE_LINE_CUMULATIVE
+
 		cudaDeviceSynchronize();
 
 		/*cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
@@ -487,14 +546,14 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		cudaDeviceSynchronize();*/
 
 #ifdef STATS
-		getStats();
-#endif
+		getStatsFreeColors();
+#endif // STATS
 
 		calcConflicts(conflictCounterStar, starColoring_d);
 
 #ifdef PRINTS
 		std::cout << "nuovi conflitti rilevati: " << conflictCounterStar << std::endl;
-#endif
+#endif // PRINTS
 
 #ifdef PRINTS
 		/*cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
@@ -525,7 +584,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		}
 		std::cout << "numberOfEpsilonStar: " << numberOfEpsilonStar << " numberOfChangeColorStar: " << numberOfChangeColorStar << " numberOfSameColorStar: " << numberOfSameColorStar << std::endl;
 		std::cout << "numberOfEpsilon: " << numberOfEpsilon << " numberOfChangeColor: " << numberOfChangeColor << " numberOfSameColor: " << numberOfSameColor << std::endl;*/
-#endif
+#endif // PRINTS
 
 		//calcProbs();
 
@@ -542,12 +601,12 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		std::cout << "left: " << param.lambda * (conflictCounter - conflictCounterStar) << " right:" << p - pStar << std::endl;
 		std::cout << "result: " << result << std::endl;*/
 		//std::cout << "random: " << random << std::endl;
-#endif
+#endif // PRINTS
 
 		//if (random < result) {
 #ifdef PRINTS
 		std::cout << "CHANGE" << std::endl;
-#endif
+#endif // PRINTS
 		switchPointer = coloring_d;
 		coloring_d = starColoring_d;
 		starColoring_d = switchPointer;
@@ -555,43 +614,11 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 	} while (rip < param.maxRip);
 
+#ifdef PRINTS
 #ifdef STATS
-	cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
-	for (int i = 0; i < nnodes; i++)
-	{
-		statsColors_h[coloring_h[i]]++;
-	}
-	int counter = 0;
-	int max_i = 0, min_i = nnodes;
-	int max_c = 0, min_c = nnodes;
-	int divider = 5;
-	for (int i = 0; i < param.nCol; i++)
-	{
-		std::cout << "Color " << i << " ";
-		for (int j = 0; j < statsColors_h[i] / divider; j++)
-		{
-			std::cout << "*";
-		}
-		std::cout << std::endl;
-		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
-		if (statsColors_h[i] > 0) {
-			counter++;
-			if (statsColors_h[i] > max_c) {
-				max_i = i;
-				max_c = statsColors_h[i];
-			}
-			if (statsColors_h[i] < min_c) {
-				min_i = i;
-				min_c = statsColors_h[i];
-			}
-		}
-	}
-	std::cout << "Number of used colors is " << counter << " on " << param.nCol << " available" << std::endl;
-	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
-	std::cout << "Least used colors is " << min_i << " used " << min_c << " times" << std::endl;
-	std::cout << "Generic average nnodes / ncol " << (float)nnodes / (float)param.nCol << std::endl;
+	getStatsNumColors();
 #endif // STATS
+#endif // PRINTS
 }
 
 template<typename nodeW, typename edgeW>
@@ -610,7 +637,7 @@ void ColoringMCMC<nodeW, edgeW>::calcConflicts(int &conflictCounter, uint32_t * 
 }
 
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::getStats() {
+void ColoringMCMC<nodeW, edgeW>::getStatsFreeColors() {
 	cuSts = cudaMemcpy(statsColors_h, statsFreeColors_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	statsFreeColors_max = statsFreeColors_avg = 0;
 	statsFreeColors_min = param.nCol + 1;
@@ -622,6 +649,53 @@ void ColoringMCMC<nodeW, edgeW>::getStats() {
 	}
 	statsFreeColors_avg /= (float)nnodes;
 	std::cout << "Max Free Colors: " << statsFreeColors_max << " - Min Free Colors: " << statsFreeColors_min << " - AVG Free Colors: " << statsFreeColors_avg << std::endl;
+}
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
+	cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
+	for (int i = 0; i < nnodes; i++)
+	{
+		statsColors_h[coloring_h[i]]++;
+	}
+	int counter = 0;
+	int max_i = 0, min_i = nnodes;
+	int max_c = 0, min_c = nnodes;
+
+	for (int i = 0; i < param.nCol; i++)
+	{
+		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
+		if (statsColors_h[i] > 0) {
+			counter++;
+			if (statsColors_h[i] > max_c) {
+				max_i = i;
+				max_c = statsColors_h[i];
+			}
+			if (statsColors_h[i] < min_c) {
+				min_i = i;
+				min_c = statsColors_h[i];
+			}
+		}
+	}
+
+	int divider = max_c / (param.nCol / 3);
+	for (int i = 0; i < param.nCol; i++)
+	{
+		std::cout << "Color " << i << " ";
+		for (int j = 0; j < statsColors_h[i] / divider; j++)
+		{
+			std::cout << "*";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << "Every * is " << divider << " nodes" << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "Number of used colors is " << counter << " on " << param.nCol << " available" << std::endl;
+	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
+	std::cout << "Least used colors is " << min_i << " used " << min_c << " times" << std::endl;
+	std::cout << "Generic average nnodes / ncol " << (float)nnodes / (float)param.nCol << std::endl;
 }
 
 template<typename nodeW, typename edgeW>
