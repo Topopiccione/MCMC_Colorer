@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 	params.nCol = 200;	//test.getMaxNodeDeg() / 2.0f;
 	//params.nCol = 80;
 	params.epsilon = 1e-8f;
-	params.lambda = 1.2f;
+	params.lambda = 0.1f;
 	//params.lambda = test.getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
 	params.maxRip = 250;

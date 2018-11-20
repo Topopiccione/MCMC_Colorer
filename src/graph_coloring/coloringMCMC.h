@@ -19,7 +19,8 @@
 * choose one to indicate how to initialize the colors
 */
 //#define STANDARD_INIT
-#define DISTRIBUTION_INIT
+//#define DISTRIBUTION_LINE_INIT
+#define DISTRIBUTION_EXP_INIT
 
 /**
 * choose one to indicate the desired colorer
@@ -27,10 +28,10 @@
 //#define STANDARD
 //#define STANDARD_CUMULATIVE						TODO
 //#define COLOR_BALANCE_ON_NODE_CUMULATIVE
-#define COLOR_DECREASE_LINE_CUMULATIVE
-//#define COLOR_DECREASE_EXPONENT_CUMULATIVE		TODO
+//#define COLOR_DECREASE_LINE_CUMULATIVE
+#define COLOR_DECREASE_EXP_CUMULATIVE				
 //#define COLOR_BALANCE_LINE_CUMULATIVE				TODO
-//#define COLOR_BALANCE_EXPONENT_CUMULATIVE			TODO
+//#define COLOR_BALANCE_EXP_CUMULATIVE				TODO
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
@@ -79,9 +80,12 @@ protected:
 #ifdef STANDARD
 	uint32_t	*	orderedColors_d;
 #endif // STANDARD
-#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
-	float		*	probDistribution_d;
-#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
+#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
+	float		*	probDistributionLine_d;
+#endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE_CUMULATIVE
+#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
+	float		*	probDistributionExp_d;
+#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP_CUMULATIVE
 
 	// STATS
 	uint32_t	*	coloring_h;			// each element denotes a color
@@ -110,16 +114,19 @@ protected:
 
 namespace ColoringMCMC_k {
 
+#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
+	__global__ void initDistributionLine(float nCol, float denom, float lambda, float * probDistributionLine_d);
+#endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE_CUMULATIVE
+#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
+	__global__ void initDistributionExp(float nCol, float denom, float lambda, float * probDistributionExp_d);
+#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP_CUMULATIVE
+
 #ifdef STANDARD_INIT
 	__global__ void initColoring(uint32_t nnodes, uint32_t * coloring_d, float nCol, curandState * states);
 #endif // STANDARD_INIT
-
-#if defined(DISTRIBUTION_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
-	__global__ void initDistribution(float nCol, float denom, float lambda, float * probDistribution_d);
-#endif
-#ifdef DISTRIBUTION_INIT
+#if defined(DISTRIBUTION_LINE_INIT) || defined(DISTRIBUTION_EXP_INIT)
 	__global__ void initColoringWithDistribution(uint32_t nnodes, uint32_t * coloring_d, float nCol, float * probDistribution_d, curandState * states);
-#endif // DISTRIBUTION_INIT || COLOR_DECREASE_LINE_CUMULATIVE
+#endif // DISTRIBUTION_LINE_INIT || DISTRIBUTION_EXP_INIT
 
 	__global__ void logarithmer(uint32_t nnodes, float * values);
 	__global__ void conflictChecker(uint32_t nedges, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * edges);
@@ -132,9 +139,9 @@ namespace ColoringMCMC_k {
 #ifdef COLOR_BALANCE_ON_NODE_CUMULATIVE
 	__global__ void selectStarColoringBalanceOnNode_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float partition, float epsilon, uint32_t * statsFreeColors_d);
 #endif // !COLOR_BALANCE_ON_NODE_CUMULATIVE
-#ifdef COLOR_DECREASE_LINE_CUMULATIVE
-	__global__ void selectStarColoringDecreaseLine_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
-#endif // COLOR_DECREASE_LINE_CUMULATIVE
+#if defined(COLOR_DECREASE_LINE_CUMULATIVE) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
+	__global__ void selectStarColoringDecrease_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
+#endif // COLOR_DECREASE_LINE_CUMULATIVE || COLOR_DECREASE_EXP_CUMULATIVE
 
 	__global__ void lookOldColoring(uint32_t nnodes, float * q_d, col_sz nCol, uint32_t * starColoring_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon);
 }
