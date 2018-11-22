@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMCParams params;
-	params.nCol = 200;	//test.getMaxNodeDeg() / 2.0f;
+	params.nCol = 75;	//test.getMaxNodeDeg() / 2.0f;
 	//params.nCol = 80;
 	params.epsilon = 1e-8f;
 	params.lambda = 0.1f;
@@ -138,21 +138,21 @@ int main(int argc, char *argv[]) {
 	params.maxRip = 250;
 	//params.maxRip = 4;
 
-	/*ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
+	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
 	g_debugger = new dbg(&test, &mcmc_cpu);
 	start = std::clock();
 	mcmc_cpu.run();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	mcmc_cpu.show_histogram();
-	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;*/
+	//mcmc_cpu.show_histogram();
+	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
-	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
-
-	start = std::clock();
-	colMCMC.run();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-
-	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+	// ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+	//
+	// start = std::clock();
+	// colMCMC.run();
+	// duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	//
+	// LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
 
 	if (g_debugger != nullptr)
 		delete g_debugger;
