@@ -246,6 +246,15 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			break;
 		}
 	}
+
+	// Print stats
+	size_t usedCols = 0;
+	size_t idx = 0;
+	std::fill( std::begin(histBins), std::end(histBins), 0 );
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {if (val) usedCols++;} );
+	std::cout << "numero di colori: " << nCol << " - colori utilizzati: " << usedCols << std::endl;
+
 }
 
 
