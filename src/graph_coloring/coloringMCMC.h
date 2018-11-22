@@ -15,6 +15,9 @@
 #define STATS
 #define PRINTS
 
+#define FIXED_N_COLORS
+//#define DYNAMIC_N_COLORS
+
 /**
 * choose one to indicate how to initialize the colors
 */
@@ -80,6 +83,7 @@ protected:
 #ifdef STANDARD
 	uint32_t	*	orderedColors_d;
 #endif // STANDARD
+
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
 	float		*	probDistributionLine_d;
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE_CUMULATIVE

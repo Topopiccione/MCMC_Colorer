@@ -160,7 +160,7 @@ __global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, ui
 		color++;
 	}
 
-	if (idx == 0) {
+	/*if (idx == 0) {
 		float a = 0;
 		for (int i = 0; i < nCol; i++)
 		{
@@ -168,7 +168,7 @@ __global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, ui
 			printf("parziale : %f\n", probDistribution_d[i]);
 		}
 		printf("totale : %f\n", a);
-	}
+	}*/
 
 	coloring_d[idx] = color - 1;
 }
@@ -316,8 +316,14 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 
 	if (!Zp)													//manage exception of no free colors
 	{
+#ifdef FIXED_N_COLORS
 		starColoring_d[idx] = nodeCol;
 		qStar_d[idx] = 1;
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+		starColoring_d[idx] = nCol;
+		qStar_d[idx] = 1;
+#endif // DYNAMIC_N_COLORS
 		return;
 	}
 
@@ -547,8 +553,14 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
 #ifdef STANDARD_INIT
+#ifdef FIXED_N_COLORS
 	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, randStates);
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.startingNCol, randStates);
+#endif // DYNAMIC_N_COLORS
 #endif // STANDARD_INIT
+
 #ifdef DISTRIBUTION_LINE_INIT
 	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistributionLine_d, randStates);
 #endif // DISTRIBUTION_LINE_INIT
@@ -557,9 +569,9 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #endif // DISTRIBUTION_EXP_INIT
 	cudaDeviceSynchronize();
 
-#ifdef STATS
+#if defined(PRINTS) && defined(STATS)
 	getStatsNumColors();
-#endif // STATS
+#endif // PRINTS && STATS
 
 	do {
 
@@ -579,8 +591,26 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 
 #ifdef STANDARD
 		cudaMemset(orderedColors_d, 0, nnodes * param.nCol * sizeof(uint32_t));
+#ifdef FIXED_N_COLORS
 		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, orderedColors_d, randStates, param.epsilon, statsFreeColors_d);
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, orderedColors_d, randStates, param.epsilon, statsFreeColors_d);
+		cudaDeviceSynchronize();
+		cuSts = cudaMemcpy(coloring_h, starColoring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		for (uint32_t i = 0; i < nnodes; i++)
+		{
+			if (coloring_h[i] == param.startingNCol)
+			{
+				std::cout << "###############################################" << std::endl;
+				param.startingNCol++;
+				i = nnodes;
+			}
+		}
+		std::cout << "startingNCol = " << param.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
 #endif // STANDARD
+
 #ifdef COLOR_BALANCE_ON_NODE_CUMULATIVE
 		float partition = 15;
 		ColoringMCMC_k::selectStarColoringBalanceOnNode_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, randStates, partition, param.epsilon, statsFreeColors_d);
@@ -665,10 +695,14 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		starColoring_d = switchPointer;
 		//}
 
+#if defined(PRINTS) && defined(STATS)
+		getStatsNumColors();
+#endif // PRINTS && STATS
+
 	} while (rip < param.maxRip);
 
 #if defined(PRINTS) && defined(STATS)
-	getStatsNumColors();
+	//getStatsNumColors();
 #endif // PRINTS && STATS
 }
 
@@ -714,7 +748,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	int max_i = 0, min_i = nnodes;
 	int max_c = 0, min_c = nnodes;
 
-	for (int i = 0; i < param.nCol; i++)
+	for (int i = 0; i < param.startingNCol; i++)
 	{
 		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
 		if (statsColors_h[i] > 0) {
@@ -731,7 +765,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	}
 
 	int divider = max_c / (param.nCol / 3);
-	for (int i = 0; i < param.nCol; i++)
+	for (int i = 0; i < param.startingNCol; i++)
 	{
 		std::cout << "Color " << i << " ";
 		for (int j = 0; j < statsColors_h[i] / divider; j++)
@@ -743,7 +777,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	std::cout << "Every * is " << divider << " nodes" << std::endl;
 	std::cout << std::endl;
 
-	std::cout << "Number of used colors is " << counter << " on " << param.nCol << " available" << std::endl;
+	std::cout << "Number of used colors is " << counter << " on " << param.startingNCol << " available" << std::endl;
 	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
 	std::cout << "Least used colors is " << min_i << " used " << min_c << " times" << std::endl;
 	std::cout << "Generic average nnodes / ncol " << (float)nnodes / (float)param.nCol << std::endl;
