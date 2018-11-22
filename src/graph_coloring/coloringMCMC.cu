@@ -473,6 +473,8 @@ __global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t n
 		} while (threshold < randnum);
 	}
 	qStar_d[idx] = q;											//save the probability of the color chosen
+	if ((i - 1) >= nCol)										//TEMP
+		i = nCol;
 	starColoring_d[idx] = i - 1;
 }
 #endif // COLOR_DECREASE_LINE_CUMULATIVE || COLOR_DECREASE_EXP_CUMULATIVE
@@ -748,7 +750,14 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	int max_i = 0, min_i = nnodes;
 	int max_c = 0, min_c = nnodes;
 
-	for (int i = 0; i < param.startingNCol; i++)
+#ifdef FIXED_N_COLORS
+	int numberOfCol = param.nCol;
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+	int numberOfCol = param.startingNCol;
+#endif // DYNAMIC_N_COLORS
+
+	for (int i = 0; i < numberOfCol; i++)
 	{
 		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
 		if (statsColors_h[i] > 0) {
@@ -765,7 +774,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	}
 
 	int divider = max_c / (param.nCol / 3);
-	for (int i = 0; i < param.startingNCol; i++)
+	for (int i = 0; i < numberOfCol; i++)
 	{
 		std::cout << "Color " << i << " ";
 		for (int j = 0; j < statsColors_h[i] / divider; j++)
@@ -777,7 +786,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	std::cout << "Every * is " << divider << " nodes" << std::endl;
 	std::cout << std::endl;
 
-	std::cout << "Number of used colors is " << counter << " on " << param.startingNCol << " available" << std::endl;
+	std::cout << "Number of used colors is " << counter << " on " << numberOfCol << " available" << std::endl;
 	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
 	std::cout << "Least used colors is " << min_i << " used " << min_c << " times" << std::endl;
 	std::cout << "Generic average nnodes / ncol " << (float)nnodes / (float)param.nCol << std::endl;
