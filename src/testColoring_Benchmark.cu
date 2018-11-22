@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMCParams params;
-	params.nCol = 80;	//test.getMaxNodeDeg() / 2.0f;
+	params.nCol = 150;	//test.getMaxNodeDeg() / 2.0f;
 	//params.nCol = 80;
 	params.epsilon = 1e-8f;
 	params.lambda = 0.1f;
