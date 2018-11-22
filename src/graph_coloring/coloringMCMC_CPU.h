@@ -80,6 +80,9 @@ protected:
 	float										epsilon;
 	float										ratioFreezed;
 
+	float										expLambda;
+	float										divider;
+
 	// Vars
 	size_t										Cviol;		// # of violation in C
 	size_t										Cstarviol;	// # of violation in Cstar
