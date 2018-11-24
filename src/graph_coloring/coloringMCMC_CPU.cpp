@@ -442,6 +442,12 @@ void ColoringMCMC_CPU<nodeW, edgeW>::extract_new_color(const size_t currentNode,
 			break;
 	}
 
+	// fix for overflowing
+	if (idx >= nCol) {
+		idx = rand() % (nCol - 1);
+		std::cout << TXT_BIRED << "X" << TXT_NORML << std::endl;
+	}
+
 	qVect[currentNode] = pVect[idx];
 	newColoring[currentNode] = idx;
 }
