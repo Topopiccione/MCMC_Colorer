@@ -121,15 +121,15 @@ int main(int argc, char *argv[]) {
 	GPURand GPURandGen(test.getStruct()->nNodes, (long)commandLine.seed);
 
 	//// GPU Luby coloring
-	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
-	start = std::clock();
-	colLuby.run_fast();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+	// ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
+	// start = std::clock();
+	// colLuby.run_fast();
+	// duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	// LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
+	// LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMCParams params;
-	params.nCol = 150;	//test.getMaxNodeDeg() / 2.0f;
+	params.nCol = test.getMaxNodeDeg();
 	//params.nCol = 80;
 	params.epsilon = 1e-8f;
 	params.lambda = 0.1f;
