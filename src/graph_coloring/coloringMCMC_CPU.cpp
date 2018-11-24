@@ -136,7 +136,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		Cviol = violation_count(C, Cviols);
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
 
-		show_histogram();
+		//show_histogram();
 
 		if ((g_traceLogEn) & (Cviol < 40)) {
 			size_t idx = 0;
@@ -146,22 +146,20 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
 		}
 
-		// Managed freezing nodes.
-		// Remember: 0 = evaluate new color, 1 = freezed
-		//float freezingProb = 0.5f - exp( (-(int32_t)Cviol) / (float) nNodes ) * 0.5f;
-		//float freezingProb = 0.2f + exp( (-(int32_t)Cviol) / (float) nNodes ) / 2.5f;
-		float freezingProb = 0;
-		LOG(TRACE) << TXT_BIBLU << "freezingProb: " << freezingProb << TXT_NORML;
-		for (size_t i = 0; i < freezed.size(); i++) {
-			if (!Cviols[i])
-				freezed[i] = bernie(freezingProb);
-			else
-				freezed[i] = 0;
-		}
-		if (g_traceLogEn) {
-			size_t tempVal = std::count(std::begin(freezed), std::end(freezed), 1);
-			LOG(TRACE) << TXT_BIBLU << "Number of freezed nodes: " << tempVal << TXT_NORML;
-		}
+		// // Managing freezing nodes.
+		// // Remember: 0 = evaluate new color, 1 = freezed
+		// float freezingProb = 0;
+		// LOG(TRACE) << TXT_BIBLU << "freezingProb: " << freezingProb << TXT_NORML;
+		// for (size_t i = 0; i < freezed.size(); i++) {
+		// 	if (!Cviols[i])
+		// 		freezed[i] = bernie(freezingProb);
+		// 	else
+		// 		freezed[i] = 0;
+		// }
+		// if (g_traceLogEn) {
+		// 	size_t tempVal = std::count(std::begin(freezed), std::end(freezed), 1);
+		// 	LOG(TRACE) << TXT_BIBLU << "Number of freezed nodes: " << tempVal << TXT_NORML;
+		// }
 
 		// reset stats...
 		Zvcomp_max = Zvcomp_avg = 0;
@@ -169,11 +167,11 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 
 		// Iternal loop 1: building Cstar
 		for (size_t i = 0; i < nNodes; i++) {
-			if (freezed[i]) {
-				Cstar[i] = C[i];
-				q[i] = 1.0f;
-				continue;
-			}
+			// if (freezed[i]) {
+			// 	Cstar[i] = C[i];
+			// 	q[i] = 1.0f;
+			// 	continue;
+			// }
 
 			// Build list of free / occupied colors (and count them)
 			size_t Zvcomp = count_free_colors(i, C, freeColors);
@@ -199,12 +197,16 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		Cstarviol = violation_count(Cstar, Cstarviols);
 		LOG(TRACE) << TXT_BIBLU << "Cstar violations: " << Cstarviol << TXT_NORML;
 
+		// if (unlock_stall())
+		// 	continue;
+
 		// Internal loop 2: building C
 		for (size_t i = 0; i < nNodes; i++) {
-			if (freezed[i]) {
-				qstar[i] = 1.0f;
-				continue;
-			}
+			// if (freezed[i]) {
+			// 	qstar[i] = 1.0f;
+			// 	continue;
+			// }
+
 			// Build list of free / occupied colors (and count them)
 			size_t Zvcomp = count_free_colors(i, Cstar, freeColors);
 			size_t Zv = nCol - Zvcomp;
