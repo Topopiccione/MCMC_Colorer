@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 #ifdef __unix
 #include <sys/ioctl.h>
 #endif
