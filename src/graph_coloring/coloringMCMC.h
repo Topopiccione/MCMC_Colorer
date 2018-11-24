@@ -15,24 +15,24 @@
 #define STATS
 #define PRINTS
 
-#define FIXED_N_COLORS
-//#define DYNAMIC_N_COLORS
+//#define FIXED_N_COLORS
+#define DYNAMIC_N_COLORS
 
 /**
 * choose one to indicate how to initialize the colors
 */
-//#define STANDARD_INIT
+#define STANDARD_INIT
 //#define DISTRIBUTION_LINE_INIT
-#define DISTRIBUTION_EXP_INIT
+//#define DISTRIBUTION_EXP_INIT
 
 /**
 * choose one to indicate the desired colorer
 */
-//#define STANDARD
+#define STANDARD
 //#define STANDARD_CUMULATIVE						TODO
 //#define COLOR_BALANCE_ON_NODE_CUMULATIVE
 //#define COLOR_DECREASE_LINE_CUMULATIVE
-#define COLOR_DECREASE_EXP_CUMULATIVE				
+//#define COLOR_DECREASE_EXP_CUMULATIVE				
 //#define COLOR_BALANCE_LINE_CUMULATIVE				TODO
 //#define COLOR_BALANCE_EXP_CUMULATIVE				TODO
 
