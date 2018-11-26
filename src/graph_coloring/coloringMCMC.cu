@@ -321,7 +321,7 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 		qStar_d[idx] = 1;
 #endif // FIXED_N_COLORS
 #ifdef DYNAMIC_N_COLORS
-		starColoring_d[idx] = nCol;
+		starColoring_d[idx] = nodeCol;
 		qStar_d[idx] = 1;
 #endif // DYNAMIC_N_COLORS
 		return;
@@ -599,15 +599,21 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef DYNAMIC_N_COLORS
 		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, orderedColors_d, randStates, param.epsilon, statsFreeColors_d);
 		cudaDeviceSynchronize();
-		cuSts = cudaMemcpy(coloring_h, starColoring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		//cuSts = cudaMemcpy(coloring_h, starColoring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		for (uint32_t i = 0; i < nnodes; i++)
 		{
-			if (coloring_h[i] == param.startingNCol)
+			if (param.startingNCol == param.nCol)			// CONTROL
+				i = nnodes;
+
+			//if (coloring_h[i] == param.startingNCol)
+			if (qStar_h[i] == 1)
 			{
-				std::cout << "###############################################" << std::endl;
-				param.startingNCol++;
+				//param.startingNCol++;
+				param.startingNCol += 1;
 				i = nnodes;
 			}
+
 		}
 		std::cout << "startingNCol = " << param.startingNCol << std::endl;
 #endif // DYNAMIC_N_COLORS
@@ -698,13 +704,13 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		//}
 
 #if defined(PRINTS) && defined(STATS)
-		getStatsNumColors();
+		//getStatsNumColors();
 #endif // PRINTS && STATS
 
 	} while (rip < param.maxRip);
 
 #if defined(PRINTS) && defined(STATS)
-	//getStatsNumColors();
+	getStatsNumColors();
 #endif // PRINTS && STATS
 }
 
