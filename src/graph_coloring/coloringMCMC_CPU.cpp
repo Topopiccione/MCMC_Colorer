@@ -54,7 +54,7 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	// Begin with a random coloration (colors range = [0, nCol-1])
 	size_t idx = 0;
 	////////////// Baseline
-	std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
+	// std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
 	////////////// Non-uniform probabilities: linear
 	// // Filling p with color distribution
 	// divider = nCol * (nCol + 1);
@@ -68,17 +68,17 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	// for (idx = 0; idx < nNodes; idx++)
 	// 	extract_new_color(idx, p, nodeProbab, q, C);
 	////////////// Non-uniform probabilities: negative exp
-	// expLambda = 0.1f;
-	// auto expEval = [&] (size_t i) {return exp(-expLambda * (float(i)));};
-	// std::for_each( std::begin(p), std::end(p), [&](float &val) { val = expEval(idx); idx++; } );
-	// divider = std::accumulate( std::begin(p), std::end(p), 0.0f );
-	// idx = 0;
-	// std::for_each( std::begin(p), std::end(p), [&](float &val) { val /= divider; } );
-	// //Extract in advance all the experiment probabilities
-	// std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
-	// // Run extract_new_color on each node (q vector in ignored)
-	// for (idx = 0; idx < nNodes; idx++)
-	// 	extract_new_color(idx, p, nodeProbab, q, C);
+	expLambda = 0.1f;
+	auto expEval = [&] (size_t i) {return exp(-expLambda * (float(i)));};
+	std::for_each( std::begin(p), std::end(p), [&](float &val) { val = expEval(idx); idx++; } );
+	divider = std::accumulate( std::begin(p), std::end(p), 0.0f );
+	idx = 0;
+	std::for_each( std::begin(p), std::end(p), [&](float &val) { val /= divider; } );
+	//Extract in advance all the experiment probabilities
+	std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
+	// Run extract_new_color on each node (q vector in ignored)
+	for (idx = 0; idx < nNodes; idx++)
+		extract_new_color(idx, p, nodeProbab, q, C);
 	//////////////
 }
 
@@ -196,8 +196,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		Cstarviol = violation_count(Cstar, Cstarviols);
 		LOG(TRACE) << TXT_BIBLU << "Cstar violations: " << Cstarviol << TXT_NORML;
 
-		// if (unlock_stall())
-		// 	continue;
+		if (unlock_stall())
+			continue;
 
 		// Internal loop 2: building C
 		for (size_t i = 0; i < nNodes; i++) {
@@ -349,13 +349,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 			return;
 		}
 		////////// Baseline
-		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (freeColors[idx])
-				val = (1.0f - epsilon * Zv) / (float)Zvcomp;
-			else
-				val = epsilon;
-			idx++;
-		});
+		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		// 	if (freeColors[idx])
+		// 		val = (1.0f - epsilon * Zv) / (float)Zvcomp;
+		// 	else
+		// 		val = epsilon;
+		// 	idx++;
+		// });
 		////////// Non-uniform probabilities: linear
 		// float reminder = 0;
 		// size_t nOccup = 0;
@@ -381,29 +381,30 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 		// 	idx++;
 		// });
 		/////////// Non-uniform probabilities: negative exponential
-		// float reminder = 0;
-		// size_t nOccup = 0;
-		// idx = 0;
-		// auto expEval = [&] (size_t i) {return 2.0f * exp(-expLambda * (float(i)));};
-		// // Start filling the probabilites and accumulating the reminder
-		// idx = 0;
-		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
-		// 	if (freeColors[colorIdx[idx]])
-		// 		val = expEval(idx) / divider;
-		// 	else {
-		// 		val = epsilon;
-		// 		reminder += (expEval(idx) / divider) - epsilon;
-		// 		nOccup++;
-		// 	}
-		// 	idx++;
-		// });
+		float reminder = 0;
+		size_t nOccup = 0;
+		idx = 0;
+		auto expEval = [&] (size_t i) {return 2.0f * exp(-expLambda * (float(i)));};
+		// Start filling the probabilites and accumulating the reminder
+		idx = 0;
+		std::for_each(std::begin(p), std::end(p), [&](float &val) {
+			if (freeColors[colorIdx[idx]])
+				val = expEval(idx) / divider;
+			else {
+				val = epsilon;
+				reminder += (expEval(idx) / divider) - epsilon;
+				nOccup++;
+			}
+			idx++;
+		});
 		// Redistributing the reminder on the free colors
-		// idx = 0;
-		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
-		// 	if (freeColors[colorIdx[idx]])
-		// 		val += (reminder / (float) (nCol - nOccup));
-		// 	idx++;
-		// });
+		idx = 0;
+		std::for_each(std::begin(p), std::end(p), [&](float &val) {
+			if (freeColors[colorIdx[idx]])
+				val += (reminder / (float) (nCol - nOccup));
+			idx++;
+		});
+		//////////////
 
 	}
 	else { // Current color is NOT in a violation state
