@@ -384,7 +384,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 		float reminder = 0;
 		size_t nOccup = 0;
 		idx = 0;
-		auto expEval = [&] (size_t i) {return 2.0f * exp(-expLambda * (float(i)));};
+		auto expEval = [&] (size_t i) {return /*2.0f * */exp(-expLambda * (float(i)));};
 		// Start filling the probabilites and accumulating the reminder
 		idx = 0;
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {

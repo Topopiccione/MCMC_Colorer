@@ -48,14 +48,14 @@ bool ColoringMCMC_CPU<nodeW, edgeW>::unlock_stall() {
 	if (Cviol == Cstarviol) {
 		for (size_t i = 0; i < C.size(); i++) {
 			if (Cviols[i]) {
-				std::cout << "Node " << i << " from " << C[i];
+				//std::cout << "Node " << i << " from " << C[i];
 				C[i] = rand() % (nCol - 1);
-				std::cout << " to " << C[i] << std::endl;
-				const size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
-				const size_t neighIdx = str->cumulDegs[i];
-				const node * neighPtr = str->neighs + neighIdx;
-				for (size_t j = 0; j < nodeDeg; j++)
-					C[neighPtr[j]] = rand() % (nCol - 1);
+				//std::cout << " to " << C[i] << std::endl;
+				// const size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
+				// const size_t neighIdx = str->cumulDegs[i];
+				// const node * neighPtr = str->neighs + neighIdx;
+				// for (size_t j = 0; j < nodeDeg; j++)
+				// 	C[neighPtr[j]] = rand() % (nCol - 1);
 
 			}
 		}

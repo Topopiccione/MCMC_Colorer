@@ -146,6 +146,8 @@ int main(int argc, char *argv[]) {
 	//mcmc_cpu.show_histogram();
 	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
+	mcmc_cpu.show_histogram();
+
 	// ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 	//
 	// start = std::clock();
