@@ -56,13 +56,16 @@ void Graph<nodeW, edgeW>::setupImporter() {
 	fImport->fRewind();
 	while (fImport->getNextEdge()) {
 		if (fImport->edgeIsValid) {
-			tempN[fImport->srcIdx]->push_back( fImport->dstIdx );
-			tempW[fImport->srcIdx]->push_back( (edgeW)fImport->edgeWgh );
-			str->nEdges++;
-			// anche l'arco di ritorno!
-			tempN[fImport->dstIdx]->push_back( fImport->srcIdx );
-			tempW[fImport->dstIdx]->push_back( (edgeW)fImport->edgeWgh );
-			str->nEdges++;
+			// Remove self loops
+			if (fImport->srcIdx != fImport->dstIdx) {
+				tempN[fImport->srcIdx]->push_back( fImport->dstIdx );
+				tempW[fImport->srcIdx]->push_back( (edgeW)fImport->edgeWgh );
+				str->nEdges++;
+				// anche l'arco di ritorno!
+				tempN[fImport->dstIdx]->push_back( fImport->srcIdx );
+				tempW[fImport->dstIdx]->push_back( (edgeW)fImport->edgeWgh );
+				str->nEdges++;
+			}
 		}
 	}
 
