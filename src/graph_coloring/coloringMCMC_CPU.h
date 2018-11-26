@@ -25,6 +25,7 @@ public:
 	void 			fill_qstar(const size_t currentNode, const size_t Zv, const std::vector<uint32_t> & newColoring,
 		const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
 		std::vector<float> & qVect);
+	bool 			unlock_stall();
 
 	// Just for class dbg...
 	std::vector<uint32_t>	*	getC() { return &C; }

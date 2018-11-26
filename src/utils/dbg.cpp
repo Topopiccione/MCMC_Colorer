@@ -241,6 +241,8 @@ void dbg::print_var( std::vector<std::string> ss ) {
 							std::cout << TXT_BIBLU << p->at(i) << TXT_NORML <<" ";
 					}
 					std::cout << std::endl;
+					auto accTemp = std::accumulate( p->begin(), p->end(), 0.0f );
+					std::cout << TXT_BICYA << "Sum of probabilities: " << accTemp << TXT_NORML << std::endl;
 				}
 			}
 		}
