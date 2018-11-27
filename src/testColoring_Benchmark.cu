@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
 	ColoringMCMCParams params;
 	params.nCol = 200;	//test.getMaxNodeDeg() / 2.0f;
-	//params.nCol = 80;
+	params.nCol = 40;
 	params.startingNCol = 50;
 	//params.startingNCol = 20;
 	params.epsilon = 1e-8f;
@@ -141,13 +141,13 @@ int main(int argc, char *argv[]) {
 	//params.maxRip = 4;
 	//params.maxRip = 5000;
 
-	//ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
-	//g_debugger = new dbg(&test, &mcmc_cpu);
-	//start = std::clock();
-	//mcmc_cpu.run();
-	//duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	////mcmc_cpu.show_histogram();
-	//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
+	g_debugger = new dbg(&test, &mcmc_cpu);
+	start = std::clock();
+	mcmc_cpu.run();
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	mcmc_cpu.show_histogram();
+	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
