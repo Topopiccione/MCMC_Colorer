@@ -126,6 +126,7 @@
     <ClCompile Include="..\src\graph\graphCPU.cpp" />
     <ClCompile Include="..\src\graph_coloring\colorer.cpp" />
     <ClCompile Include="..\src\graph_coloring\coloringMCMC_CPU.cpp" />
+    <ClCompile Include="..\src\graph_coloring\coloringMCMC_CPUutils.cpp" />
     <ClCompile Include="..\src\utils\ArgHandle.cpp" />
     <ClCompile Include="..\src\utils\dbg.cpp" />
     <ClCompile Include="..\src\utils\fileExporter.cpp">

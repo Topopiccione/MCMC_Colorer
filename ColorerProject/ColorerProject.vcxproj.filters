@@ -90,9 +90,6 @@
     <ClInclude Include="..\src\easyloggingpp\easyloggingpp\easylogging++.h">
       <Filter>easyloggingpp</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\graph_coloring\coloringMCMC_CPU.h">
-      <Filter>graph_coloring</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\utils\miscUtils.h">
       <Filter>utils</Filter>
     </ClInclude>
@@ -100,6 +97,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\src\graph_coloring\old_coloringMCMC.h">
+      <Filter>graph_coloring</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\graph_coloring\coloringMCMC_CPU.h">
       <Filter>graph_coloring</Filter>
     </ClInclude>
   </ItemGroup>
@@ -125,11 +125,14 @@
     <ClCompile Include="..\src\easyloggingpp\easyloggingpp\easylogging++.cc">
       <Filter>easyloggingpp</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\utils\dbg.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\graph_coloring\coloringMCMC_CPU.cpp">
       <Filter>graph_coloring</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\utils\dbg.cpp">
-      <Filter>utils</Filter>
+    <ClCompile Include="..\src\graph_coloring\coloringMCMC_CPUutils.cpp">
+      <Filter>graph_coloring</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

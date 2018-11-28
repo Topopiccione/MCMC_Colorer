@@ -14,9 +14,9 @@
 #define DUPLICATE_CHECK
 #define BIDIR_CHECK
 
-//#ifdef WIN32
+#ifdef WIN32
 #define INLINE_ARGS
-//#endif
+#endif
 
 std::vector<std::string> generateRandomName(const int n);
 

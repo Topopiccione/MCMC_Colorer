@@ -925,13 +925,13 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 
 		//cAverage += i * statsColors_h[i];
 	}
-	average = (float)nnodes / (float)param.nCol;
+	average = (float)nnodes / numberOfCol;
 	//cAverage /= nnodes;
 	for (int i = 0; i < numberOfCol; i++) {
-		variance += pow(statsColors_h[i] - average, 2.f);
+		variance += pow((statsColors_h[i] - average), 2.f);
 		//cVariance += i * pow((statsColors_h[i] - cAverage), 2.f);
 	}
-	variance /= (float)(nnodes - 1);
+	variance /= numberOfCol;
 	//cVariance /= nnodes;
 	standardDeviation = sqrt(variance);
 	//cStandardDeviation = sqrt(cVariance);
