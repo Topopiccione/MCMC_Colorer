@@ -26,7 +26,7 @@ int main(int argc, const char ** argv) {
 	argv[1] = "25000";
 	argv[2] = "lab.txt";
 	argv[3] = "net.txt";
-	argv[4] = "0.01";
+	argv[4] = "0.005";
 #else
 	//printf(argc + "");
 	//return;

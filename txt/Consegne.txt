@@ -1,0 +1,13 @@
+﻿
+scalare il grafo con varie densità
+
+algoritmo standard - colori uguale massimo grado
+
+25000 - 50000 - 100000 - 150000 - 200000 - 300000
+
+0.001 - 0.005 - 0.01
+
+file con tutti i nodi e il colore che ha
+aggiungere varianza finale
+radice varianza
+deviazione standard

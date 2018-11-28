@@ -63,6 +63,42 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 
 	/*cudaMemGetInfo(&free_mem, &total_mem);
 	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;*/
+
+#ifdef PRINTS
+	std::cout << std::endl << "ColoringMCMC GPU" << std::endl;
+	std::cout << "numCol: " << params.nCol << std::endl;
+#ifdef DYNAMIC_N_COLORS
+	std::cout << "startingNCol: " << params.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+	std::cout << "epsilon: " << params.epsilon << std::endl;
+	std::cout << "lambda: " << params.lambda << std::endl;
+	std::cout << "ratioFreezed: " << params.ratioFreezed << std::endl;
+	std::cout << "maxRip: " << params.maxRip << std::endl << std::endl;
+#endif // PRINTS
+
+#ifdef WRITE
+	logFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile.txt");
+	resultsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile.txt");
+	colorsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile.txt");
+
+	logFile << "numCol: " << params.nCol << std::endl;
+#ifdef DYNAMIC_N_COLORS
+	logFile << "startingNCol: " << params.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+	logFile << "epsilon: " << params.epsilon << std::endl;
+	logFile << "lambda: " << params.lambda << std::endl;
+	logFile << "ratioFreezed: " << params.ratioFreezed << std::endl;
+	logFile << "maxRip: " << params.maxRip << std::endl << std::endl;
+
+	resultsFile << "numCol " << params.nCol << std::endl;
+#ifdef DYNAMIC_N_COLORS
+	resultsFile << "startingNCol " << params.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+	resultsFile << "epsilon " << params.epsilon << std::endl;
+	resultsFile << "lambda " << params.lambda << std::endl;
+	resultsFile << "ratioFreezed " << params.ratioFreezed << std::endl;
+	resultsFile << "maxRip " << params.maxRip << std::endl;
+#endif // WRITE
 }
 
 template<typename nodeW, typename edgeW>
@@ -85,7 +121,10 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(q_d); 							cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(qStar_d);						cudaCheck(cuSts, __FILE__, __LINE__);
 
+#ifdef STATS
 	free(coloring_h);
+#endif
+
 	free(conflictCounter_h);
 	free(q_h);
 	free(qStar_h);
@@ -94,6 +133,12 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	free(statsColors_h);
 	cuSts = cudaFree(statsFreeColors_d);			cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // STATS
+
+#ifdef WRITE
+	logFile.close();
+	resultsFile.close();
+	colorsFile.close();
+#endif // WRITE
 }
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
@@ -447,8 +492,14 @@ __global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t n
 
 	if (!Zp)													//manage exception of no free colors
 	{
+#ifdef FIXED_N_COLORS
 		starColoring_d[idx] = nodeCol;
 		qStar_d[idx] = 1;
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+		starColoring_d[idx] = nodeCol;
+		qStar_d[idx] = 1;
+#endif // DYNAMIC_N_COLORS
 		return;
 	}
 
@@ -531,6 +582,7 @@ __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, float * q_d, co
  */
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::run() {
+	start = std::clock();
 
 	cuSts = cudaMemset(coloring_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
 
@@ -545,12 +597,23 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
+#ifdef FIXED_N_COLORS
 	float denomE = 0;
 	for (int i = 0; i < param.nCol; i++)
 	{
 		denomE += exp(-param.lambda * i);
 	}
 	ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, denomE, param.lambda, probDistributionExp_d);
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+	float denomE = 0;
+	for (int i = 0; i < param.startingNCol; i++)
+	{
+		denomE += exp(-param.lambda * i);
+	}
+	ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
+#endif // DYNAMIC_N_COLORS
+
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE_CUMULATIVE
 
@@ -566,14 +629,34 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef DISTRIBUTION_LINE_INIT
 	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistributionLine_d, randStates);
 #endif // DISTRIBUTION_LINE_INIT
+
 #ifdef DISTRIBUTION_EXP_INIT
+#ifdef FIXED_N_COLORS
 	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistributionExp_d, randStates);
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.startingNCol, probDistributionExp_d, randStates);
+#endif // DYNAMIC_N_COLORS
 #endif // DISTRIBUTION_EXP_INIT
 	cudaDeviceSynchronize();
 
-#if defined(PRINTS) && defined(STATS)
-	getStatsNumColors();
-#endif // PRINTS && STATS
+#if defined(PRINTS) && (defined(STATS) || defined(WRITE))
+#ifdef PRINTS
+	std::cout << "COLORAZIONE INIZIALE" << std::endl;
+#endif // PRINTS
+#ifdef WRITE
+	logFile << "COLORAZIONE INIZIALE" << std::endl;
+#endif // WRITE
+
+	getStatsNumColors("start_");
+
+#ifdef PRINTS
+	std::cout << std::endl << "end colorazione iniziale -------------------------------------------------------------------" << std::endl << std::endl;
+#endif // PRINTS
+#ifdef WRITE
+	logFile << std::endl << "end colorazione iniziale -------------------------------------------------------------------" << std::endl << std::endl;
+#endif // WRITE
+#endif // PRINTS && ( STATS || WRITE )
 
 	do {
 
@@ -588,6 +671,13 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		std::cout << "***** Tentativo numero: " << rip << std::endl;
 		std::cout << "conflitti rilevati: " << conflictCounter << std::endl;
 #endif // PRINTS
+#ifdef WRITE
+		logFile << "***** Tentativo numero: " << rip << std::endl;
+		logFile << "conflitti rilevati: " << conflictCounter << std::endl;
+
+		resultsFile << "iteration " << rip << std::endl;
+		resultsFile << "iteration_" << rip << "_conflicts " << conflictCounter << std::endl;
+#endif // WRITE
 
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
 
@@ -601,10 +691,9 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		cudaDeviceSynchronize();
 		//cuSts = cudaMemcpy(coloring_h, starColoring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		for (uint32_t i = 0; i < nnodes; i++)
+		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
 		{
-			if (param.startingNCol == param.nCol)			// CONTROL
-				i = nnodes;
+
 
 			//if (coloring_h[i] == param.startingNCol)
 			if (qStar_h[i] == 1)
@@ -623,11 +712,37 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		float partition = 15;
 		ColoringMCMC_k::selectStarColoringBalanceOnNode_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, randStates, partition, param.epsilon, statsFreeColors_d);
 #endif // COLOR_BALANCE_ON_NODE_CUMULATIVE
+
 #ifdef COLOR_DECREASE_LINE_CUMULATIVE
 		ColoringMCMC_k::selectStarColoringDecrease_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionLine_d, randStates, param.epsilon, statsFreeColors_d);
 #endif // COLOR_DECREASE_LINE_CUMULATIVE
+
 #ifdef COLOR_DECREASE_EXP_CUMULATIVE
+#ifdef FIXED_N_COLORS
 		ColoringMCMC_k::selectStarColoringDecrease_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, randStates, param.epsilon, statsFreeColors_d);
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+		ColoringMCMC_k::selectStarColoringDecrease_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, randStates, param.epsilon, statsFreeColors_d);
+		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
+		{
+			//if (coloring_h[i] == param.startingNCol)
+			if (qStar_h[i] == 1)
+			{
+				//param.startingNCol++;
+				param.startingNCol += 1;
+				float denomE = 0;
+				for (int i = 0; i < param.startingNCol; i++)
+				{
+					denomE += exp(-param.lambda * i);
+				}
+				ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
+				i = nnodes;
+			}
+
+		}
+		std::cout << "startingNCol = " << param.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
 #endif // COLOR_DECREASE_LINE_CUMULATIVE
 
 		cudaDeviceSynchronize();
@@ -636,15 +751,18 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		ColoringMCMC_k::lookOldColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, q_d, param.nCol, starColoring_d, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, param.epsilon);
 		cudaDeviceSynchronize();*/
 
-#ifdef STATS
+#if defined(PRINTS) && defined(STATS)
 		getStatsFreeColors();
-#endif // STATS
+#endif // PRINTS && ( STATS || WRITE )
 
 		calcConflicts(conflictCounterStar, starColoring_d);
 
 #ifdef PRINTS
 		std::cout << "nuovi conflitti rilevati: " << conflictCounterStar << std::endl;
 #endif // PRINTS
+#ifdef WRITE
+		logFile << "nuovi conflitti rilevati: " << conflictCounterStar << std::endl;
+#endif // WRITE
 
 #ifdef PRINTS
 		/*cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
@@ -698,20 +816,43 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef PRINTS
 		std::cout << "CHANGE" << std::endl;
 #endif // PRINTS
+#ifdef WRITE
+		logFile << "CHANGE" << std::endl;
+#endif // WRITE
+
 		switchPointer = coloring_d;
 		coloring_d = starColoring_d;
 		starColoring_d = switchPointer;
 		//}
 
-#if defined(PRINTS) && defined(STATS)
-		//getStatsNumColors();
-#endif // PRINTS && STATS
+#if defined(PRINTS) && (defined(STATS) || defined(WRITE))
+		//getStatsNumColors(true);
+#endif // PRINTS && ( STATS || WRITE )
 
 	} while (rip < param.maxRip);
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-#if defined(PRINTS) && defined(STATS)
-	getStatsNumColors();
-#endif // PRINTS && STATS
+#if defined(PRINTS) && (defined(STATS) || defined(WRITE))
+#ifdef PRINTS
+	std::cout << "COLORAZIONE FINALE" << std::endl;
+	std::cout << "Time " << duration << std::endl;
+#endif // PRINTS
+#ifdef WRITE
+	logFile << "COLORAZIONE FINALE" << std::endl;
+	logFile << "Time " << duration << std::endl;
+
+	resultsFile << "time " << duration << std::endl;
+#endif // WRITE
+
+	getStatsNumColors("end_");
+
+#ifdef PRINTS
+	std::cout << std::endl << "end colorazione finale -------------------------------------------------------------------" << std::endl << std::endl;
+#endif // PRINTS
+#ifdef WRITE
+	logFile << std::endl << "end colorazione finale -------------------------------------------------------------------" << std::endl << std::endl;
+#endif // WRITE
+#endif // PRINTS && ( STATS || WRITE )
 }
 
 template<typename nodeW, typename edgeW>
@@ -745,12 +886,14 @@ void ColoringMCMC<nodeW, edgeW>::getStatsFreeColors() {
 }
 
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
+void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
+
 	cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
 	for (int i = 0; i < nnodes; i++)
 	{
 		statsColors_h[coloring_h[i]]++;
+		//std::cout << i << " " << coloring_h[i] << std::endl;
 	}
 	int counter = 0;
 	int max_i = 0, min_i = nnodes;
@@ -763,9 +906,11 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	int numberOfCol = param.startingNCol;
 #endif // DYNAMIC_N_COLORS
 
+	float average = 0, variance = 0, standardDeviation;
+	//float cAverage = 0, cVariance = 0, cStandardDeviation;
+
 	for (int i = 0; i < numberOfCol; i++)
 	{
-		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
 		if (statsColors_h[i] > 0) {
 			counter++;
 			if (statsColors_h[i] > max_c) {
@@ -777,9 +922,25 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 				min_c = statsColors_h[i];
 			}
 		}
+
+		//cAverage += i * statsColors_h[i];
 	}
+	average = (float)nnodes / (float)param.nCol;
+	//cAverage /= nnodes;
+	for (int i = 0; i < numberOfCol; i++) {
+		variance += pow(statsColors_h[i] - average, 2.f);
+		//cVariance += i * pow((statsColors_h[i] - cAverage), 2.f);
+	}
+	variance /= (float)(nnodes - 1);
+	//cVariance /= nnodes;
+	standardDeviation = sqrt(variance);
+	//cStandardDeviation = sqrt(cVariance);
 
 	int divider = max_c / (param.nCol / 3);
+
+#ifdef PRINTS
+	//for (int i = 0; i < numberOfCol; i++)
+		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
 	for (int i = 0; i < numberOfCol; i++)
 	{
 		std::cout << "Color " << i << " ";
@@ -795,8 +956,60 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors() {
 	std::cout << "Number of used colors is " << counter << " on " << numberOfCol << " available" << std::endl;
 	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
 	std::cout << "Least used colors is " << min_i << " used " << min_c << " times" << std::endl;
-	std::cout << "Generic average nnodes / ncol " << (float)nnodes / (float)param.nCol << std::endl;
 	std::cout << std::endl;
+	std::cout << "Average " << average << std::endl;
+	std::cout << "Variance " << variance << std::endl;
+	std::cout << "StandardDeviation " << standardDeviation << std::endl;
+	//std::cout << std::endl;
+	//std::cout << "Colors average " << cAverage << std::endl;
+	//std::cout << "Colors variance " << cVariance << std::endl;
+	//std::cout << "Colors standardDeviation " << cStandardDeviation << std::endl;
+	std::cout << std::endl;
+#endif // PRINTS
+
+#ifdef WRITE
+	for (int i = 0; i < numberOfCol; i++)
+		colorsFile << i << " " << coloring_h[i] << std::endl;
+
+
+	for (int i = 0; i < numberOfCol; i++)
+	{
+		logFile << "Color " << i << " ";
+		for (int j = 0; j < statsColors_h[i] / divider; j++)
+		{
+			logFile << "*";
+		}
+		logFile << std::endl;
+	}
+	logFile << "Every * is " << divider << " nodes" << std::endl;
+	logFile << std::endl;
+
+	logFile << "Number of used colors is " << counter << " on " << numberOfCol << " available" << std::endl;
+	logFile << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
+	logFile << "Least used colors is " << min_i << " used " << min_c << " times" << std::endl;
+	logFile << std::endl;
+	logFile << "Average " << average << std::endl;
+	logFile << "Variance " << variance << std::endl;
+	logFile << "StandardDeviation " << standardDeviation << std::endl;
+	//logFile << std::endl;
+	//logFile << "Colors average " << cAverage << std::endl;
+	//logFile << "Colors variance " << cVariance << std::endl;
+	//logFile << "Colors standardDeviation " << cStandardDeviation << std::endl;
+	logFile << std::endl;
+
+	resultsFile << prefix << "used_colors " << counter << std::endl;
+	resultsFile << prefix << "available_colors " << numberOfCol << std::endl;
+	resultsFile << prefix << "most_used_colors " << max_i << std::endl;
+	resultsFile << prefix << "most_used_colors_n_times " << max_c << std::endl;
+	resultsFile << prefix << "least_used_colors " << min_i << std::endl;
+	resultsFile << prefix << "least_used_colors_n_times " << min_c << std::endl;
+	resultsFile << prefix << "average " << average << std::endl;
+	resultsFile << prefix << "variance " << variance << std::endl;
+	resultsFile << prefix << "standard_deviation " << standardDeviation << std::endl;
+	//logFile << "Colors average " << cAverage << std::endl;
+	//logFile << "Colors variance " << cVariance << std::endl;
+	//logFile << "Colors standardDeviation " << cStandardDeviation << std::endl;
+#endif // WRITE
 }
 
 template<typename nodeW, typename edgeW>

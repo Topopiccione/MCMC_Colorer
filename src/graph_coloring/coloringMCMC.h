@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <fstream>
+#include <ctime>
 #include <memory>
 #include <algorithm>
 #include <cuda.h>
@@ -14,9 +16,10 @@
 
 #define STATS
 #define PRINTS
+#define WRITE
 
-//#define FIXED_N_COLORS
-#define DYNAMIC_N_COLORS
+#define FIXED_N_COLORS
+//#define DYNAMIC_N_COLORS
 
 /**
 * choose one to indicate how to initialize the colors
@@ -111,8 +114,15 @@ protected:
 
 	void			calcConflicts(int &conflictCounter, uint32_t * coloring_d);
 	void			getStatsFreeColors();
-	void			getStatsNumColors();
+	void			getStatsNumColors(char * prefix);
 	void			calcProbs();
+
+#ifdef WRITE
+	std::clock_t start;
+	double duration;
+	std::ofstream logFile, resultsFile, colorsFile;
+#endif //WRITE
+
 };
 
 

@@ -10,10 +10,7 @@ test_01
 **/x86/*
 **/vc140.pdb
 
-**/lab.txt
-**/net.txt
-**/lab100000.txt
-**/net100000.txt
-**/istruzioni_accesso_remoto.txt
+**/*.txt
+!txt/*.txt
 
 **/*.log
