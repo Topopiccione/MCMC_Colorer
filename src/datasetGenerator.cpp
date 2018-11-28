@@ -14,7 +14,7 @@
 #define DUPLICATE_CHECK
 #define BIDIR_CHECK
 
-#ifdef WIN32
+#ifdef _WIN32
 #define INLINE_ARGS
 #endif
 
