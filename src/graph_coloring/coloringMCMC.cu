@@ -640,7 +640,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #endif // DISTRIBUTION_EXP_INIT
 	cudaDeviceSynchronize();
 
-#if defined(PRINTS) && (defined(STATS) || defined(WRITE))
+#if defined(STATS) && (defined(PRINTS) || defined(WRITE))
 #ifdef PRINTS
 	std::cout << "COLORAZIONE INIZIALE" << std::endl;
 #endif // PRINTS
@@ -656,7 +656,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef WRITE
 	logFile << std::endl << "end colorazione iniziale -------------------------------------------------------------------" << std::endl << std::endl;
 #endif // WRITE
-#endif // PRINTS && ( STATS || WRITE )
+#endif // STATS && ( PRINTS || WRITE )
 
 	do {
 
@@ -825,14 +825,14 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 		starColoring_d = switchPointer;
 		//}
 
-#if defined(PRINTS) && (defined(STATS) || defined(WRITE))
+#if defined(STATS) && (defined(PRINTS) || defined(WRITE))
 		//getStatsNumColors(true);
-#endif // PRINTS && ( STATS || WRITE )
+#endif // STATS && ( PRINTS || WRITE )
 
 	} while (rip < param.maxRip);
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-#if defined(PRINTS) && (defined(STATS) || defined(WRITE))
+#if defined(STATS) && (defined(PRINTS) || defined(WRITE))
 #ifdef PRINTS
 	std::cout << "COLORAZIONE FINALE" << std::endl;
 	std::cout << "Time " << duration << std::endl;
@@ -852,7 +852,7 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 #ifdef WRITE
 	logFile << std::endl << "end colorazione finale -------------------------------------------------------------------" << std::endl << std::endl;
 #endif // WRITE
-#endif // PRINTS && ( STATS || WRITE )
+#endif // STATS && ( PRINTS || WRITE )
 }
 
 template<typename nodeW, typename edgeW>
@@ -936,7 +936,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	standardDeviation = sqrt(variance);
 	//cStandardDeviation = sqrt(cVariance);
 
-	int divider = max_c / (param.nCol / 3);
+	int divider = (max_c / (param.nCol / 3) > 0) ? max_c / (param.nCol / 3) : 1;
 
 #ifdef PRINTS
 	//for (int i = 0; i < numberOfCol; i++)

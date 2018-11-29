@@ -523,3 +523,19 @@
 2018-11-28 19:27:23,353 TRACE [default] Nodi: 25000 - Archi: 3123812
 2018-11-28 19:27:23,357 TRACE [default] minDeg: 84 - maxDeg: 180 - meanDeg: 124.952
 2018-11-28 19:27:26,843 TRACE [default] Elapsed time: 2.657
+2018-11-29 10:33:14,523 TRACE [default] Nodi: 25000 - Archi: 3123812
+2018-11-29 10:33:14,526 TRACE [default] minDeg: 84 - maxDeg: 180 - meanDeg: 124.952
+2018-11-29 10:33:17,299 TRACE [default] Elapsed time: 2.067
+2018-11-29 10:40:38,748 TRACE [default] Nodi: 25000 - Archi: 3123812
+2018-11-29 10:40:38,750 TRACE [default] minDeg: 84 - maxDeg: 180 - meanDeg: 124.952
+2018-11-29 10:40:39,491 TRACE [default] Elapsed time: 0.102
+2018-11-29 10:43:34,323 TRACE [default] Nodi: 25000 - Archi: 3123812
+2018-11-29 10:43:34,325 TRACE [default] minDeg: 84 - maxDeg: 180 - meanDeg: 124.952
+2018-11-29 10:43:35,061 TRACE [default] Elapsed time: 0.117
+2018-11-29 10:56:20,009 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-11-29 10:56:20,012 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-11-29 11:01:15,277 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-11-29 11:01:15,280 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-11-29 11:04:33,444 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-11-29 11:04:33,448 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-11-29 11:04:35,491 TRACE [default] Elapsed time: 0.869

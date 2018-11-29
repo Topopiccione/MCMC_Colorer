@@ -23,10 +23,10 @@ std::vector<std::string> generateRandomName(const int n);
 int main(int argc, const char ** argv) {
 
 #ifdef INLINE_ARGS
-	argv[1] = "25000";
-	argv[2] = "lab.txt";
-	argv[3] = "net.txt";
-	argv[4] = "0.005";
+	argv[1] = "50000";
+	argv[2] = "lab50k001.txt";
+	argv[3] = "net50k001.txt";
+	argv[4] = "0.01";
 #else
 	//printf(argc + "");
 	//return;
