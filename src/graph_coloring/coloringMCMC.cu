@@ -25,9 +25,21 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	//https://stackoverflow.com/questions/34356768/managing-properly-an-array-of-results-that-is-larger-than-the-memory-available-a
 	//colorsChecker_d e orderedColors_d
 
-	/*size_t total_mem, free_mem;
+	size_t total_mem, free_mem;
 	cudaMemGetInfo(&free_mem, &total_mem);
-	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;*/
+	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
+
+	int tot = nnodes * sizeof(uint32_t) * 3;
+	std::cout << "nnodes * sizeof(uint32_t): " << nnodes * sizeof(uint32_t) << " X 3" << std::endl;
+	tot += nnodes * sizeof(float) * 2;
+	std::cout << "nnodes * sizeof(float): " << nnodes * sizeof(float) << " X 2" << std::endl;
+	tot += nedges * sizeof(uint32_t);
+	std::cout << "nedges * sizeof(uint32_t): " << nedges * sizeof(uint32_t) << " X 1" << std::endl;
+	tot += nnodes * param.nCol * sizeof(bool);
+	std::cout << "nnodes * param.nCol * sizeof(bool): " << nnodes * param.nCol * sizeof(bool) << " X 1" << std::endl;
+	tot += nnodes * param.nCol * sizeof(uint32_t);
+	std::cout << "nnodes * param.nCol * sizeof(uint32_t): " << nnodes * param.nCol * sizeof(uint32_t) << " X 1" << std::endl;
+	std::cout << "TOTALE: " << tot << " bytes" <<std::endl;
 
 	cuSts = cudaMalloc((void**)&coloring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&starColoring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
@@ -39,7 +51,6 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 
 	conflictCounter_h = (uint32_t *)malloc(nedges * sizeof(uint32_t));
 	cuSts = cudaMalloc((void**)&conflictCounter_d, nedges * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
-
 
 	cuSts = cudaMalloc((void**)&colorsChecker_d, nnodes * param.nCol * sizeof(bool));	cudaCheck(cuSts, __FILE__, __LINE__);
 	//std::cout << "colorsChecker_d: " << nnodes * param.nCol * sizeof(bool) << std::endl;
@@ -61,8 +72,8 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cuSts = cudaMalloc((void**)&statsFreeColors_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif
 
-	/*cudaMemGetInfo(&free_mem, &total_mem);
-	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;*/
+	cudaMemGetInfo(&free_mem, &total_mem);
+	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
 
 #ifdef PRINTS
 	std::cout << std::endl << "ColoringMCMC GPU" << std::endl;

@@ -14,8 +14,8 @@
 #include "GPUutils/GPUutils.h"
 #include "GPUutils/GPURandomizer.h"
 
-#define STATS
-//#define PRINTS
+//#define STATS
+#define PRINTS
 #define WRITE
 
 #define FIXED_N_COLORS

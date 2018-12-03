@@ -26,3 +26,7 @@ It can be invoked by:
 example: ./MCMC_Colorer --data net.txt --label lab.txt --gene gene.txt
 
 per cancellare tutto: rm -rf build
+
+per mostrare file dettagliatamente: ls -l
+file nascosti:						ls -a
+cartelle con /:						ls -F
