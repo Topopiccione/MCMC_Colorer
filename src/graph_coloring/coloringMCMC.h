@@ -14,12 +14,12 @@
 #include "GPUutils/GPUutils.h"
 #include "GPUutils/GPURandomizer.h"
 
-//#define STATS
+#define STATS
 #define PRINTS
 #define WRITE
 
 #define FIXED_N_COLORS
-//#define DYNAMIC_N_COLORS
+//#define DYNAMIC_N_COLORS						// works only with STANDARD
 
 /**
 * choose one to indicate how to initialize the colors
@@ -29,10 +29,16 @@
 //#define DISTRIBUTION_EXP_INIT
 
 /**
+* choose one to indicate how to count conflicts
+*/
+#define COUNTER_WITH_NODES
+//#define COUNTER_WITH_EDGES
+
+/**
 * choose one to indicate the desired colorer
 */
-#define STANDARD
-//#define STANDARD_CUMULATIVE						TODO
+//#define STANDARD
+#define STANDARD_CUMULATIVE
 //#define COLOR_BALANCE_ON_NODE_CUMULATIVE
 //#define COLOR_DECREASE_LINE_CUMULATIVE
 //#define COLOR_DECREASE_EXP_CUMULATIVE				
@@ -143,12 +149,21 @@ namespace ColoringMCMC_k {
 #endif // DISTRIBUTION_LINE_INIT || DISTRIBUTION_EXP_INIT
 
 	__global__ void logarithmer(uint32_t nnodes, float * values);
+
+#ifdef COUNTER_WITH_NODES
+	__global__ void conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs);
+#endif // COUNTER_WITH_NODES
+#ifdef COUNTER_WITH_EDGES
 	__global__ void conflictChecker(uint32_t nedges, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * edges);
+#endif // COUNTER_WITH_EDGES
 	__global__ void sumReduction(uint32_t nedges, float * conflictCounter_d);
 	__device__ void warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize);
 
 #ifdef STANDARD
 	__global__ void selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * orderedColors_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
+#endif // STANDARD
+#ifdef STANDARD_CUMULATIVE
+	__global__ void selectStarColoringCumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
 #endif // STANDARD
 #ifdef COLOR_BALANCE_ON_NODE_CUMULATIVE
 	__global__ void selectStarColoringBalanceOnNode_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float partition, float epsilon, uint32_t * statsFreeColors_d);
