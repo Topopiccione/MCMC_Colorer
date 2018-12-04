@@ -23,9 +23,9 @@ std::vector<std::string> generateRandomName(const int n);
 int main(int argc, const char ** argv) {
 
 #ifdef INLINE_ARGS
-	argv[1] = "50000";
-	argv[2] = "lab50k001.txt";
-	argv[3] = "net50k001.txt";
+	argv[1] = "100000";
+	argv[2] = "lab100k001.txt";
+	argv[3] = "net100k001.txt";
 	argv[4] = "0.01";
 #else
 	//printf(argc + "");

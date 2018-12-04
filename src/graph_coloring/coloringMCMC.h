@@ -156,7 +156,7 @@ namespace ColoringMCMC_k {
 #ifdef COUNTER_WITH_EDGES
 	__global__ void conflictChecker(uint32_t nedges, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * edges);
 #endif // COUNTER_WITH_EDGES
-	__global__ void sumReduction(uint32_t nedges, float * conflictCounter_d);
+	__global__ void sumReduction(uint32_t n, float * conflictCounter_d);
 	__device__ void warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize);
 
 #ifdef STANDARD

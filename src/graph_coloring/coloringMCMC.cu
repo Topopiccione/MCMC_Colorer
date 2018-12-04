@@ -317,11 +317,11 @@ __device__ void ColoringMCMC_k::warpReduction(volatile float *sdata, uint32_t ti
 
 * refs: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
 */
-__global__ void ColoringMCMC_k::sumReduction(uint32_t nedges, float * conflictCounter_d) {
+__global__ void ColoringMCMC_k::sumReduction(uint32_t n, float * conflictCounter_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (idx >= nedges)
+	if (idx >= n)
 		return;
 
 	extern	__shared__ float sdata[];
@@ -334,7 +334,7 @@ __global__ void ColoringMCMC_k::sumReduction(uint32_t nedges, float * conflictCo
 
 	/*uint32_t gridSize = (blockSize * 2) * gridDim.x;
 	sdata[tid] = 0;
-	while (i < nedges) {
+	while (i < n) {
 		sdata[tid] += conflictCounter_d[i] + conflictCounter_d[i + blockSize];
 		i += gridSize;
 	}*/
@@ -972,11 +972,12 @@ void ColoringMCMC<nodeW, edgeW>::calcConflicts(int &conflictCounter, uint32_t * 
 
 #ifdef COUNTER_WITH_NODES
 	ColoringMCMC_k::conflictCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, conflictCounter_d, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
-
-	ColoringMCMC_k::sumReduction << < blocksPerGrid, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nnodes, (float*)conflictCounter_d);
 	cudaDeviceSynchronize();
 
-	cuSts = cudaMemcpy(conflictCounter_h, conflictCounter_d, blocksPerGrid.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+	ColoringMCMC_k::sumReduction << < blocksPerGrid_half, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nnodes, (float*)conflictCounter_d);
+	cudaDeviceSynchronize();
+
+	cuSts = cudaMemcpy(conflictCounter_h, conflictCounter_d, blocksPerGrid_half.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 
 	conflictCounter = 0;
 

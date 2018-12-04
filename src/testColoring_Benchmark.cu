@@ -75,9 +75,9 @@ int main(int argc, char *argv[]) {
 #ifdef INLINE_ARGS
 	argc = 7;
 	argv[1] = "--data";
-	argv[2] = "net50k001.txt";
+	argv[2] = "net100k001.txt";
 	argv[3] = "--label";
-	argv[4] = "lab50k001.txt";
+	argv[4] = "lab100k001.txt";
 	argv[5] = "--gene";
 	argv[6] = "gene.txt";
 #endif // INLINE_ARGS
