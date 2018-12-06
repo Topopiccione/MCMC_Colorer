@@ -1,4 +1,7 @@
 ﻿
+nickname cudone: lemen47nic
+nickname dalab : aspes
+
 mkdir build
 cd build
 cmake ../src

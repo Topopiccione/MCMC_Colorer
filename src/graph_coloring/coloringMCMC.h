@@ -52,7 +52,7 @@ public:
 	ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params);
 	~ColoringMCMC();
 
-	void			run();
+	void			run(int iteration);
 
 protected:
 	uint32_t		nnodes;

@@ -1,4 +1,9 @@
 ﻿
-- Batch
-- Aggiungere nuovo algoritmo per calcolo dei conflitti che non utilizzi gli archi singoli
-- Bilanciare Hastings
+
+
+- Suddividere il progetto in classi: Standard, Decrease e Balance, in modo da renderlo più comprensibile.
+- Provare a usare la distribuzione lineare o esponenziale anche nel reminder all'interno dell'algoritmo.
+- Se effettivamente può avere un vantaggio usare la matrice di adiacenza (come algoritmo standard, il primo che ho implementato) allora serve un meccanismo di batches che suddivida la memoria.
+- Provare a ottenere il risultato di bilanciamento.
+
+- Hastings

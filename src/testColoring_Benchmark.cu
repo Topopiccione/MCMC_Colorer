@@ -75,9 +75,9 @@ int main(int argc, char *argv[]) {
 #ifdef INLINE_ARGS
 	argc = 7;
 	argv[1] = "--data";
-	argv[2] = "net50k001.txt";
+	argv[2] = "net25k001.txt";
 	argv[3] = "--label";
-	argv[4] = "lab50k001.txt";
+	argv[4] = "lab25k001.txt";
 	argv[5] = "--gene";
 	argv[6] = "gene.txt";
 #endif // INLINE_ARGS
@@ -152,11 +152,18 @@ int main(int argc, char *argv[]) {
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
+	//for (int i = 0; i < 10; i++)
+	//{
+		//std::cout << "Iterazione: " << i << std::endl;
+
 	start = std::clock();
-	colMCMC.run();
+	//colMCMC.run(i);
+	colMCMC.run(0);
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
 	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+	std::cout << std::endl;
+	//}
 
 	if (g_debugger != nullptr)
 		delete g_debugger;

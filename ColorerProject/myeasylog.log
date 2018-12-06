@@ -676,3 +676,122 @@
 2018-12-04 14:59:01,238 TRACE [default] Nodi: 100000 - Archi: 100024194
 2018-12-04 14:59:01,244 TRACE [default] minDeg: 860 - maxDeg: 1135 - meanDeg: 1000.24
 2018-12-04 14:59:17,782 TRACE [default] Elapsed time: 13.503
+2018-12-04 15:18:58,676 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-12-04 15:18:58,678 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-12-04 15:19:00,530 TRACE [default] Elapsed time: 0.732
+2018-12-04 15:29:20,773 TRACE [default] Nodi: 100000 - Archi: 100024194
+2018-12-04 15:29:20,780 TRACE [default] minDeg: 860 - maxDeg: 1135 - meanDeg: 1000.24
+2018-12-04 15:29:29,868 TRACE [default] Elapsed time: 6.061
+2018-12-04 15:36:12,281 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:36:12,283 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:36:13,125 TRACE [default] Elapsed time: 0.131
+2018-12-04 15:38:53,392 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:38:53,395 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:38:54,234 TRACE [default] Elapsed time: 0.125
+2018-12-04 15:38:54,369 TRACE [default] Elapsed time: 0.134
+2018-12-04 15:45:42,671 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:45:42,673 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:45:43,511 TRACE [default] Elapsed time: 0.125
+2018-12-04 15:45:43,622 TRACE [default] Elapsed time: 0.111
+2018-12-04 15:48:42,622 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:48:42,623 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:48:43,452 TRACE [default] Elapsed time: 0.127
+2018-12-04 15:48:43,563 TRACE [default] Elapsed time: 0.112
+2018-12-04 15:50:24,646 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:50:24,648 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:50:25,489 TRACE [default] Elapsed time: 0.135
+2018-12-04 15:50:25,603 TRACE [default] Elapsed time: 0.112
+2018-12-04 15:57:02,807 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:57:02,809 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:57:03,664 TRACE [default] Elapsed time: 0.143
+2018-12-04 15:57:03,776 TRACE [default] Elapsed time: 0.112
+2018-12-04 15:59:12,069 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 15:59:12,071 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 15:59:12,922 TRACE [default] Elapsed time: 0.149
+2018-12-04 15:59:13,059 TRACE [default] Elapsed time: 0.136
+2018-12-04 16:00:18,545 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 16:00:18,547 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 16:00:19,567 TRACE [default] Elapsed time: 0.131
+2018-12-04 16:00:19,685 TRACE [default] Elapsed time: 0.117
+2018-12-04 16:04:57,929 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-04 16:04:57,931 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-04 16:04:58,873 TRACE [default] Elapsed time: 0.166
+2018-12-04 16:04:59,034 TRACE [default] Elapsed time: 0.161
+2018-12-06 10:56:27,349 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-06 10:56:27,355 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-06 10:56:28,579 TRACE [default] Elapsed time: 0.175
+2018-12-06 11:32:47,976 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-06 11:32:47,980 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-06 11:32:49,065 TRACE [default] Elapsed time: 0.19
+2018-12-06 11:56:12,663 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-06 11:56:12,666 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-06 11:56:13,509 TRACE [default] Creating ColorerMCMC with parameters: nCol= 333 - lambda= 0.01 - epsilon= 1e-08 - ratioFreezed= 0.01 - seed= 1544093736
+2018-12-06 11:56:13,510 TRACE [default] C: allocated 25000 x 4
+2018-12-06 11:56:13,510 TRACE [default] Cstar: allocated 25000 x 4
+2018-12-06 11:56:13,511 TRACE [default] q: allocated 25000 x 4
+2018-12-06 11:56:13,511 TRACE [default] qstar: allocated 25000 x 4
+2018-12-06 11:56:13,511 TRACE [default] p: allocated 333 x 4
+2018-12-06 11:56:13,511 TRACE [default] pstar: allocated 333 x 4
+2018-12-06 11:56:13,511 TRACE [default] nodeProbab: allocated 25000 x 4
+2018-12-06 11:56:13,512 TRACE [default] freezed: allocated 25000 x 1
+2018-12-06 11:56:13,512 TRACE [default] freeColors: allocated 333 x 1
+2018-12-06 11:56:13,512 TRACE [default] Cviols: allocated 25000 x 1
+2018-12-06 11:56:13,512 TRACE [default] Cstarviols: allocated 25000 x 1
+2018-12-06 11:56:13,515 TRACE [default] Starting MCMC coloring...
+2018-12-06 11:56:13,528 TRACE [default] Initial violations: 24037
+2018-12-06 11:56:13,531 TRACE [default] iteration 0
+2018-12-06 11:56:13,548 TRACE [default] C violations: 24037
+2018-12-06 11:56:13,825 TRACE [default] Zv max: 306 - Zv min: 284 - Zv avg: 295.176
+2018-12-06 11:56:13,835 TRACE [default] Cstar violations: 12930
+2018-12-06 11:56:13,882 TRACE [default] Cviol: 24037 - Cviolstar: 12930 - sumlogq: -136286 - sumlogqstar: -442651
+2018-12-06 11:56:13,883 TRACE [default] alpha: -306253
+2018-12-06 11:56:13,886 TRACE [default] iteration 1
+2018-12-06 11:56:13,910 TRACE [default] C violations: 12930
+2018-12-06 11:56:14,139 TRACE [default] Zv max: 197 - Zv min: 126 - Zv avg: 160.907
+2018-12-06 11:56:14,153 TRACE [default] Cstar violations: 11359
+2018-12-06 11:56:14,201 TRACE [default] Cviol: 12930 - Cviolstar: 11359 - sumlogq: -44317.9 - sumlogqstar: -238192
+2018-12-06 11:56:14,202 TRACE [default] alpha: -193859
+2018-12-06 11:56:14,206 TRACE [default] iteration 2
+2018-12-06 11:56:14,222 TRACE [default] C violations: 11359
+2018-12-06 11:56:14,421 TRACE [default] Zv max: 238 - Zv min: 172 - Zv avg: 204.433
+2018-12-06 11:56:14,430 TRACE [default] Cstar violations: 3438
+2018-12-06 11:56:14,482 TRACE [default] Cviol: 11359 - Cviolstar: 3438 - sumlogq: -60038.6 - sumlogqstar: -209251
+2018-12-06 11:56:14,483 TRACE [default] alpha: -149134
+2018-12-06 11:56:14,487 TRACE [default] iteration 3
+2018-12-06 11:56:14,503 TRACE [default] C violations: 3438
+2018-12-06 11:56:14,630 TRACE [default] Zv max: 196 - Zv min: 126 - Zv avg: 160.256
+2018-12-06 11:56:14,642 TRACE [default] Cstar violations: 2345
+2018-12-06 11:56:14,696 TRACE [default] Cviol: 3438 - Cviolstar: 2345 - sumlogq: -12076.2 - sumlogqstar: -63331.7
+2018-12-06 11:56:14,697 TRACE [default] alpha: -51244.6
+2018-12-06 11:56:14,702 TRACE [default] iteration 4
+2018-12-06 11:56:14,718 TRACE [default] C violations: 2345
+2018-12-06 11:56:14,832 TRACE [default] Zv max: 196 - Zv min: 129 - Zv avg: 162.134
+2018-12-06 11:56:14,842 TRACE [default] Cstar violations: 171
+2018-12-06 11:56:14,892 TRACE [default] Cviol: 2345 - Cviolstar: 171 - sumlogq: -11487.1 - sumlogqstar: -43196.6
+2018-12-06 11:56:14,893 TRACE [default] alpha: -31687.8
+2018-12-06 11:56:14,896 TRACE [default] iteration 5
+2018-12-06 11:56:14,913 TRACE [default] C violations: 171
+2018-12-06 11:56:15,019 TRACE [default] Zv max: 197 - Zv min: 124 - Zv avg: 158.592
+2018-12-06 11:56:15,033 TRACE [default] Cstar violations: 16
+2018-12-06 11:56:15,091 TRACE [default] Cviol: 171 - Cviolstar: 16 - sumlogq: -666.86 - sumlogqstar: -3149.93
+2018-12-06 11:56:15,091 TRACE [default] alpha: -2481.52
+2018-12-06 11:56:15,093 TRACE [default] iteration 6
+2018-12-06 11:56:15,108 TRACE [default] C violations: 16
+2018-12-06 11:56:15,109 TRACE [default] Violating nodes: 1016 2177 6568 6961 9976 11173 11723 12545 16823 17998 18615 21993 23176 23838 24121 24994 
+2018-12-06 11:56:15,205 TRACE [default] Zv max: 197 - Zv min: 124 - Zv avg: 158.411
+2018-12-06 11:56:15,216 TRACE [default] Cstar violations: 0
+2018-12-06 11:56:15,261 TRACE [default] Cviol: 16 - Cviolstar: 0 - sumlogq: -66.2895 - sumlogqstar: -294.757
+2018-12-06 11:56:15,262 TRACE [default] alpha: -228.308
+2018-12-06 11:56:15,268 TRACE [default] MCMC_CPU elapsed time: 1.753
+2018-12-06 11:56:15,480 TRACE [default] Elapsed time: 0.203
+2018-12-06 11:56:15,482 TRACE [default] Cstarviols: freeing 25000 x 1
+2018-12-06 11:56:15,483 TRACE [default] Cviols: freeing 25000 x 1
+2018-12-06 11:56:15,484 TRACE [default] nodeProbab: freeing 25000 x 1
+2018-12-06 11:56:15,485 TRACE [default] freeColors: freeing 333 x 1
+2018-12-06 11:56:15,486 TRACE [default] freezed: freeing 25000 x 1
+2018-12-06 11:56:15,486 TRACE [default] qstar: freeing 25000 x 4
+2018-12-06 11:56:15,494 TRACE [default] q: freeing 25000 x 4
+2018-12-06 11:56:15,496 TRACE [default] pstar: freeing 333 x 4
+2018-12-06 11:56:15,498 TRACE [default] p: freeing 333 x 4
+2018-12-06 11:56:15,498 TRACE [default] Cstar: freeing 25000 x 4
+2018-12-06 11:56:15,499 TRACE [default] C: freeing 25000 x 4

@@ -3,7 +3,7 @@
 #include "coloringMCMC.h"
 
 template<typename nodeW, typename edgeW>
-ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams params) :
+ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curandState * randStates, ColoringMCMCParams param) :
 	Colorer<nodeW, edgeW>(inGraph_d),
 	graphStruct_d(inGraph_d->getStruct()),
 	nnodes(inGraph_d->getStruct()->nNodes),
@@ -11,7 +11,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	randStates(randStates),
 	numOfColors(0),
 	threadId(0),
-	param(params) {
+	param(param) {
 
 	// configuro la griglia e i blocchi
 	numThreads = 32;
@@ -31,17 +31,17 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cudaMemGetInfo(&free_mem, &total_mem);
 	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
 
-	int tot = nnodes * sizeof(uint32_t) * 3;
-	std::cout << "nnodes * sizeof(uint32_t): " << nnodes * sizeof(uint32_t) << " X 3" << std::endl;
-	tot += nnodes * sizeof(float) * 2;
-	std::cout << "nnodes * sizeof(float): " << nnodes * sizeof(float) << " X 2" << std::endl;
+	//int tot = nnodes * sizeof(uint32_t) * 3;
+	//std::cout << "nnodes * sizeof(uint32_t): " << nnodes * sizeof(uint32_t) << " X 3" << std::endl;
+	//tot += nnodes * sizeof(float) * 2;
+	//std::cout << "nnodes * sizeof(float): " << nnodes * sizeof(float) << " X 2" << std::endl;
 	//tot += nedges * sizeof(uint32_t);
 	//std::cout << "nedges * sizeof(uint32_t): " << nedges * sizeof(uint32_t) << " X 1" << std::endl;
-	tot += nnodes * param.nCol * sizeof(bool);
+	//tot += nnodes * param.nCol * sizeof(bool);t
 	std::cout << "nnodes * param.nCol * sizeof(bool): " << nnodes * param.nCol * sizeof(bool) << " X 1" << std::endl;
 	//tot += nnodes * param.nCol * sizeof(uint32_t);
 	//std::cout << "nnodes * param.nCol * sizeof(uint32_t): " << nnodes * param.nCol * sizeof(uint32_t) << " X 1" << std::endl;
-	std::cout << "TOTALE: " << tot << " bytes" << std::endl;
+	//std::cout << "TOTALE: " << tot << " bytes" << std::endl;
 
 	cuSts = cudaMalloc((void**)&coloring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&starColoring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
@@ -87,42 +87,6 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 
 	cudaMemGetInfo(&free_mem, &total_mem);
 	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
-
-#ifdef PRINTS
-	std::cout << std::endl << "ColoringMCMC GPU" << std::endl;
-	std::cout << "numCol: " << params.nCol << std::endl;
-#ifdef DYNAMIC_N_COLORS
-	std::cout << "startingNCol: " << params.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
-	std::cout << "epsilon: " << params.epsilon << std::endl;
-	std::cout << "lambda: " << params.lambda << std::endl;
-	std::cout << "ratioFreezed: " << params.ratioFreezed << std::endl;
-	std::cout << "maxRip: " << params.maxRip << std::endl << std::endl;
-#endif // PRINTS
-
-#ifdef WRITE
-	logFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile.txt");
-	resultsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile.txt");
-	colorsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile.txt");
-
-	logFile << "numCol: " << params.nCol << std::endl;
-#ifdef DYNAMIC_N_COLORS
-	logFile << "startingNCol: " << params.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
-	logFile << "epsilon: " << params.epsilon << std::endl;
-	logFile << "lambda: " << params.lambda << std::endl;
-	logFile << "ratioFreezed: " << params.ratioFreezed << std::endl;
-	logFile << "maxRip: " << params.maxRip << std::endl << std::endl;
-
-	resultsFile << "numCol " << params.nCol << std::endl;
-#ifdef DYNAMIC_N_COLORS
-	resultsFile << "startingNCol " << params.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
-	resultsFile << "epsilon " << params.epsilon << std::endl;
-	resultsFile << "lambda " << params.lambda << std::endl;
-	resultsFile << "ratioFreezed " << params.ratioFreezed << std::endl;
-	resultsFile << "maxRip " << params.maxRip << std::endl;
-#endif // WRITE
 }
 
 template<typename nodeW, typename edgeW>
@@ -157,12 +121,6 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	free(statsColors_h);
 	cuSts = cudaFree(statsFreeColors_d);			cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // STATS && COUNTER_WITH_EDGES
-
-#ifdef WRITE
-	logFile.close();
-	resultsFile.close();
-	colorsFile.close();
-#endif // WRITE
 }
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
@@ -687,7 +645,44 @@ __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, float * q_d, co
  * Start the coloring on the graph
  */
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::run() {
+void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
+
+#ifdef PRINTS
+	std::cout << std::endl << "ColoringMCMC GPU" << std::endl;
+	std::cout << "numCol: " << param.nCol << std::endl;
+#ifdef DYNAMIC_N_COLORS
+	std::cout << "startingNCol: " << param.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+	std::cout << "epsilon: " << param.epsilon << std::endl;
+	std::cout << "lambda: " << param.lambda << std::endl;
+	std::cout << "ratioFreezed: " << param.ratioFreezed << std::endl;
+	std::cout << "maxRip: " << param.maxRip << std::endl << std::endl;
+#endif // PRINTS
+
+#ifdef WRITE
+	logFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile-" + std::to_string(iteration) + ".txt");
+	resultsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile-" + std::to_string(iteration) + ".txt");
+	colorsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile-" + std::to_string(iteration) + ".txt");
+
+	logFile << "numCol: " << param.nCol << std::endl;
+#ifdef DYNAMIC_N_COLORS
+	logFile << "startingNCol: " << param.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+	logFile << "epsilon: " << param.epsilon << std::endl;
+	logFile << "lambda: " << param.lambda << std::endl;
+	logFile << "ratioFreezed: " << param.ratioFreezed << std::endl;
+	logFile << "maxRip: " << param.maxRip << std::endl << std::endl;
+
+	resultsFile << "numCol " << param.nCol << std::endl;
+#ifdef DYNAMIC_N_COLORS
+	resultsFile << "startingNCol " << param.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+	resultsFile << "epsilon " << param.epsilon << std::endl;
+	resultsFile << "lambda " << param.lambda << std::endl;
+	resultsFile << "ratioFreezed " << param.ratioFreezed << std::endl;
+	resultsFile << "maxRip " << param.maxRip << std::endl;
+#endif // WRITE
+
 	start = std::clock();
 
 	cuSts = cudaMemset(coloring_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
@@ -965,6 +960,12 @@ void ColoringMCMC<nodeW, edgeW>::run() {
 	logFile << std::endl << "end colorazione finale -------------------------------------------------------------------" << std::endl << std::endl;
 #endif // WRITE
 #endif // STATS && ( PRINTS || WRITE )
+
+#ifdef WRITE
+	logFile.close();
+	resultsFile.close();
+	colorsFile.close();
+#endif // WRITE
 }
 
 template<typename nodeW, typename edgeW>
