@@ -33,3 +33,10 @@ per cancellare tutto: rm -rf build
 per mostrare file dettagliatamente: ls -l
 file nascosti:						ls -a
 cartelle con /:						ls -F
+
+in dalab:
+- fai una nuova cartella build2 e spostatici dentro
+- nuovo comando cmake: 
+CC=/usr/bin/gcc-4.8 CXX=/usr/bin/g++-4.8 cmake ../src
+questo forza ad usare una versione più vecchia di gcc
+- compilazione usuale (make -j 8)

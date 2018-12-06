@@ -795,3 +795,6 @@
 2018-12-06 11:56:15,498 TRACE [default] p: freeing 333 x 4
 2018-12-06 11:56:15,498 TRACE [default] Cstar: freeing 25000 x 4
 2018-12-06 11:56:15,499 TRACE [default] C: freeing 25000 x 4
+2018-12-06 15:55:10,612 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-06 15:55:10,622 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-06 15:55:12,233 TRACE [default] Elapsed time: 0.2

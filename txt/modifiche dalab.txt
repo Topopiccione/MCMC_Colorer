@@ -1,0 +1,50 @@
+﻿Un modo per aggirare, in attesa di capire bene di cosa si tratti, è questo:
+
+- fai una nuova cartella build2 e spostatici dentro
+- nuovo comando cmake: 
+CC=/usr/bin/gcc-4.8 CXX=/usr/bin/g++-4.8 cmake ../src
+questo forza ad usare una versione più vecchia di gcc
+- compilazione usuale (make -j 8)
+
+Occhio, bisogna modificare il file utils/fileImporter.cpp in questo modo:
+
+
+#include "utils/fileImporter.h"
+
+fileImporter::fileImporter( std::string graphFileName, std::string labelFileName ) :
+                //graphFile{ std::ifstream( graphFileName.c_str() ) },
+                //labelFile{ std::ifstream( labelFileName.c_str() ) },
+                currentClass( "" ), geneIn( "" ), classIn( "" ), firstRound( true )  {
+        // leggo dal file tutti i nomi dei geni e costruisco il set temporaneo
+        // intanto raccatto qualche info prliminare sul grafo...
+        //std::string inStr;
+        //std::string lab1, src, dst;
+        int i = 0;
+        int edges = 0;
+        //float ww;
+        //std::stringstream ss;
+        std::set<std::string> tempGeneNamesSet;
+
+        graphFile.open( graphFileName.c_str() );
+        labelFile.open( labelFileName.c_str() );
+
+        // Skip prima linea di header
+        // (e intanto controllo che i file siano stati aperti)
+        if (graphFile)
+                std::getline( graphFile, inStr );
+        else
+        [...]
+
+
+ovvero, commentare le linee:
+
+//graphFile{ std::ifstream( graphFileName.c_str() ) },
+//labelFile{ std::ifstream( labelFileName.c_str() ) },
+
+nella assegnazione delle variabili del costruttore e aggiungere le linee: 
+
+graphFile.open( graphFileName.c_str() );
+labelFile.open( labelFileName.c_str() );
+
+appena sotto, nel corpo del costruttore.
+
