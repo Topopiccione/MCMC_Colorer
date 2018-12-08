@@ -12,6 +12,6 @@ test_01
 
 **/*.txt
 !txt/*.txt
-!txt/results/*.txt
+!txt/results/*/*.txt
 
 **/*.log
