@@ -8,7 +8,9 @@
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <math.h>
-#include <direct.h>
+//#include <direct.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "graph/graph.h"
 #include "coloring.h"

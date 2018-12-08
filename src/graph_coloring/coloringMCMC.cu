@@ -664,7 +664,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #ifdef WRITE
 
 	std::string directory = std::to_string(nnodes) + "-" + std::to_string(nedges) + "-results";
-	mkdir(directory.c_str());
+	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
 	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile-" + std::to_string(iteration) + ".txt");
 	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile-" + std::to_string(iteration) + ".txt");
