@@ -813,3 +813,39 @@
 2018-12-08 10:17:19,746 TRACE [default] Elapsed time: 0.162
 2018-12-08 10:17:19,902 TRACE [default] Elapsed time: 0.153
 2018-12-08 10:17:20,074 TRACE [default] Elapsed time: 0.163
+2018-12-08 17:30:18,303 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-08 17:30:18,305 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-08 17:30:19,144 TRACE [default] Elapsed time: 0.151
+2018-12-08 17:30:19,291 TRACE [default] Elapsed time: 0.146
+2018-12-08 17:30:19,444 TRACE [default] Elapsed time: 0.153
+2018-12-08 17:30:19,594 TRACE [default] Elapsed time: 0.148
+2018-12-08 17:30:19,743 TRACE [default] Elapsed time: 0.149
+2018-12-08 17:30:19,891 TRACE [default] Elapsed time: 0.147
+2018-12-08 17:30:20,078 TRACE [default] Elapsed time: 0.186
+2018-12-08 17:30:20,268 TRACE [default] Elapsed time: 0.185
+2018-12-08 17:30:20,421 TRACE [default] Elapsed time: 0.148
+2018-12-08 17:30:20,591 TRACE [default] Elapsed time: 0.167
+2018-12-08 17:44:40,336 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-08 17:44:40,338 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-08 17:44:41,198 TRACE [default] Elapsed time: 0.166
+2018-12-08 17:44:41,345 TRACE [default] Elapsed time: 0.147
+2018-12-08 17:44:41,505 TRACE [default] Elapsed time: 0.158
+2018-12-08 17:44:41,663 TRACE [default] Elapsed time: 0.156
+2018-12-08 17:44:41,812 TRACE [default] Elapsed time: 0.15
+2018-12-08 17:44:41,962 TRACE [default] Elapsed time: 0.149
+2018-12-08 17:44:42,123 TRACE [default] Elapsed time: 0.161
+2018-12-08 17:44:42,289 TRACE [default] Elapsed time: 0.164
+2018-12-08 17:44:42,449 TRACE [default] Elapsed time: 0.157
+2018-12-08 17:44:42,609 TRACE [default] Elapsed time: 0.157
+2018-12-08 22:05:11,982 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-08 22:05:11,985 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-08 22:05:13,054 TRACE [default] Elapsed time: 0.176
+2018-12-08 22:05:13,221 TRACE [default] Elapsed time: 0.166
+2018-12-08 22:05:13,384 TRACE [default] Elapsed time: 0.164
+2018-12-08 22:05:13,539 TRACE [default] Elapsed time: 0.154
+2018-12-08 22:05:13,699 TRACE [default] Elapsed time: 0.158
+2018-12-08 22:05:14,024 TRACE [default] Elapsed time: 0.324
+2018-12-08 22:05:14,459 TRACE [default] Elapsed time: 0.432
+2018-12-08 22:05:14,902 TRACE [default] Elapsed time: 0.399
+2018-12-08 22:05:15,160 TRACE [default] Elapsed time: 0.251
+2018-12-08 22:05:15,380 TRACE [default] Elapsed time: 0.216

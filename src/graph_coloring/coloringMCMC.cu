@@ -647,6 +647,8 @@ __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, float * q_d, co
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
+	rip = 0;
+
 #ifdef PRINTS
 	std::cout << std::endl << "ColoringMCMC GPU" << std::endl;
 	std::cout << "numCol: " << param.nCol << std::endl;
@@ -660,9 +662,13 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #endif // PRINTS
 
 #ifdef WRITE
-	logFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile-" + std::to_string(iteration) + ".txt");
-	resultsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile-" + std::to_string(iteration) + ".txt");
-	colorsFile.open(std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile-" + std::to_string(iteration) + ".txt");
+
+	std::string directory = std::to_string(nnodes) + "-" + std::to_string(nedges) + "-results";
+	mkdir(directory.c_str());
+
+	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile-" + std::to_string(iteration) + ".txt");
+	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile-" + std::to_string(iteration) + ".txt");
+	colorsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile-" + std::to_string(iteration) + ".txt");
 
 	logFile << "numCol: " << param.nCol << std::endl;
 #ifdef DYNAMIC_N_COLORS

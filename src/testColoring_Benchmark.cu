@@ -59,7 +59,61 @@ void newComponents(Graph<float, float> * test) {
 	//test->getStruct()->edges = tempEdges.data();
 }
 
+#include <fstream>
+#include <string>
+
+vector<string> split(const string& str, const string& delim)
+{
+	vector<string> tokens;
+	size_t prev = 0, pos = 0;
+	do
+	{
+		pos = str.find(delim, prev);
+		if (pos == string::npos) pos = str.length();
+		string token = str.substr(prev, pos - prev);
+		if (!token.empty()) tokens.push_back(token);
+		prev = pos + delim.length();
+	} while (pos < str.length() && prev < str.length());
+	return tokens;
+}
+
+void combineFiles() {
+	string line;
+	std::map< std::string, std::string > map[10];
+
+	for (int i = 0; i < 10; i++)
+	{
+		ifstream myfile("25000-3125539-resultsFile-" + std::to_string(i) + ".txt");
+
+		std::map< std::string, std::string >::iterator iterMap;
+
+		if (myfile.is_open())
+		{
+			while (getline(myfile, line))
+			{
+				vector<string> v = split(line, " ");
+				map[i][v[0]] = v[1];
+			}
+			myfile.close();
+		}
+
+		iterMap = map[i].begin();
+
+		while (iterMap != map[i].end()) {
+			std::string key = (*iterMap).first;
+
+			std::cout << key << " " << map[i][key] << std::endl;
+			iterMap++;
+		}
+
+		std::cout << "*************" << std::endl;
+	}
+}
+
 int main(int argc, char *argv[]) {
+
+	//combineFiles();
+	//return EXIT_SUCCESS;
 
 	////EasyLogging++
 	START_EASYLOGGINGPP(argc, argv);
@@ -138,7 +192,7 @@ int main(int argc, char *argv[]) {
 	params.lambda = 0.01f;
 	//params.lambda = test.getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
-	params.maxRip = 250;
+	params.maxRip = 10000;
 	//params.maxRip = 4;
 	//params.maxRip = 5000;
 
