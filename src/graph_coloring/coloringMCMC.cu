@@ -27,9 +27,9 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	//https://stackoverflow.com/questions/34356768/managing-properly-an-array-of-results-that-is-larger-than-the-memory-available-a
 	//colorsChecker_d e orderedColors_d
 
-	size_t total_mem, free_mem;
+	/*size_t total_mem, free_mem;
 	cudaMemGetInfo(&free_mem, &total_mem);
-	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
+	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;*/
 
 	//int tot = nnodes * sizeof(uint32_t) * 3;
 	//std::cout << "nnodes * sizeof(uint32_t): " << nnodes * sizeof(uint32_t) << " X 3" << std::endl;
@@ -38,7 +38,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	//tot += nedges * sizeof(uint32_t);
 	//std::cout << "nedges * sizeof(uint32_t): " << nedges * sizeof(uint32_t) << " X 1" << std::endl;
 	//tot += nnodes * param.nCol * sizeof(bool);t
-	std::cout << "nnodes * param.nCol * sizeof(bool): " << nnodes * param.nCol * sizeof(bool) << " X 1" << std::endl;
+	//std::cout << "nnodes * param.nCol * sizeof(bool): " << nnodes * param.nCol * sizeof(bool) << " X 1" << std::endl;
 	//tot += nnodes * param.nCol * sizeof(uint32_t);
 	//std::cout << "nnodes * param.nCol * sizeof(uint32_t): " << nnodes * param.nCol * sizeof(uint32_t) << " X 1" << std::endl;
 	//std::cout << "TOTALE: " << tot << " bytes" << std::endl;
@@ -85,8 +85,8 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 #endif // COUNTER_WITH_EDGES
 #endif
 
-	cudaMemGetInfo(&free_mem, &total_mem);
-	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
+	//cudaMemGetInfo(&free_mem, &total_mem);
+	//std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
 }
 
 template<typename nodeW, typename edgeW>

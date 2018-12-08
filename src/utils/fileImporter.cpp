@@ -3,9 +3,9 @@
 #include "utils/fileImporter.h"
 
 fileImporter::fileImporter(std::string graphFileName, std::string labelFileName) :
-	//graphFile{ std::ifstream( graphFileName.c_str(), std::ios::in ) },
-	//labelFile{ std::ifstream( labelFileName.c_str(), std::ios::in ) },
-	currentClass(""), geneIn(""), classIn(""), firstRound{ true }  {
+	//graphFile{ std::ifstream( graphFileName.c_str() ) },
+	//labelFile{ std::ifstream( labelFileName.c_str() ) },
+	currentClass(""), geneIn(""), classIn(""), firstRound(true) {
 	// leggo dal file tutti i nomi dei geni e costruisco il set temporaneo
 	// intanto raccatto qualche info prliminare sul grafo...
 	//std::string inStr;

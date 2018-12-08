@@ -34,6 +34,20 @@ per mostrare file dettagliatamente: ls -l
 file nascosti:						ls -a
 cartelle con /:						ls -F
 
+-------------------------------------------------------------------
+Per il lancio del processo su cudone ti consiglio di usare il programma byobu, che permette di creare diverse istanze di terminali virtuali che rimangono attivi anche se ti disconnetti dalla macchina e quindi permette di lanciare programmi che richiedono tempi di esecuzione particolarmente lunghi, senza bisogno di essere perennemente connessi.
+Per usarlo, connettiti a cudone come al solito e digita:
+
+byobu
+
+si aprira' un terminale con una barra colorata in basso. Le funzioni utili sono molte, ma si possono riassumere con queste combinazioni di tasti:
+F2: crea una nuova istanza di terminale (per chiuderla, usa il comando "exit" come al solito)
+F3-F4: muovi il focus tra i vari terminali aperti
+F6: disconnettiti da byobu, ma lascia che i terminali e i processi lanciati continuino a girare
+
+Dopo aver premuto F6, puoi tranquillamente chiudere la sessione remota. Puoi tornare a byobu scrivendo di nuovo "byobu" nel terminale.
+--------------------------------------------------------------------
+
 in dalab:
 - fai una nuova cartella build2 e spostatici dentro
 - nuovo comando cmake: 

@@ -152,18 +152,18 @@ int main(int argc, char *argv[]) {
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
-	//for (int i = 0; i < 10; i++)
-	//{
-		//std::cout << "Iterazione: " << i << std::endl;
+	for (int i = 0; i < 10; i++)
+	{
+		std::cout << "Iterazione: " << i << std::endl;
 
-	start = std::clock();
-	//colMCMC.run(i);
-	colMCMC.run(0);
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		start = std::clock();
+		colMCMC.run(i);
+		//colMCMC.run(0);
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
-	std::cout << std::endl;
-	//}
+		LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+		std::cout << std::endl;
+	}
 
 	if (g_debugger != nullptr)
 		delete g_debugger;
