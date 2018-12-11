@@ -14,7 +14,7 @@ fileImporter::fileImporter(std::string graphFileName, std::string labelFileName)
 	int edges = 0;
 	//float ww;
 	//std::stringstream ss;
-	std::set<std::string> tempGeneNamesSet;
+	std::unordered_set<std::string> tempGeneNamesSet;
 
 	graphFile.open(graphFileName.c_str());
 	labelFile.open(labelFileName.c_str());

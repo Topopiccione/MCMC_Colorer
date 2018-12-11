@@ -18,7 +18,7 @@ void Graph<nodeW, edgeW>::setup(node nn) {
 template<typename nodeW, typename edgeW>
 Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb }, fImport{ imp } {
 	if (!GPUEnabled)
-		setupImporter();
+		setupImporterNew();
 	else
 		setupImporterGPU();
 }
@@ -115,6 +115,80 @@ void Graph<nodeW, edgeW>::setupImporter() {
 	}
 	delete[] tempW;
 	delete[] tempN;
+}
+
+template<typename nodeW, typename edgeW>
+void Graph<nodeW, edgeW>::setupImporterNew() {
+	uint32_t nn = fImport->nNodes;
+	str = new GraphStruct<nodeW, edgeW>;
+	str->cumulDegs = new node_sz[nn + 1];
+	std::fill(str->cumulDegs, str->cumulDegs + (nn + 1), 0);
+	str->nNodes = nn;
+
+	// Filling cumulDegs
+	std::cout << "Filling cumulDegs..." << std::endl;
+	fImport->fRewind();
+	while (fImport->getNextEdge()) {
+		if (fImport->edgeIsValid) {
+			// Remove self loops
+			if (fImport->srcIdx != fImport->dstIdx) {
+				str->cumulDegs[fImport->srcIdx + 1]++;
+				str->nEdges++;
+				// anche l'arco di ritorno!
+				str->cumulDegs[fImport->dstIdx + 1]++;
+				str->nEdges++;
+			}
+		}
+	}
+
+	// Cumulating cumulDegs
+	std::cout << "Cumulating cumulDegs..." << std::endl;
+	for (uint32_t i = 1; i < (nn + 1); i++)
+		str->cumulDegs[i] += str->cumulDegs[i - 1];
+
+	// Filling neighs and weights reading il file again
+	str->neighs = new node[str->nEdges];
+	str->edgeWeights = new edgeW[str->nEdges];
+	str->nodeThresholds = new nodeW[str->nNodes];
+
+	std::vector<size_t> tempDegs( nn, 0 );
+	size_t neighIdx;
+
+	std::cout << "Filling neighs and weights..." << std::endl;
+	fImport->fRewind();
+	while (fImport->getNextEdge()) {
+		if (fImport->edgeIsValid) {
+			// Remove self loops
+			if (fImport->srcIdx != fImport->dstIdx) {
+				neighIdx = str->cumulDegs[fImport->srcIdx] + tempDegs[fImport->srcIdx];
+				str->neighs[neighIdx] = fImport->dstIdx;
+				str->edgeWeights[neighIdx] = fImport->edgeWgh;
+				tempDegs[fImport->srcIdx]++;
+				// anche l'arco di ritorno!
+				neighIdx = str->cumulDegs[fImport->dstIdx] + tempDegs[fImport->dstIdx];
+				str->neighs[neighIdx] = fImport->srcIdx;
+				str->edgeWeights[neighIdx] = fImport->edgeWgh;
+				tempDegs[fImport->dstIdx]++;
+			}
+		}
+	}
+
+	std::cout << "Calculating statistics..." << std::endl;
+	// max, min, mean deg
+	maxDeg = 0;
+	minDeg = nn;
+	for (uint32_t i = 0; i < nn; i++) {
+		if (str->deg(i) > maxDeg)
+			maxDeg = (uint32_t)str->deg(i);
+		if (str->deg(i) < minDeg)
+			minDeg = (uint32_t)str->deg(i);
+	}
+	density = (float)str->nEdges / (float)(nn * (nn - 1) / 2);
+	meanDeg = (float)str->nEdges / (float)nn;
+	if (minDeg == 0)
+		connected = false;
+	else
+		connected = true;
 }
 
 
