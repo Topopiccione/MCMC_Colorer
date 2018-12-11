@@ -27,9 +27,9 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	//https://stackoverflow.com/questions/34356768/managing-properly-an-array-of-results-that-is-larger-than-the-memory-available-a
 	//colorsChecker_d e orderedColors_d
 
-	/*size_t total_mem, free_mem;
-	cudaMemGetInfo(&free_mem, &total_mem);
-	std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;*/
+	//size_t total_mem, free_mem;
+	//cudaMemGetInfo(&free_mem, &total_mem);
+	//std::cout << "total mem: " << total_mem << " free mem:" << free_mem << std::endl;
 
 	//int tot = nnodes * sizeof(uint32_t) * 3;
 	//std::cout << "nnodes * sizeof(uint32_t): " << nnodes * sizeof(uint32_t) << " X 3" << std::endl;
@@ -664,11 +664,21 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #ifdef WRITE
 
 	std::string directory = std::to_string(nnodes) + "-" + std::to_string(nedges) + "-results";
-	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	//#ifdef WIN32
+	//	mkdir(directory.c_str());
+	//#else
+	//	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	//#endif
 
 	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile-" + std::to_string(iteration) + ".txt");
 	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile-" + std::to_string(iteration) + ".txt");
 	colorsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile-" + std::to_string(iteration) + ".txt");
+
+	size_t total_mem, free_mem;
+	cudaMemGetInfo(&free_mem, &total_mem);
+	logFile << "total memory: " << total_mem << " free memory:" << free_mem << std::endl;
+	resultsFile << "total_memory " << total_mem << std::endl;
+	resultsFile << "free_memory " << free_mem << std::endl;
 
 	logFile << "numCol: " << param.nCol << std::endl;
 #ifdef DYNAMIC_N_COLORS

@@ -8,9 +8,12 @@
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <math.h>
-//#include <direct.h>
+#ifdef WIN32
+#include <direct.h>
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
+#endif
 
 #include "graph/graph.h"
 #include "coloring.h"

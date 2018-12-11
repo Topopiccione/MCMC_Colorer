@@ -3,7 +3,7 @@ scalare il grafo con varie densità
 
 algoritmo standard - colori uguale massimo grado
 
-25000 - 50000 - 100000 - 150000 - 200000 - 300000
+25000 - 50000 - 100000 - 150000 - 200000 - 250000
 
 0.001 - 0.005 - 0.01
 

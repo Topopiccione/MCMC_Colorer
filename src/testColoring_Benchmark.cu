@@ -19,6 +19,17 @@
 #define INLINE_ARGS
 #endif
 
+#define WRITE
+#ifdef WRITE
+#ifdef WIN32
+#include <direct.h>
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+#endif // WRITE
+
+
 //argomenti tipo : --data net.txt --label lab.txt --gene gene.txt
 
 bool		g_traceLogEn;	// Declared in utils/miscUtils.h
@@ -60,17 +71,16 @@ void newComponents(Graph<float, float> * test) {
 }
 
 #include <fstream>
-#include <string>
 
-vector<string> split(const string& str, const string& delim)
+vector<string> split(const std::string& str, const std::string& delim)
 {
-	vector<string> tokens;
+	vector<std::string> tokens;
 	size_t prev = 0, pos = 0;
 	do
 	{
 		pos = str.find(delim, prev);
-		if (pos == string::npos) pos = str.length();
-		string token = str.substr(prev, pos - prev);
+		if (pos == std::string::npos) pos = str.length();
+		std::string token = str.substr(prev, pos - prev);
 		if (!token.empty()) tokens.push_back(token);
 		prev = pos + delim.length();
 	} while (pos < str.length() && prev < str.length());
@@ -78,36 +88,56 @@ vector<string> split(const string& str, const string& delim)
 }
 
 void combineFiles() {
-	string line;
-	std::map< std::string, std::string > map[10];
+	std::string line;
+	std::string directory = "250000-312585727";
+	std::map< std::string, float> tempMap[10];
+	std::map< std::string, float> finalMap;
+
+	std::vector<std::string> keys = {
+		"numCol", "epsilon", "lambda", "ratioFreezed", "maxRip", "start_used_colors", "start_available_colors", "start_most_used_colors", "start_most_used_colors_n_times", "start_least_used_colors", "start_least_used_colors_n_times", "start_average", "start_variance", "start_standard_deviation", "time", "end_used_colors", "end_available_colors", "end_most_used_colors", "end_most_used_colors_n_times", "end_least_used_colors", "end_least_used_colors_n_times", "end_average", "end_variance", "end_standard_deviation"
+	};
 
 	for (int i = 0; i < 10; i++)
 	{
-		ifstream myfile("25000-3125539-resultsFile-" + std::to_string(i) + ".txt");
-
-		std::map< std::string, std::string >::iterator iterMap;
+		ifstream myfile(directory + "-results/" + directory + "-resultsFile-" + std::to_string(i) + ".txt");
 
 		if (myfile.is_open())
 		{
 			while (getline(myfile, line))
 			{
 				vector<string> v = split(line, " ");
-				map[i][v[0]] = v[1];
+				tempMap[i][v[0]] = std::stof(v[1]);
 			}
 			myfile.close();
 		}
+	}
 
-		iterMap = map[i].begin();
+	for (std::string key : keys)
+	{
+		finalMap[key] = 0.;
+	}
 
-		while (iterMap != map[i].end()) {
-			std::string key = (*iterMap).first;
-
-			std::cout << key << " " << map[i][key] << std::endl;
-			iterMap++;
+	for (int i = 0; i < 10; i++)
+	{
+		for (std::string key : keys)
+		{
+			//std::cout << key << " " << tempMap[i][key] << std::endl;
+			finalMap[key] += tempMap[i][key];
 		}
 
-		std::cout << "*************" << std::endl;
+		//std::cout << "*************" << std::endl;
 	}
+
+	std::ofstream finalFile;
+	finalFile.open(directory + "-results/" + directory + "-FINAL" + ".txt");
+	for (std::string key : keys)
+	{
+		finalMap[key] /= 10;
+		std::cout << key << " " << finalMap[key] << std::endl;
+		finalFile << key << " " << finalMap[key] << std::endl;
+	}
+
+	finalFile.close();
 }
 
 int main(int argc, char *argv[]) {
@@ -162,6 +192,15 @@ int main(int argc, char *argv[]) {
 
 	newComponents(&test);
 
+#ifdef WRITE
+	std::string directory = std::to_string(test.getStruct()->nNodes) + "-" + std::to_string(test.getStruct()->nCleanEdges) + "-results";
+#ifdef WIN32
+	mkdir(directory.c_str());
+#else
+	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
+#endif // WRITE
+
 	//// CPU greedy coloring
 	//// Don't know if this still works...
 	// Graph<col, col> graph( N, GPUEnabled );  	// random graph
@@ -175,12 +214,21 @@ int main(int argc, char *argv[]) {
 	GPURand GPURandGen(test.getStruct()->nNodes, (long)commandLine.seed);
 
 	//// GPU Luby coloring
-	/*ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
+	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
 	start = std::clock();
 	colLuby.run_fast();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 	LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;*/
+	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+
+#ifdef WRITE
+	std::ofstream lubyFile;
+	lubyFile.open(directory + "/" + std::to_string(test.getStruct()->nNodes) + "-" + std::to_string(test.getStruct()->nCleanEdges) + "-LUBY" + ".txt");
+	lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
+	lubyFile << "time" << " " << duration << std::endl;
+	lubyFile.close();
+#endif // WRITE
+
 
 	ColoringMCMCParams params;
 	params.nCol = test.getMaxNodeDeg();
@@ -196,13 +244,20 @@ int main(int argc, char *argv[]) {
 	//params.maxRip = 4;
 	//params.maxRip = 5000;
 
-	//ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
-	//g_debugger = new dbg(&test, &mcmc_cpu);
-	//start = std::clock();
-	//mcmc_cpu.run();
-	//duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	////mcmc_cpu.show_histogram();
-	//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
+	g_debugger = new dbg(&test, &mcmc_cpu);
+	start = std::clock();
+	mcmc_cpu.run();
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	//mcmc_cpu.show_histogram();
+	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+
+#ifdef WRITE
+	std::ofstream cpuFile;
+	cpuFile.open(directory + "/" + std::to_string(test.getStruct()->nNodes) + "-" + std::to_string(test.getStruct()->nCleanEdges) + "-MCMC_CPU" + ".txt");
+	cpuFile << "time" << " " << duration << std::endl;
+	cpuFile.close();
+#endif // WRITE
 
 	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
