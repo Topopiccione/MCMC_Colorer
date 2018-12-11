@@ -1,0 +1,143 @@
+numCol: 46
+epsilon: 1e-08
+lambda: 0.01
+ratioFreezed: 0.01
+maxRip: 10000
+
+COLORAZIONE INIZIALE
+Color 0 *************
+Color 1 *************
+Color 2 *************
+Color 3 **************
+Color 4 *************
+Color 5 *************
+Color 6 *************
+Color 7 **************
+Color 8 **************
+Color 9 *************
+Color 10 ************
+Color 11 **************
+Color 12 *************
+Color 13 **************
+Color 14 **************
+Color 15 **************
+Color 16 *************
+Color 17 ***************
+Color 18 *************
+Color 19 **************
+Color 20 **************
+Color 21 **************
+Color 22 ***************
+Color 23 **************
+Color 24 ************
+Color 25 ************
+Color 26 *************
+Color 27 **************
+Color 28 *************
+Color 29 **************
+Color 30 *************
+Color 31 *************
+Color 32 **************
+Color 33 *************
+Color 34 **************
+Color 35 ************
+Color 36 *************
+Color 37 **************
+Color 38 *************
+Color 39 *************
+Color 40 ************
+Color 41 **************
+Color 42 **************
+Color 43 **************
+Color 44 *************
+Color 45 ************
+Every * is 39 nodes
+
+Number of used colors is 46 on 46 available
+Most used colors is 22 used 593 times
+Least used colors is 45 used 480 times
+
+Average 543.478
+Variance 731.51
+StandardDeviation 27.0464
+
+
+end colorazione iniziale -------------------------------------------------------------------
+
+***** Tentativo numero: 1
+conflitti rilevati: 6763
+nuovi conflitti rilevati: 1392
+CHANGE
+***** Tentativo numero: 2
+conflitti rilevati: 1392
+nuovi conflitti rilevati: 115
+CHANGE
+***** Tentativo numero: 3
+conflitti rilevati: 115
+nuovi conflitti rilevati: 4
+CHANGE
+***** Tentativo numero: 4
+conflitti rilevati: 4
+nuovi conflitti rilevati: 0
+CHANGE
+COLORAZIONE FINALE
+Time 0.001463
+Color 0 **************
+Color 1 *************
+Color 2 **************
+Color 3 **************
+Color 4 **************
+Color 5 **************
+Color 6 **************
+Color 7 ***************
+Color 8 **************
+Color 9 *************
+Color 10 **************
+Color 11 **************
+Color 12 **************
+Color 13 *************
+Color 14 **************
+Color 15 *************
+Color 16 **************
+Color 17 **************
+Color 18 **************
+Color 19 *************
+Color 20 **************
+Color 21 *************
+Color 22 ***************
+Color 23 **************
+Color 24 **************
+Color 25 **************
+Color 26 **************
+Color 27 *************
+Color 28 *************
+Color 29 **************
+Color 30 **************
+Color 31 **************
+Color 32 ***************
+Color 33 ***************
+Color 34 **************
+Color 35 *************
+Color 36 **************
+Color 37 **************
+Color 38 **************
+Color 39 **************
+Color 40 *************
+Color 41 *************
+Color 42 *************
+Color 43 **************
+Color 44 **************
+Color 45 **************
+Every * is 38 nodes
+
+Number of used colors is 46 on 46 available
+Most used colors is 33 used 583 times
+Least used colors is 42 used 510 times
+
+Average 543.478
+Variance 286.945
+StandardDeviation 16.9395
+
+
+end colorazione finale -------------------------------------------------------------------
+

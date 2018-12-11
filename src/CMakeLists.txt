@@ -3,9 +3,10 @@ PROJECT(MCMC_Colorer)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
 option(test "Build all tests." OFF)								# Attiva GoogleTest
+option(sm61 "Activate nvcc compiling for 6.1 capability" ON)	# dalab
 option(sm60 "Activate nvcc compiling for 6.0 capability" OFF)
 option(sm52 "Activate nvcc compiling for 5.2 capability" OFF)
-option(sm50 "Activate nvcc compiling for 5.0 capability" ON)	# Default sul mio pc
+option(sm50 "Activate nvcc compiling for 5.0 capability" OFF)	# Default sul mio pc
 option(sm35 "Activate nvcc compiling for 3.5 capability" OFF)
 
 add_subdirectory(easyloggingpp)
@@ -28,6 +29,9 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}
 endif()
 
 #SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; --compiler-options -fno-strict-aliasing -lineinfo -use_fast_math -Xptxas -dlcm=cg)
+if (sm61)
+	SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_61,code=sm_61;)
+endif()
 if (sm60)
 	SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -gencode arch=compute_60,code=sm_60;)
 endif()
