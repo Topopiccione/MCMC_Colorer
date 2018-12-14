@@ -32,7 +32,7 @@ dbg::dbg( Graph<float, float> * g, ColoringMCMC_CPU<float, float> * colMCMC ) :
 
 dbg::~dbg() {
 #ifdef __unix
-	system("stty cooked echo");
+	int rr = system("stty cooked echo");
 #endif
 }
 
@@ -42,19 +42,19 @@ bool dbg::check_F12keypress() {
 // on linux, use syscalls
 // https://stackoverflow.com/questions/421860/capture-characters-from-standard-input-without-waiting-for-enter-to-be-pressed
 #ifdef __unix
-	system("stty raw -echo");
+	int rr = system("stty raw -echo");
 	int i = 0;
 	int ii = 0;
 	int c;
 	if ( ii = kbhit() ) {
 		c = getchar();
-		system("stty cooked echo");
+		rr = system("stty cooked echo");
 		if (c == 27)	// Escape
 			return true;
 		else
 			return false;
 	}
-	system("stty cooked echo");
+	rr = system("stty cooked echo");
 	// Note that it swithces the console back and forth between different modes and this may affect performances
 #endif
 // on win / dos, uses conio.h
