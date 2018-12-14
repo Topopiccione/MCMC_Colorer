@@ -15,6 +15,7 @@ src/zlib/*.h
 **/*.txt
 !txt/*.txt
 !txt/results/*/*.txt
+!src/CMakeLists.txt
 
 **/*.log
 **/*.7z
