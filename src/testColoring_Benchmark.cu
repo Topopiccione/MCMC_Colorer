@@ -185,9 +185,9 @@ int main(int argc, char *argv[]) {
 
 	bool GPUEnabled = 1;
 
-	fileImporter fImport(graphFileName, labelsFileName);
-	Graph<float, float> test(&fImport, !GPUEnabled);
-	// Graph<float, float> test( 100000, 0.1, 1234 );
+	//fileImporter fImport(graphFileName, labelsFileName);
+	//Graph<float, float> test(&fImport, !GPUEnabled);
+	Graph<float, float> test(10000, 0.01, 1235);
 	LOG(TRACE) << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges;
 	LOG(TRACE) << "minDeg: " << test.getMinNodeDeg() << " - maxDeg: " << test.getMaxNodeDeg() << " - meanDeg: "
 		<< test.getMeanNodeDeg();

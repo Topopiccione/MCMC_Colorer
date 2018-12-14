@@ -11,6 +11,7 @@
 #include <cinttypes>
 #include "utils/fileImporter.h"
 #include "utils/miscUtils.h"
+#include "utils/timer.h"
 #include "GPUutils/GPURandomizer.h"
 
 typedef uint32_t node;     // graph node
@@ -104,6 +105,7 @@ public:
 	void setupImporter();
 	void setupImporterNew();
 	void setupRnd( node nn, float prob, uint32_t seed );
+	void setupRnd2( node nn, float prob, uint32_t seed );
 	void setupRedux( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds );
 
@@ -111,7 +113,7 @@ public:
 	void setupReduxGPU( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds );
 
-	void randGraphUnweighted(float prob, std::default_random_engine&);  /// generate an Erdos random graph
+	void doStats();
 	void print(bool);
 	void print_d(bool);
 	GraphStruct<nodeW,edgeW>* getStruct() {return str;}
