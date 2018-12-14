@@ -83,7 +83,8 @@ template<typename nodeW, typename edgeW> struct GraphStruct {
  * It manages a graph for CPU & GPU
  */
 template<typename nodeW, typename edgeW> class Graph {
-	float prob{ 0.0f };	               /// Probability of an edge (Erdos graph)
+	float density{ 0.0f };
+	float prob{ 0.0f };						/// Probability of an edge (Erdos graph)
 	GraphStruct<nodeW, edgeW>* str{};      /// graph structure
 	node maxDeg{ 0 };
 	node minDeg{ 0 };

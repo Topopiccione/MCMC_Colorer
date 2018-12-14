@@ -170,13 +170,17 @@ int main(int argc, char *argv[]) {
 	// Commandline arguments
 	ArgHandle commandLine(argc, argv);
 	commandLine.processCommandLine();
+	uint32_t N, M;
+	float prob;
 
-	//uint32_t			N				= commandLine.n;
-	//uint32_t			M				= commandLine.m;
-	//float				prob			= (float) commandLine.prob;
-	uint32_t			seed = commandLine.seed;
-	std::string			graphFileName = commandLine.dataFilename;
-	std::string			labelsFileName = commandLine.labelFilename;
+	if (commandLine.simulate) {
+		N				= commandLine.n;
+		M				= commandLine.m;
+		prob			= (float) commandLine.prob;
+	}
+	uint32_t			seed			= commandLine.seed;
+	std::string			graphFileName	= commandLine.dataFilename;
+	std::string			labelsFileName	= commandLine.labelFilename;
 
 	//seed = 10000;
 
@@ -184,18 +188,23 @@ int main(int argc, char *argv[]) {
 	double duration;
 
 	bool GPUEnabled = 1;
+	Graph<float, float> *	test;
+	fileImporter 		*	fImport;
 
-	//fileImporter fImport(graphFileName, labelsFileName);
-	//Graph<float, float> test(&fImport, !GPUEnabled);
-	Graph<float, float> test(10000, 0.01, 1235);
-	LOG(TRACE) << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges;
-	LOG(TRACE) << "minDeg: " << test.getMinNodeDeg() << " - maxDeg: " << test.getMaxNodeDeg() << " - meanDeg: "
-		<< test.getMeanNodeDeg();
+	if (commandLine.simulate)
+		test	= new Graph<float, float>(N, prob, 1235);
+	else {
+		fImport	= new fileImporter(graphFileName, labelsFileName);
+		test	= new Graph<float, float> (fImport, !GPUEnabled);
+	}
+	LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
+	LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+		<< test->getMeanNodeDeg();
 
-	newComponents(&test);
+	newComponents( test );
 
 #ifdef WRITE
-	std::string directory = std::to_string(test.getStruct()->nNodes) + "-" + std::to_string(test.getStruct()->nCleanEdges) + "-results";
+	std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->getStruct()->nCleanEdges) + "-results";
 #ifdef WIN32
 	mkdir(directory.c_str());
 #else
@@ -211,9 +220,9 @@ int main(int argc, char *argv[]) {
 	// cout << "Greedy-CPU coloring elapsed time: " << colGreedyCPU.getElapsedTime() << "(sec)" << endl;
 	// colGreedyCPU.print(0);
 
-	Graph<float, float> graph_d(&test);
+	Graph<float, float> graph_d( test );
 
-	GPURand GPURandGen(test.getStruct()->nNodes, (long)commandLine.seed);
+	GPURand GPURandGen(test->getStruct()->nNodes, (long)commandLine.seed);
 
 	//// GPU Luby coloring
 	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
@@ -225,7 +234,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef WRITE
 	std::ofstream lubyFile;
-	lubyFile.open(directory + "/" + std::to_string(test.getStruct()->nNodes) + "-" + std::to_string(test.getStruct()->nCleanEdges) + "-LUBY" + ".txt");
+	lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->getStruct()->nCleanEdges) + "-LUBY" + ".txt");
 	lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
 	lubyFile << "time" << " " << duration << std::endl;
 	lubyFile.close();
@@ -233,21 +242,21 @@ int main(int argc, char *argv[]) {
 
 
 	ColoringMCMCParams params;
-	params.nCol = test.getMaxNodeDeg();
+	params.nCol = test->getMaxNodeDeg();
 	//params.nCol = 200;
 	//params.nCol = 80;
 	params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
 	//params.startingNCol = 20;
 	params.epsilon = 1e-8f;
 	params.lambda = 0.01f;
-	//params.lambda = test.getStruct()->nNodes * log( params.epsilon );
+	//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 	params.ratioFreezed = 1e-2;
 	params.maxRip = 10000;
 	//params.maxRip = 4;
 	//params.maxRip = 5000;
 
-	ColoringMCMC_CPU<float, float> mcmc_cpu(&test, params, seed);
-	g_debugger = new dbg(&test, &mcmc_cpu);
+	ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
+	g_debugger = new dbg(test, &mcmc_cpu);
 	start = std::clock();
 	mcmc_cpu.run();
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
@@ -256,7 +265,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef WRITE
 	std::ofstream cpuFile;
-	cpuFile.open(directory + "/" + std::to_string(test.getStruct()->nNodes) + "-" + std::to_string(test.getStruct()->nCleanEdges) + "-MCMC_CPU" + ".txt");
+	cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->getStruct()->nCleanEdges) + "-MCMC_CPU" + ".txt");
 	cpuFile << "time" << " " << duration << std::endl;
 	cpuFile.close();
 #endif // WRITE
@@ -278,6 +287,10 @@ int main(int argc, char *argv[]) {
 
 	if (g_debugger != nullptr)
 		delete g_debugger;
+
+	delete test;
+	if (!commandLine.simulate)
+		delete fImport;
 
 	return EXIT_SUCCESS;
 }
