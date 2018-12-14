@@ -84,7 +84,6 @@ template<typename nodeW, typename edgeW> struct GraphStruct {
  */
 template<typename nodeW, typename edgeW> class Graph {
 	float density{ 0.0f };
-	float prob{ 0.0f };						/// Probability of an edge (Erdos graph)
 	GraphStruct<nodeW, edgeW>* str{};      /// graph structure
 	node maxDeg{ 0 };
 	node minDeg{ 0 };
@@ -126,6 +125,8 @@ public:
 	node getMinNodeDeg() { return minDeg; };
 	float getMeanNodeDeg() { return meanDeg; };
 	void efficiency();
+
+	float prob{ 0.0f };						/// Probability of an edge (Erdos graph)
 
 private:
 	fileImporter		*	fImport;

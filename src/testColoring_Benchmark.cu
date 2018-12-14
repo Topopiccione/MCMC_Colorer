@@ -189,114 +189,114 @@ int main(int argc, char *argv[]) {
 	std::string			labelsFileName = commandLine.labelFilename;
 
 	//seed = 10000;
+	for (int i = 0; i < 2; i++)
+	{
+		std::cout << "Iterazione: " << i << std::endl;
 
-	std::clock_t start;
-	double duration;
+		std::clock_t start;
+		double duration;
 
-	bool GPUEnabled = 1;
-	Graph<float, float> *	test;
-	fileImporter 		*	fImport;
+		bool GPUEnabled = 1;
+		Graph<float, float> *	test;
+		fileImporter 		*	fImport;
 
-	if (commandLine.simulate)
-		test = new Graph<float, float>(N, prob, 1235);
-	else {
-		fImport = new fileImporter(graphFileName, labelsFileName);
-		test = new Graph<float, float>(fImport, !GPUEnabled);
-	}
-	LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
-	LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
-		<< test->getMeanNodeDeg();
+		if (commandLine.simulate)
+			test = new Graph<float, float>(N, prob, i);
+		else {
+			fImport = new fileImporter(graphFileName, labelsFileName);
+			test = new Graph<float, float>(fImport, !GPUEnabled);
+		}
+		LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
+		LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+			<< test->getMeanNodeDeg();
 
-	newComponents(test);
+		newComponents(test);
 
 #ifdef WRITE
-	std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->getStruct()->nCleanEdges) + "-results";
+		std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-results";
 #ifdef WIN32
-	mkdir(directory.c_str());
+		mkdir(directory.c_str());
 #else
-	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
 #endif // WRITE
 
-	//// CPU greedy coloring
-	//// Don't know if this still works...
-	// Graph<col, col> graph( N, GPUEnabled );  	// random graph
-	// ColoringGeedyCPU<col,col> colGreedyCPU(&graph);
-	// colGreedyCPU.run();
-	// cout << "Greedy-CPU coloring elapsed time: " << colGreedyCPU.getElapsedTime() << "(sec)" << endl;
-	// colGreedyCPU.print(0);
+		//// CPU greedy coloring
+		//// Don't know if this still works...
+		// Graph<col, col> graph( N, GPUEnabled );  	// random graph
+		// ColoringGeedyCPU<col,col> colGreedyCPU(&graph);
+		// colGreedyCPU.run();
+		// cout << "Greedy-CPU coloring elapsed time: " << colGreedyCPU.getElapsedTime() << "(sec)" << endl;
+		// colGreedyCPU.print(0);
 
-	Graph<float, float> graph_d(test);
+		Graph<float, float> graph_d(test);
 
-	GPURand GPURandGen(test->getStruct()->nNodes, (long)commandLine.seed);
+		GPURand GPURandGen(test->getStruct()->nNodes, (long)commandLine.seed);
 
-	//// GPU Luby coloring
-	ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
-	start = std::clock();
-	colLuby.run_fast();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-	LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+		//// GPU Luby coloring
+		ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
+		start = std::clock();
+		colLuby.run_fast();
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
+		LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 
 #ifdef WRITE
-	std::ofstream lubyFile;
-	lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->getStruct()->nCleanEdges) + "-LUBY" + ".txt");
-	lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
-	lubyFile << "time" << " " << duration << std::endl;
-	lubyFile.close();
+		std::ofstream lubyFile;
+		lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-LUBY" + ".txt");
+		lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
+		lubyFile << "time" << " " << duration << std::endl;
+		lubyFile.close();
 #endif // WRITE
 
 
-	ColoringMCMCParams params;
-	params.nCol = test->getMaxNodeDeg();
-	//params.nCol = 200;
-	//params.nCol = 80;
-	params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
-	//params.startingNCol = 20;
-	params.epsilon = 1e-8f;
-	params.lambda = 0.01f;
-	//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
-	params.ratioFreezed = 1e-2;
-	params.maxRip = 10000;
-	//params.maxRip = 4;
-	//params.maxRip = 5000;
+		ColoringMCMCParams params;
+		params.nCol = (N * prob > 0) ? N * prob : 1;
+		//params.nCol = test->getMaxNodeDeg();
+		//params.nCol = 200;
+		//params.nCol = 80;
+		params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
+		//params.startingNCol = 20;
+		params.epsilon = 1e-8f;
+		params.lambda = 0.01f;
+		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
+		params.ratioFreezed = 1e-2;
+		params.maxRip = params.nCol;
+		//params.maxRip = 4;
+		//params.maxRip = 5000;
 
-	ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
-	g_debugger = new dbg(test, &mcmc_cpu);
-	start = std::clock();
-	mcmc_cpu.run();
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-	//mcmc_cpu.show_histogram();
-	LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
+		g_debugger = new dbg(test, &mcmc_cpu);
+		start = std::clock();
+		mcmc_cpu.run();
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		//mcmc_cpu.show_histogram();
+		LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 
 #ifdef WRITE
-	std::ofstream cpuFile;
-	cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->getStruct()->nCleanEdges) + "-MCMC_CPU" + ".txt");
-	cpuFile << "time" << " " << duration << std::endl;
-	cpuFile.close();
+		std::ofstream cpuFile;
+		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU" + ".txt");
+		cpuFile << "time" << " " << duration << std::endl;
+		cpuFile.close();
 #endif // WRITE
 
-	ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
-	//for (int i = 0; i < 10; i++)
-	//{
-		//std::cout << "Iterazione: " << i << std::endl;
 
-	start = std::clock();
-	//colMCMC.run(i);
-	colMCMC.run(0);
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		start = std::clock();
+		colMCMC.run(i);
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
-	std::cout << std::endl;
-	//}
+		LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+		std::cout << std::endl;
 
-	if (g_debugger != nullptr)
-		delete g_debugger;
+		if (g_debugger != nullptr)
+			delete g_debugger;
 
-	delete test;
-	if (!commandLine.simulate)
-		delete fImport;
+		delete test;
+		if (!commandLine.simulate)
+			delete fImport;
+	}
 
 	return EXIT_SUCCESS;
 }

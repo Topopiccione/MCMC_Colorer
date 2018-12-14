@@ -227,6 +227,7 @@ Graph<nodeW, edgeW>::Graph(Graph<nodeW, edgeW> * const graph_h) {
 	minDeg = graph_h->minDeg;
 	meanDeg = graph_h->meanDeg;
 	density = graph_h->density;
+	prob = graph_h->prob;
 	connected = graph_h->connected;
 	GPUEnabled = true;
 }

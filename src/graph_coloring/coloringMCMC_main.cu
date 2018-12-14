@@ -7,6 +7,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	Colorer<nodeW, edgeW>(inGraph_d),
 	graphStruct_d(inGraph_d->getStruct()),
 	nnodes(inGraph_d->getStruct()->nNodes),
+	prob(inGraph_d->prob),
 	nedges(inGraph_d->getStruct()->nCleanEdges),
 	randStates(randStates),
 	numOfColors(0),
@@ -116,8 +117,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 	__customPrintRun0_start(iteration);
 
-	start = std::clock();
-
 	cuSts = cudaMemset(coloring_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE_CUMULATIVE)
@@ -175,6 +174,8 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	cudaDeviceSynchronize();
 
 	__customPrintRun1_init();
+
+	start = std::clock();
 
 	do {
 

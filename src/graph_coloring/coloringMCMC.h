@@ -8,12 +8,12 @@
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <math.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#include <sys/types.h>
-#include <sys/stat.h>
-#endif
+//#ifdef WIN32
+//#include <direct.h>
+//#else
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#endif
 
 #include "graph/graph.h"
 #include "coloring.h"
@@ -21,7 +21,7 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-#define PRINTS
+//#define PRINTS
 #define WRITE
 
 #define FIXED_N_COLORS
@@ -62,6 +62,7 @@ public:
 
 protected:
 	uint32_t		nnodes;
+	float			prob;
 	uint32_t		nedges;
 	uint32_t		numOfColors;
 

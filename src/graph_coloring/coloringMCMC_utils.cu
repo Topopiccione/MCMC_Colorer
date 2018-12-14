@@ -358,9 +358,9 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 #endif // PRINTS
 
 #ifdef WRITE
-	for (int i = 0; i < numberOfCol; i++)
-		colorsFile << i << " " << coloring_h[i] << std::endl;
 
+	for (int i = 0; i < nnodes; i++)
+		colorsFile << i << " " << coloring_h[i] << std::endl;
 
 	for (int i = 0; i < numberOfCol; i++)
 	{
@@ -456,16 +456,12 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 
 #ifdef WRITE
 
-	std::string directory = std::to_string(nnodes) + "-" + std::to_string(nedges) + "-results";
-	//#ifdef WIN32
-	//	mkdir(directory.c_str());
-	//#else
-	//	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	//#endif
+	std::cout << "prob: " << prob << std::endl;
+	std::string directory = std::to_string(nnodes) + "-" + std::to_string(prob) + "-results";
 
-	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-logFile-" + std::to_string(iteration) + ".txt");
-	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-resultsFile-" + std::to_string(iteration) + ".txt");
-	colorsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(nedges) + "-colorsFile-" + std::to_string(iteration) + ".txt");
+	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-logFile-" + std::to_string(iteration) + ".txt");
+	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-resultsFile-" + std::to_string(iteration) + ".txt");
+	colorsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-colorsFile-" + std::to_string(iteration) + ".txt");
 
 	size_t total_mem, free_mem;
 	cudaMemGetInfo(&free_mem, &total_mem);
