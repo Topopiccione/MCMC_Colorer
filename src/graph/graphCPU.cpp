@@ -24,8 +24,8 @@ Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb
 }
 
 template<typename nodeW, typename edgeW>
-Graph<nodeW, edgeW>::Graph( node nn, float prob, uint32_t seed ) : GPUEnabled{ false } {
-	setupRnd( nn, prob, seed );
+Graph<nodeW, edgeW>::Graph( node nn, float prob, uint32_t seed ) : GPUEnabled{ false }, prob{ prob } {
+	setupRnd2( nn, prob, seed );
 }
 
 template<typename nodeW, typename edgeW>
