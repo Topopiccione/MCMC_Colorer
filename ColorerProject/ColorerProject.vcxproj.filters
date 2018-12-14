@@ -19,11 +19,20 @@
     <CudaCompile Include="..\src\graph_coloring\coloringLubyFast.cu">
       <Filter>graph_coloring</Filter>
     </CudaCompile>
-    <CudaCompile Include="..\src\graph_coloring\coloringMCMC.cu">
+    <CudaCompile Include="..\src\testColoring_Benchmark.cu" />
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_balance.cu">
       <Filter>graph_coloring</Filter>
     </CudaCompile>
-    <CudaCompile Include="..\src\testColoring_Benchmark.cu" />
-    <CudaCompile Include="..\src\graph_coloring\old_coloringMCMC.cu">
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_decrease.cu">
+      <Filter>graph_coloring</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_standard.cu">
+      <Filter>graph_coloring</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_main.cu">
+      <Filter>graph_coloring</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_utils.cu">
       <Filter>graph_coloring</Filter>
     </CudaCompile>
   </ItemGroup>
@@ -95,9 +104,6 @@
     </ClInclude>
     <ClInclude Include="..\src\utils\dbg.h">
       <Filter>utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\graph_coloring\old_coloringMCMC.h">
-      <Filter>graph_coloring</Filter>
     </ClInclude>
     <ClInclude Include="..\src\graph_coloring\coloringMCMC_CPU.h">
       <Filter>graph_coloring</Filter>

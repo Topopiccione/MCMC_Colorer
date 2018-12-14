@@ -73,7 +73,11 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph/graphGPU.cu"
                 	"graph_coloring/coloringLuby.cu"
 					"graph_coloring/coloringLubyFast.cu"
-					"graph_coloring/coloringMCMC.cu"
+					"graph_coloring/coloringMCMC_main.cu"
+					"graph_coloring/coloringMCMC_standard.cu"
+					"graph_coloring/coloringMCMC_decrease.cu"
+					"graph_coloring/coloringMCMC_balance.cu"
+					"graph_coloring/coloringMCMC_utils.cu"
 					"testColoring_Benchmark.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
 SET(LOGGINGPP		"easyloggingpp/easyloggingpp/easylogging++.cc")

@@ -21,7 +21,7 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-//#define PRINTS
+#define PRINTS
 #define WRITE
 
 #define FIXED_N_COLORS
@@ -43,11 +43,11 @@
 /**
 * choose one to indicate the desired colorer
 */
-//#define STANDARD
 #define STANDARD_CUMULATIVE
-//#define COLOR_BALANCE_ON_NODE_CUMULATIVE
+//#define STANDARD
 //#define COLOR_DECREASE_LINE_CUMULATIVE
 //#define COLOR_DECREASE_EXP_CUMULATIVE				
+//#define COLOR_BALANCE_ON_NODE_CUMULATIVE
 //#define COLOR_BALANCE_LINE_CUMULATIVE				TODO
 //#define COLOR_BALANCE_EXP_CUMULATIVE				TODO
 
@@ -128,6 +128,19 @@ protected:
 	void			getStatsFreeColors();
 	void			getStatsNumColors(char * prefix);
 	void			calcProbs();
+
+#if defined(PRINTS) || defined(WRITE)
+	void			__customPrintConstructor0_start();
+	void			__customPrintConstructor1_end();
+	void			__customPrintRun0_start(int iteration);
+	void			__customPrintRun1_init();
+	void			__customPrintRun2_conflicts();
+	void			__customPrintRun3_newConflicts();
+	void			__customPrintRun4();
+	void			__customPrintRun5();
+	void			__customPrintRun6_change();
+	void			__customPrintRun7_end();
+#endif
 
 #ifdef WRITE
 	std::clock_t start;

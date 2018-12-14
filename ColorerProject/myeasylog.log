@@ -1140,3 +1140,30 @@
 2018-12-11 11:32:09,324 TRACE [default] p: freeing 333 x 4
 2018-12-11 11:32:09,327 TRACE [default] Cstar: freeing 25000 x 4
 2018-12-11 11:32:09,327 TRACE [default] C: freeing 25000 x 4
+2018-12-13 21:07:39,089 TRACE [default] Nodi: 0 - Archi: 0
+2018-12-13 21:07:39,091 TRACE [default] minDeg: 0 - maxDeg: 0 - meanDeg: -nan(ind)
+2018-12-13 21:14:05,866 TRACE [default] Nodi: 0 - Archi: 0
+2018-12-13 21:14:05,867 TRACE [default] minDeg: 0 - maxDeg: 0 - meanDeg: -nan(ind)
+2018-12-13 21:34:05,100 TRACE [default] Nodi: 150000 - Archi: 225014094
+2018-12-13 21:34:05,102 TRACE [default] minDeg: 1342 - maxDeg: 1666 - meanDeg: 1500.09
+2018-12-14 01:30:58,674 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-14 01:30:58,675 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-14 01:30:59,641 TRACE [default] Elapsed time: 0.175
+2018-12-14 01:32:41,848 TRACE [default] Nodi: 25000 - Archi: 6251078
+2018-12-14 01:32:41,850 TRACE [default] minDeg: 184 - maxDeg: 333 - meanDeg: 250.043
+2018-12-14 01:32:46,034 TRACE [default] Elapsed time: 3.493
+2018-12-14 01:35:33,602 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-12-14 01:35:33,604 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-12-14 01:35:42,165 TRACE [default] Elapsed time: 7.372
+2018-12-14 12:38:54,687 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-12-14 12:38:54,692 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-12-14 12:39:03,084 TRACE [default] Elapsed time: 7.174
+2018-12-14 14:33:37,615 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-12-14 14:33:37,616 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-12-14 14:33:46,653 TRACE [default] Elapsed time: 7.717
+2018-12-14 14:38:13,900 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-12-14 14:38:13,900 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-12-14 14:38:22,664 TRACE [default] Elapsed time: 7.261
+2018-12-14 14:42:02,388 TRACE [default] Nodi: 50000 - Archi: 25008562
+2018-12-14 14:42:02,389 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
+2018-12-14 14:42:10,692 TRACE [default] Elapsed time: 7.146
