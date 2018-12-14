@@ -158,13 +158,19 @@ int main(int argc, char *argv[]) {
 	g_debugger = nullptr;
 
 #ifdef INLINE_ARGS
-	argc = 7;
-	argv[1] = "--data";
+	//argc = 7;
+	/*argv[1] = "--data";
 	argv[2] = "net50k001.txt";
 	argv[3] = "--label";
 	argv[4] = "lab50k001.txt";
 	argv[5] = "--gene";
-	argv[6] = "gene.txt";
+	argv[6] = "gene.txt";*/
+
+	argc = 5;
+	argv[1] = "--simulate";
+	argv[2] = "0.01";
+	argv[3] = "-n";
+	argv[4] = "25000";
 #endif // INLINE_ARGS
 
 	// Commandline arguments

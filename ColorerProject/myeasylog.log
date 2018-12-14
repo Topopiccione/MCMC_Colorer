@@ -1167,3 +1167,145 @@
 2018-12-14 14:42:02,388 TRACE [default] Nodi: 50000 - Archi: 25008562
 2018-12-14 14:42:02,389 TRACE [default] minDeg: 409 - maxDeg: 595 - meanDeg: 500.171
 2018-12-14 14:42:10,692 TRACE [default] Elapsed time: 7.146
+2018-12-14 15:02:02,943 TRACE [default] Nodi: 25000 - Archi: 897886
+2018-12-14 15:02:02,945 TRACE [default] minDeg: 15 - maxDeg: 60 - meanDeg: 35.9154
+2018-12-14 15:02:03,599 TRACE [default] LubyGPU - number of colors: 15
+2018-12-14 15:02:03,599 TRACE [default] LubyGPU elapsed time: 0.064
+2018-12-14 15:02:03,607 TRACE [default] Creating ColorerMCMC with parameters: nCol= 60 - lambda= 0.01 - epsilon= 1e-08 - ratioFreezed= 0.01 - seed= 1544796112
+2018-12-14 15:02:03,608 TRACE [default] C: allocated 25000 x 4
+2018-12-14 15:02:03,608 TRACE [default] Cstar: allocated 25000 x 4
+2018-12-14 15:02:03,608 TRACE [default] q: allocated 25000 x 4
+2018-12-14 15:02:03,608 TRACE [default] qstar: allocated 25000 x 4
+2018-12-14 15:02:03,608 TRACE [default] p: allocated 60 x 4
+2018-12-14 15:02:03,609 TRACE [default] pstar: allocated 60 x 4
+2018-12-14 15:02:03,609 TRACE [default] nodeProbab: allocated 25000 x 4
+2018-12-14 15:02:03,609 TRACE [default] freezed: allocated 25000 x 1
+2018-12-14 15:02:03,609 TRACE [default] freeColors: allocated 60 x 1
+2018-12-14 15:02:03,610 TRACE [default] Cviols: allocated 25000 x 1
+2018-12-14 15:02:03,610 TRACE [default] Cstarviols: allocated 25000 x 1
+2018-12-14 15:02:03,613 TRACE [default] Starting MCMC coloring...
+2018-12-14 15:02:03,616 TRACE [default] Initial violations: 18248
+2018-12-14 15:02:03,618 TRACE [default] iteration 0
+2018-12-14 15:02:03,622 TRACE [default] C violations: 18248
+2018-12-14 15:02:03,656 TRACE [default] Zv max: 51 - Zv min: 31 - Zv avg: 41.3874
+2018-12-14 15:02:03,659 TRACE [default] Cstar violations: 6856
+2018-12-14 15:02:03,668 TRACE [default] Cviol: 18248 - Cviolstar: 6856 - sumlogq: -66468.4 - sumlogqstar: -336097
+2018-12-14 15:02:03,669 TRACE [default] alpha: -269515
+2018-12-14 15:02:03,669 TRACE [default] iteration 1
+2018-12-14 15:02:03,673 TRACE [default] C violations: 6856
+2018-12-14 15:02:03,698 TRACE [default] Zv max: 48 - Zv min: 17 - Zv avg: 33.4391
+2018-12-14 15:02:03,700 TRACE [default] Cstar violations: 2056
+2018-12-14 15:02:03,712 TRACE [default] Cviol: 6856 - Cviolstar: 2056 - sumlogq: -21775.2 - sumlogqstar: -126298
+2018-12-14 15:02:03,712 TRACE [default] alpha: -104474
+2018-12-14 15:02:03,713 TRACE [default] iteration 2
+2018-12-14 15:02:03,719 TRACE [default] C violations: 2056
+2018-12-14 15:02:03,734 TRACE [default] Zv max: 49 - Zv min: 18 - Zv avg: 33.7296
+2018-12-14 15:02:03,737 TRACE [default] Cstar violations: 166
+2018-12-14 15:02:03,747 TRACE [default] Cviol: 2056 - Cviolstar: 166 - sumlogq: -6853.62 - sumlogqstar: -37872.7
+2018-12-14 15:02:03,747 TRACE [default] alpha: -31000.2
+2018-12-14 15:02:03,748 TRACE [default] iteration 3
+2018-12-14 15:02:03,754 TRACE [default] C violations: 166
+2018-12-14 15:02:03,776 TRACE [default] Zv max: 48 - Zv min: 18 - Zv avg: 33.5165
+2018-12-14 15:02:03,778 TRACE [default] Cstar violations: 10
+2018-12-14 15:02:03,788 TRACE [default] Cviol: 166 - Cviolstar: 10 - sumlogq: -522.405 - sumlogqstar: -3057.83
+2018-12-14 15:02:03,788 TRACE [default] alpha: -2533.86
+2018-12-14 15:02:03,789 TRACE [default] iteration 4
+2018-12-14 15:02:03,793 TRACE [default] C violations: 10
+2018-12-14 15:02:03,794 TRACE [default] Violating nodes: 1372 1667 4507 4846 7001 11988 19660 20299 23122 23353 
+2018-12-14 15:02:03,807 TRACE [default] Zv max: 48 - Zv min: 17 - Zv avg: 33.5194
+2018-12-14 15:02:03,810 TRACE [default] Cstar violations: 0
+2018-12-14 15:02:03,820 TRACE [default] Cviol: 10 - Cviolstar: 0 - sumlogq: -32.5399 - sumlogqstar: -184.208
+2018-12-14 15:02:03,820 TRACE [default] alpha: -151.568
+2018-12-14 15:02:03,823 TRACE [default] MCMC_CPU elapsed time: 0.209
+2018-12-14 15:02:04,291 TRACE [default] Elapsed time: 0.461
+2018-12-14 15:02:04,295 TRACE [default] Cstarviols: freeing 25000 x 1
+2018-12-14 15:02:04,295 TRACE [default] Cviols: freeing 25000 x 1
+2018-12-14 15:02:04,296 TRACE [default] nodeProbab: freeing 25000 x 1
+2018-12-14 15:02:04,296 TRACE [default] freeColors: freeing 60 x 1
+2018-12-14 15:02:04,297 TRACE [default] freezed: freeing 25000 x 1
+2018-12-14 15:02:04,298 TRACE [default] qstar: freeing 25000 x 4
+2018-12-14 15:02:04,298 TRACE [default] q: freeing 25000 x 4
+2018-12-14 15:02:04,299 TRACE [default] pstar: freeing 60 x 4
+2018-12-14 15:02:04,299 TRACE [default] p: freeing 60 x 4
+2018-12-14 15:02:04,300 TRACE [default] Cstar: freeing 25000 x 4
+2018-12-14 15:02:04,301 TRACE [default] C: freeing 25000 x 4
+2018-12-14 15:03:43,722 TRACE [default] Nodi: 25000 - Archi: 8860670
+2018-12-14 15:03:43,723 TRACE [default] minDeg: 287 - maxDeg: 433 - meanDeg: 354.427
+2018-12-14 15:03:45,073 TRACE [default] LubyGPU - number of colors: 77
+2018-12-14 15:03:45,073 TRACE [default] LubyGPU elapsed time: 0.628
+2018-12-14 15:03:45,080 TRACE [default] Creating ColorerMCMC with parameters: nCol= 433 - lambda= 0.01 - epsilon= 1e-08 - ratioFreezed= 0.01 - seed= 1544796213
+2018-12-14 15:03:45,080 TRACE [default] C: allocated 25000 x 4
+2018-12-14 15:03:45,080 TRACE [default] Cstar: allocated 25000 x 4
+2018-12-14 15:03:45,081 TRACE [default] q: allocated 25000 x 4
+2018-12-14 15:03:45,081 TRACE [default] qstar: allocated 25000 x 4
+2018-12-14 15:03:45,081 TRACE [default] p: allocated 433 x 4
+2018-12-14 15:03:45,081 TRACE [default] pstar: allocated 433 x 4
+2018-12-14 15:03:45,082 TRACE [default] nodeProbab: allocated 25000 x 4
+2018-12-14 15:03:45,082 TRACE [default] freezed: allocated 25000 x 1
+2018-12-14 15:03:45,082 TRACE [default] freeColors: allocated 433 x 1
+2018-12-14 15:03:45,084 TRACE [default] Cviols: allocated 25000 x 1
+2018-12-14 15:03:45,085 TRACE [default] Cstarviols: allocated 25000 x 1
+2018-12-14 15:03:45,089 TRACE [default] Starting MCMC coloring...
+2018-12-14 15:03:45,101 TRACE [default] Initial violations: 24273
+2018-12-14 15:03:45,101 TRACE [default] iteration 0
+2018-12-14 15:03:45,119 TRACE [default] C violations: 24273
+2018-12-14 15:03:45,378 TRACE [default] Zv max: 402 - Zv min: 380 - Zv avg: 391.667
+2018-12-14 15:03:45,393 TRACE [default] Cstar violations: 13903
+2018-12-14 15:03:45,452 TRACE [default] Cviol: 24273 - Cviolstar: 13903 - sumlogq: -144693 - sumlogqstar: -446995
+2018-12-14 15:03:45,452 TRACE [default] alpha: -302198
+2018-12-14 15:03:45,453 TRACE [default] iteration 1
+2018-12-14 15:03:45,473 TRACE [default] C violations: 13903
+2018-12-14 15:03:45,717 TRACE [default] Zv max: 237 - Zv min: 157 - Zv avg: 196.103
+2018-12-14 15:03:45,734 TRACE [default] Cstar violations: 12758
+2018-12-14 15:03:45,788 TRACE [default] Cviol: 13903 - Cviolstar: 12758 - sumlogq: -47059.8 - sumlogqstar: -256117
+2018-12-14 15:03:45,788 TRACE [default] alpha: -209045
+2018-12-14 15:03:45,790 TRACE [default] iteration 2
+2018-12-14 15:03:45,801 TRACE [default] C violations: 12758
+2018-12-14 15:03:46,015 TRACE [default] Zv max: 306 - Zv min: 226 - Zv avg: 270.134
+2018-12-14 15:03:46,025 TRACE [default] Cstar violations: 4556
+2018-12-14 15:03:46,088 TRACE [default] Cviol: 12758 - Cviolstar: 4556 - sumlogq: -71124.1 - sumlogqstar: -235024
+2018-12-14 15:03:46,088 TRACE [default] alpha: -163817
+2018-12-14 15:03:46,089 TRACE [default] iteration 3
+2018-12-14 15:03:46,105 TRACE [default] C violations: 4556
+2018-12-14 15:03:46,263 TRACE [default] Zv max: 231 - Zv min: 156 - Zv avg: 195.129
+2018-12-14 15:03:46,274 TRACE [default] Cstar violations: 3688
+2018-12-14 15:03:46,332 TRACE [default] Cviol: 4556 - Cviolstar: 3688 - sumlogq: -15791.9 - sumlogqstar: -83927.4
+2018-12-14 15:03:46,333 TRACE [default] alpha: -68126.8
+2018-12-14 15:03:46,334 TRACE [default] iteration 4
+2018-12-14 15:03:46,345 TRACE [default] C violations: 3688
+2018-12-14 15:03:46,471 TRACE [default] Zv max: 245 - Zv min: 165 - Zv avg: 205.04
+2018-12-14 15:03:46,488 TRACE [default] Cstar violations: 491
+2018-12-14 15:03:46,541 TRACE [default] Cviol: 3688 - Cviolstar: 491 - sumlogq: -19249.9 - sumlogqstar: -67937.2
+2018-12-14 15:03:46,541 TRACE [default] alpha: -48655.4
+2018-12-14 15:03:46,543 TRACE [default] iteration 5
+2018-12-14 15:03:46,556 TRACE [default] C violations: 491
+2018-12-14 15:03:46,642 TRACE [default] Zv max: 234 - Zv min: 154 - Zv avg: 193.49
+2018-12-14 15:03:46,652 TRACE [default] Cstar violations: 124
+2018-12-14 15:03:46,717 TRACE [default] Cviol: 491 - Cviolstar: 124 - sumlogq: -1930.26 - sumlogqstar: -9063.03
+2018-12-14 15:03:46,718 TRACE [default] alpha: -7129.1
+2018-12-14 15:03:46,719 TRACE [default] iteration 6
+2018-12-14 15:03:46,735 TRACE [default] C violations: 124
+2018-12-14 15:03:46,818 TRACE [default] Zv max: 234 - Zv min: 153 - Zv avg: 192.394
+2018-12-14 15:03:46,833 TRACE [default] Cstar violations: 4
+2018-12-14 15:03:46,891 TRACE [default] Cviol: 124 - Cviolstar: 4 - sumlogq: -546.653 - sumlogqstar: -2284.17
+2018-12-14 15:03:46,892 TRACE [default] alpha: -1736.32
+2018-12-14 15:03:46,893 TRACE [default] iteration 7
+2018-12-14 15:03:46,915 TRACE [default] C violations: 4
+2018-12-14 15:03:46,916 TRACE [default] Violating nodes: 9160 12227 12400 13423 
+2018-12-14 15:03:47,006 TRACE [default] Zv max: 234 - Zv min: 153 - Zv avg: 192.498
+2018-12-14 15:03:47,022 TRACE [default] Cstar violations: 0
+2018-12-14 15:03:47,076 TRACE [default] Cviol: 4 - Cviolstar: 0 - sumlogq: -18.682 - sumlogqstar: -73.8266
+2018-12-14 15:03:47,077 TRACE [default] alpha: -55.1046
+2018-12-14 15:03:47,080 TRACE [default] MCMC_CPU elapsed time: 1.991
+2018-12-14 15:03:51,129 TRACE [default] Elapsed time: 4.039
+2018-12-14 15:03:51,140 TRACE [default] Cstarviols: freeing 25000 x 1
+2018-12-14 15:03:51,140 TRACE [default] Cviols: freeing 25000 x 1
+2018-12-14 15:03:51,140 TRACE [default] nodeProbab: freeing 25000 x 1
+2018-12-14 15:03:51,142 TRACE [default] freeColors: freeing 433 x 1
+2018-12-14 15:03:51,143 TRACE [default] freezed: freeing 25000 x 1
+2018-12-14 15:03:51,144 TRACE [default] qstar: freeing 25000 x 4
+2018-12-14 15:03:51,144 TRACE [default] q: freeing 25000 x 4
+2018-12-14 15:03:51,145 TRACE [default] pstar: freeing 433 x 4
+2018-12-14 15:03:51,146 TRACE [default] p: freeing 433 x 4
+2018-12-14 15:03:51,147 TRACE [default] Cstar: freeing 25000 x 4
+2018-12-14 15:03:51,148 TRACE [default] C: freeing 25000 x 4

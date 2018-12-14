@@ -1,7 +1,7 @@
 ﻿
 
 
-- Testare le prestazioni di Standard e StandardComulative e vedere quale dei due è più veloce oltre a considerare l'utilizzo di memoria, nel caso vincesse in toto la versione con la comulata cancellare l'altra.
+- Testare le prestazioni di Standard e StandardComulative e vedere quale dei due è più veloce oltre a considerare l'utilizzo di memoria, nel caso vincesse in toto la versione con la comulata cancellare l'altra. Di conseguenza vedere se ha senso lasciare il newComponents nel main.
 - Controllare dove ho utilizzato i colori dinamici e dove no, nel caso lasciarli solo per la versione standard scelta al passaggio precedente.
 - Togliere il più possibile gli if nelle funzioni cuda utilizza la moltiplicazione per 0 e 1.
 - Provare a usare la distribuzione lineare o esponenziale anche nel reminder all'interno dell'algoritmo.
