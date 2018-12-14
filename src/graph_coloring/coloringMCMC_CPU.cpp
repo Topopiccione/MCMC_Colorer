@@ -54,7 +54,7 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	// Begin with a random coloration (colors range = [0, nCol-1])
 	size_t idx = 0;
 	////////////// Baseline
-	// std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
+	std::for_each(std::begin(C), std::end(C), [&](uint32_t &val) {val = unifInitColors(gen); });
 	////////////// Non-uniform probabilities: linear
 	// // Filling p with color distribution
 	// divider = nCol * (nCol + 1);
@@ -68,17 +68,17 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	// for (idx = 0; idx < nNodes; idx++)
 	// 	extract_new_color(idx, p, nodeProbab, q, C);
 	////////////// Non-uniform probabilities: negative exp
-	expLambda = 0.1f;
-	auto expEval = [&] (size_t i) {return exp(-expLambda * (float(i)));};
-	std::for_each( std::begin(p), std::end(p), [&](float &val) { val = expEval(idx); idx++; } );
-	divider = std::accumulate( std::begin(p), std::end(p), 0.0f );
-	idx = 0;
-	std::for_each( std::begin(p), std::end(p), [&](float &val) { val /= divider; } );
-	//Extract in advance all the experiment probabilities
-	std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
-	// Run extract_new_color on each node (q vector in ignored)
-	for (idx = 0; idx < nNodes; idx++)
-		extract_new_color(idx, p, nodeProbab, q, C);
+	// expLambda = 0.1f;
+	// auto expEval = [&] (size_t i) {return exp(-expLambda * (float(i)));};
+	// std::for_each( std::begin(p), std::end(p), [&](float &val) { val = expEval(idx); idx++; } );
+	// divider = std::accumulate( std::begin(p), std::end(p), 0.0f );
+	// idx = 0;
+	// std::for_each( std::begin(p), std::end(p), [&](float &val) { val /= divider; } );
+	// //Extract in advance all the experiment probabilities
+	// std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
+	// // Run extract_new_color on each node (q vector in ignored)
+	// for (idx = 0; idx < nNodes; idx++)
+	// 	extract_new_color(idx, p, nodeProbab, q, C);
 	//////////////
 }
 
@@ -108,12 +108,16 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
 
 	size_t iter = 0;
-	size_t maxiter = 250;
+	size_t maxiter = nCol * 10;
 
 	// Count the number of violations on the extracted coloring
 	// Remember: 1: node is in a current violation state, 0: is not
 	Cviol = violation_count(C, Cviols);
 	LOG(TRACE) << TXT_BIBLU << "Initial violations: " << Cviol << TXT_NORML;
+
+	// No reordering (as in comment below)
+	size_t ii = 0;
+	std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
 
 	// Stay in the loop until there are no more violations
 	while (Cviol != 0) {
@@ -128,20 +132,20 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		// std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
 		// std::sort( std::begin(colorIdx), std::end(colorIdx), [&](int i,int j) {return histBins[i] > histBins[j]; } );
 		///////// No reorder
-		size_t ii = 0;
-		std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+		// size_t ii = 0;
+		// std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
 		/////////
 
 		Cviol = violation_count(C, Cviols);
 		LOG(TRACE) << TXT_BIBLU << "C violations: " << Cviol << TXT_NORML;
 
-		if ((g_traceLogEn) & (Cviol < 40)) {
-			size_t idx = 0;
-			std::string logString;
-			logString = "Violating nodes: ";
-			std::for_each(Cviols.begin(), Cviols.end(), [&](bool val) {if (val) logString = logString + std::to_string(idx) + " "; idx++; });
-			LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
-		}
+		// if ((g_traceLogEn) & (Cviol < 40)) {
+		// 	size_t idx = 0;
+		// 	std::string logString;
+		// 	logString = "Violating nodes: ";
+		// 	std::for_each(Cviols.begin(), Cviols.end(), [&](bool val) {if (val) logString = logString + std::to_string(idx) + " "; idx++; });
+		// 	LOG(TRACE) << TXT_BIBLU << logString.c_str() << TXT_NORML;
+		// }
 
 		// // Managing freezing nodes.
 		// // Remember: 0 = evaluate new color, 1 = freezed
@@ -194,8 +198,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		Cstarviol = violation_count(Cstar, Cstarviols);
 		LOG(TRACE) << TXT_BIBLU << "Cstar violations: " << Cstarviol << TXT_NORML;
 
-		if (unlock_stall())
-			continue;
+		// if (unlock_stall())
+		// 	continue;
 
 		// Internal loop 2: building C
 		for (size_t i = 0; i < nNodes; i++) {
@@ -213,26 +217,27 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		}
 
 		// Apply log() to q and qstar; then, cumulate
-		std::for_each(std::begin(q), std::end(q), [](float & val) {val = log(val); });
-		std::for_each(std::begin(qstar), std::end(qstar), [](float & val) {val = log(val); });
-		float sumlogq = std::accumulate(std::begin(q), std::end(q), 0.0f);
-		float sumlogqstar = std::accumulate(std::begin(qstar), std::end(qstar), 0.0f);
+		// std::for_each(std::begin(q), std::end(q), [](float & val) {val = log(val); });
+		// std::for_each(std::begin(qstar), std::end(qstar), [](float & val) {val = log(val); });
+		// float sumlogq = std::accumulate(std::begin(q), std::end(q), 0.0f);
+		// float sumlogqstar = std::accumulate(std::begin(qstar), std::end(qstar), 0.0f);
 
 		// evaluate alpha
-		alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) - sumlogq + sumlogqstar;
-		LOG(TRACE) << TXT_BIBLU << "Cviol: " << Cviol << " - Cviolstar: " << Cstarviol << " - sumlogq: " << sumlogq
-			<< " - sumlogqstar: " << sumlogqstar << TXT_NORML;
-		LOG(TRACE) << TXT_BIBLU << "alpha: " << alpha << TXT_NORML;
+		// alpha = lambda * ((int64_t)Cviol - (int64_t)Cstarviol) - sumlogq + sumlogqstar;
+		// LOG(TRACE) << TXT_BIBLU << "Cviol: " << Cviol << " - Cviolstar: " << Cstarviol << " - sumlogq: " << sumlogq
+		// 	<< " - sumlogqstar: " << sumlogqstar << TXT_NORML;
+		// LOG(TRACE) << TXT_BIBLU << "alpha: " << alpha << TXT_NORML;
 
 		if (g_debugger->check_F12keypress())
 			g_debugger->stop_and_debug();
 
 		// Consider min(alpha, 0); execute an experiment against alpha to accept the new coloring
-#ifdef __unix
-		auto minAlpha = std::min(alpha, 0.0f);
-#else
-		auto minAlpha = min(alpha, 0.0f);
-#endif
+// #ifdef __unix
+// 		auto minAlpha = std::min(alpha, 0.0f);
+// #else
+// 		auto minAlpha = min(alpha, 0.0f);
+// #endif
+		alpha = 1.0f;
 		if (alpha != 0) {
 			if (bernie(minAlpha)) {
 				LOG(TRACE) << "Rejecting coloration!" << std::endl;
@@ -351,13 +356,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 			return;
 		}
 		////////// Baseline
-		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
-		// 	if (freeColors[idx])
-		// 		val = (1.0f - epsilon * Zv) / (float)Zvcomp;
-		// 	else
-		// 		val = epsilon;
-		// 	idx++;
-		// });
+		std::for_each(std::begin(p), std::end(p), [&](float &val) {
+			if (freeColors[idx])
+				val = (1.0f - epsilon * Zv) / (float)Zvcomp;
+			else
+				val = epsilon;
+			idx++;
+		});
 		////////// Non-uniform probabilities: linear
 		// float reminder = 0;
 		// size_t nOccup = 0;
@@ -383,30 +388,30 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 		// 	idx++;
 		// });
 		/////////// Non-uniform probabilities: negative exponential
-		float reminder = 0;
-		size_t nOccup = 0;
-		idx = 0;
-		auto expEval = [&] (size_t i) {return /*2.0f * */exp(-expLambda * (float(i)));};
-		// Start filling the probabilites and accumulating the reminder
-		idx = 0;
-		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (freeColors[colorIdx[idx]])
-				val = expEval(idx) / divider;
-			else {
-				val = epsilon;
-				reminder += (expEval(idx) / divider) - epsilon;
-				nOccup++;
-			}
-			idx++;
-		});
-		// Redistributing the reminder on the free colors
-		idx = 0;
-		std::for_each(std::begin(p), std::end(p), [&](float &val) {
-			if (freeColors[colorIdx[idx]])
-				val += (reminder / (float) (nCol - nOccup));
-			idx++;
-		});
-
+		// float reminder = 0;
+		// size_t nOccup = 0;
+		// idx = 0;
+		// auto expEval = [&] (size_t i) {return /*2.0f * */exp(-expLambda * (float(i)));};
+		// // Start filling the probabilites and accumulating the reminder
+		// idx = 0;
+		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		// 	if (freeColors[colorIdx[idx]])
+		// 		val = expEval(idx) / divider;
+		// 	else {
+		// 		val = epsilon;
+		// 		reminder += (expEval(idx) / divider) - epsilon;
+		// 		nOccup++;
+		// 	}
+		// 	idx++;
+		// });
+		// // Redistributing the reminder on the free colors
+		// idx = 0;
+		// std::for_each(std::begin(p), std::end(p), [&](float &val) {
+		// 	if (freeColors[colorIdx[idx]])
+		// 		val += (reminder / (float) (nCol - nOccup));
+		// 	idx++;
+		// });
+		////////////////
 	}
 	else { // Current color is NOT in a violation state
 		std::for_each(std::begin(p), std::end(p), [&](float &val) {
@@ -417,7 +422,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 			idx++;
 		});
 	}
-	////////////////
+
 }
 
 
