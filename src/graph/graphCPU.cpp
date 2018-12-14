@@ -23,6 +23,10 @@ Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb
 		setupImporterGPU();
 }
 
+template<typename nodeW, typename edgeW>
+Graph<nodeW, edgeW>::Graph( node nn, float prob, uint32_t seed ) : GPUEnabled{ false }, prob{ prob } {
+	setupRnd2( nn, prob, seed );
+}
 
 template<typename nodeW, typename edgeW>
 Graph<nodeW, edgeW>::Graph(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
@@ -92,21 +96,7 @@ void Graph<nodeW, edgeW>::setupImporter() {
 		}
 	}
 
-	// max, min, mean deg
-	maxDeg = 0;
-	minDeg = nn;
-	for (uint32_t i = 0; i < nn; i++) {
-		if (str->deg(i) > maxDeg)
-			maxDeg = (uint32_t)str->deg(i);
-		if (str->deg(i) < minDeg)
-			minDeg = (uint32_t)str->deg(i);
-	}
-	density = (float)str->nEdges / (float)(nn * (nn - 1) / 2);
-	meanDeg = (float)str->nEdges / (float)nn;
-	if (minDeg == 0)
-		connected = false;
-	else
-		connected = true;
+	doStats();
 
 	// elimino le strutture temporanee
 	for (uint32_t i = 0; i < nn; i++) {
@@ -174,21 +164,7 @@ void Graph<nodeW, edgeW>::setupImporterNew() {
 	}
 
 	std::cout << "Calculating statistics..." << std::endl;
-	// max, min, mean deg
-	maxDeg = 0;
-	minDeg = nn;
-	for (uint32_t i = 0; i < nn; i++) {
-		if (str->deg(i) > maxDeg)
-			maxDeg = (uint32_t)str->deg(i);
-		if (str->deg(i) < minDeg)
-			minDeg = (uint32_t)str->deg(i);
-	}
-	density = (float)str->nEdges / (float)(nn * (nn - 1) / 2);
-	meanDeg = (float)str->nEdges / (float)nn;
-	if (minDeg == 0)
-		connected = false;
-	else
-		connected = true;
+	doStats();
 }
 
 
@@ -251,63 +227,149 @@ void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const ui
 	return;
 }
 
-
-/**
- * Generate a new random graph
- * @param eng seed
- */
- // TODO: adeguare alla rimozione della Unified Memory
 template<typename nodeW, typename edgeW>
-void Graph<nodeW, edgeW>::randGraphUnweighted(float prob, std::default_random_engine & eng) {
-	if (prob < 0 || prob > 1) {
-		printf("[Graph] Warning: Probability not valid (set p = 0.5)!!\n");
-	}
-	uniform_real_distribution<> randR(0.0, 1.0);
-	node n = str->nNodes;
+void Graph<nodeW, edgeW>::setupRnd( node nn, float prob, uint32_t seed ) {
+	str = new GraphStruct<nodeW, edgeW>;
+	str->cumulDegs = new node_sz[nn + 1];
+	std::fill(str->cumulDegs, str->cumulDegs + (nn + 1), 0);
+	str->nNodes = nn;
+	str->nEdges = 0;
 
-	// gen edges
-	vector<int>* edges = new vector<int>[n];
-	for (uint32_t i = 0; i < n - 1; i++) {
-		for (uint32_t j = i + 1; j < n; j++)
-			if (randR(eng) < prob) {
+	if (prob < 0 || prob > 1) {
+		std::cout << TXT_BIYLW << "Invalid probability value. Setting default [p = 0.5]" << TXT_NORML << std::endl;
+		prob = 0.5f;
+	}
+
+	// Mersienne twister RNG
+	// Performance comparison of C++ PRNG:
+	// https://stackoverflow.com/questions/35358501/what-is-performance-wise-the-best-way-to-generate-random-bools
+	std::mt19937 MtRng( seed );
+	uint32_t lim = std::numeric_limits<uint32_t>::max() * prob;
+
+	vector<uint32_t>* edges = new vector<uint32_t>[nn];
+	// filling edge lists
+	for (uint32_t i = 0; i < nn - 1; i++) {
+		for (uint32_t j = i + 1; j < nn; j++) {
+			if (MtRng() < lim) {
 				edges[i].push_back(j);
 				edges[j].push_back(i);
 				str->cumulDegs[i + 1]++;
 				str->cumulDegs[j + 1]++;
 				str->nEdges += 2;
 			}
+		}
 	}
-	str->cumulDegs[0] = 0;
-	for (uint32_t i = 0; i < n; i++)
-		str->cumulDegs[i + 1] += str->cumulDegs[i];
 
-	// max, min, mean deg
-	maxDeg = 0;
-	minDeg = n;
-	for (uint32_t i = 0; i < n; i++) {
-		if (str->deg(i) > maxDeg)
-			maxDeg = (uint32_t)str->deg(i);
-		if (str->deg(i) < minDeg)
-			minDeg = (uint32_t)str->deg(i);
-	}
-	density = (float)str->nEdges / (float)(n * (n - 1) / 2);
-	meanDeg = (float)str->nEdges / (float)n;
-	if (minDeg == 0)
-		connected = false;
-	else
-		connected = true;
+	std::cout << "Cumulating cumulDegs..." << std::endl;
+	for (uint32_t i = 1; i < (nn + 1); i++)
+		str->cumulDegs[i] += str->cumulDegs[i - 1];
 
-	// manage memory for edges with CUDA Unified Memory
-	if (GPUEnabled)
-		setMemGPU(str->nEdges, GPUINIT_EDGES);
-	else
-		str->neighs = new node[str->nEdges]{};
+	str->neighs = new node[str->nEdges];
+	str->edgeWeights = new edgeW[str->nEdges];
+	str->nodeThresholds = new nodeW[str->nNodes];
 
-	for (uint32_t i = 0; i < n; i++)
+	std::cout << "Copying neighs..." << std::endl;
+	for (size_t i = 0; i < nn; i++)
 		memcpy((str->neighs + str->cumulDegs[i]), edges[i].data(), sizeof(int) * edges[i].size());
 
-	// free resources
+	std::cout << "Generating weights..." << std::endl;
+	for (size_t i = 0; i < str->nEdges; i++)
+		str->edgeWeights[i] = (float) MtRng() / std::numeric_limits<uint32_t>::max();
+
+	std::cout << "Calculating statistics..." << std::endl;
+	doStats();
+
 	delete[] edges;
+}
+
+template<typename nodeW, typename edgeW>
+void Graph<nodeW, edgeW>::setupRnd2( node nn, float prob, uint32_t seed ) {
+
+	Timer rndTime;
+	rndTime.startTime();
+	size_t vecSize = nn * (nn + 1) / 2;
+	float adj = sqrtf( 2.0f * nn / (float)(nn + 1) );
+	std::cout << "adj: " << adj << std::endl;
+	std::vector<bool> boolGraph( vecSize );
+	std::cout << "Generating... " << std::flush;
+	for (size_t i = 0; i < vecSize; i++)
+		boolGraph[i] = ((double)rand() / (RAND_MAX)) >= (prob * adj) ? 0 : 1;
+	rndTime.endTime();
+	std::cout << rndTime.duration() << std::endl;
+
+	size_t a = 0;
+	std::for_each( std::begin(boolGraph), std::end(boolGraph), [&](bool val) {a += val;} );
+	std::cout << "Vecsize: " << vecSize << " - tot pos: " << a << std::endl;
+
+	str = new GraphStruct<nodeW, edgeW>;
+	str->cumulDegs = new node_sz[nn + 1];
+	std::fill(str->cumulDegs, str->cumulDegs + (nn + 1), 0);
+	str->nNodes = nn;
+	str->nEdges = 0;
+
+	size_t i = 0;	// col
+	size_t j = 0;	// row
+	std::cout << "Calculating degs... " << std::flush;
+	rndTime.startTime();
+	for (size_t k = 0; k < vecSize; k++) {
+		if (j == i)
+			boolGraph[k] = 0;
+
+		if (boolGraph[k]) {
+			str->cumulDegs[i + 1]++;
+			str->cumulDegs[j + 1]++;
+			str->nEdges += 2;
+		}
+
+		i++;
+		if (i == nn) {
+			j++;
+			i = j;
+		}
+	}
+	rndTime.endTime();
+	std::cout << rndTime.duration() << std::endl;
+
+	std::cout << "Cumulating cumulDegs... " << std::flush;
+	rndTime.startTime();
+	for (uint32_t i = 1; i < (nn + 1); i++)
+		str->cumulDegs[i] += str->cumulDegs[i - 1];
+	rndTime.endTime();
+	std::cout << rndTime.duration() << std::endl;
+
+	str->neighs = new node[str->nEdges];
+	str->edgeWeights = new edgeW[str->nEdges];
+	str->nodeThresholds = new nodeW[str->nNodes];
+
+	std::vector<size_t> tempDegs( nn, 0 );
+	size_t neighIdx;
+	i = j = 0;
+	std::cout << "Filling neighs and weights... " << std::flush;
+	rndTime.startTime();
+	for (size_t k = 0; k < vecSize; k++) {
+		if (boolGraph[k]) {
+			neighIdx = str->cumulDegs[j] + tempDegs[j];
+			str->neighs[neighIdx] = i;
+			//str->edgeWeights[neighIdx] = fImport->edgeWgh;
+			tempDegs[j]++;
+			// anche l'arco di ritorno!
+			neighIdx = str->cumulDegs[i] + tempDegs[i];
+			str->neighs[neighIdx] = j;
+			//str->edgeWeights[neighIdx] = fImport->edgeWgh;
+			tempDegs[i]++;
+		}
+		i++;
+		if (i == nn) {
+			j++;
+			i = j;
+		}
+	}
+	rndTime.endTime();
+	std::cout << rndTime.duration() << std::endl;
+
+	doStats();
+
+
 }
 
 /**
@@ -334,6 +396,26 @@ void Graph<nodeW, edgeW>::print(bool verbose) {
 		}
 		cout << "\n";
 	}
+}
+
+template<typename nodeW, typename edgeW>
+void Graph<nodeW, edgeW>::doStats() {
+	// max, min, mean deg
+	size_t nn = str->nNodes;
+	maxDeg = 0;
+	minDeg = nn;
+	for (uint32_t i = 0; i < nn; i++) {
+		if (str->deg(i) > maxDeg)
+			maxDeg = (uint32_t)str->deg(i);
+		if (str->deg(i) < minDeg)
+			minDeg = (uint32_t)str->deg(i);
+	}
+	density = (float)str->nEdges / (float)(nn * (nn - 1) / 2);
+	meanDeg = (float)str->nEdges / (float)nn;
+	if (minDeg == 0)
+		connected = false;
+	else
+		connected = true;
 }
 
 // This sucks... we need to fix template declarations
