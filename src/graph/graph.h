@@ -6,9 +6,11 @@
 #include <list>
 #include <iostream>
 #include <memory>
+#include <limits>
 #include <algorithm>
 #include <cinttypes>
 #include "utils/fileImporter.h"
+#include "utils/miscUtils.h"
 #include "GPUutils/GPURandomizer.h"
 
 typedef uint32_t node;     // graph node
@@ -90,6 +92,7 @@ template<typename nodeW, typename edgeW> class Graph {
 
 public:
 	Graph( node nn, bool GPUEnb ) : GPUEnabled{ GPUEnb } { setup(nn); }
+	Graph( node nn, float prob, uint32_t seed );
 	Graph( fileImporter * imp, bool GPUEnb );
 	Graph( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F,
@@ -100,6 +103,7 @@ public:
 	void setup(node);
 	void setupImporter();
 	void setupImporterNew();
+	void setupRnd( node nn, float prob, uint32_t seed );
 	void setupRedux( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds );
 

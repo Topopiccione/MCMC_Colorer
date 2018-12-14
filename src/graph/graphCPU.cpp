@@ -23,6 +23,10 @@ Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb
 		setupImporterGPU();
 }
 
+template<typename nodeW, typename edgeW>
+Graph<nodeW, edgeW>::Graph( node nn, float prob, uint32_t seed ) : GPUEnabled{ false } {
+	setupRnd( nn, prob, seed );
+}
 
 template<typename nodeW, typename edgeW>
 Graph<nodeW, edgeW>::Graph(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
@@ -251,12 +255,78 @@ void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const ui
 	return;
 }
 
+template<typename nodeW, typename edgeW>
+void Graph<nodeW, edgeW>::setupRnd( node nn, float prob, uint32_t seed ) {
+	str = new GraphStruct<nodeW, edgeW>;
+	str->cumulDegs = new node_sz[nn + 1];
+	std::fill(str->cumulDegs, str->cumulDegs + (nn + 1), 0);
+	str->nNodes = nn;
+
+	if (prob < 0 || prob > 1) {
+		std::cout << TXT_BIYLW << "Invalid probability value. Setting default [p = 0.5]" << TXT_NORML << std::endl;
+		prob = 0.5f;
+	}
+
+	// Mersienne twister RNG
+	// Performance comparison of C++ PRNG:
+	// https://stackoverflow.com/questions/35358501/what-is-performance-wise-the-best-way-to-generate-random-bools
+	std::mt19937 MtRng( seed );
+	uint32_t lim = std::numeric_limits<uint32_t>::max() * prob;
+
+	vector<uint32_t>* edges = new vector<uint32_t>[nn];
+	// filling edge lists
+	for (uint32_t i = 0; i < nn - 1; i++) {
+		for (uint32_t j = i + 1; j < nn; j++) {
+			if (MtRng() < lim) {
+				edges[i].push_back(j);
+				edges[j].push_back(i);
+				str->cumulDegs[i + 1]++;
+				str->cumulDegs[j + 1]++;
+				str->nEdges += 2;
+			}
+		}
+	}
+
+	std::cout << "Cumulating cumulDegs..." << std::endl;
+	for (uint32_t i = 1; i < (nn + 1); i++)
+		str->cumulDegs[i] += str->cumulDegs[i - 1];
+
+	str->neighs = new node[str->nEdges];
+	str->edgeWeights = new edgeW[str->nEdges];
+	str->nodeThresholds = new nodeW[str->nNodes];
+
+	std::cout << "Copying neighs..." << std::endl;
+	for (size_t i = 0; i < nn; i++)
+		memcpy((str->neighs + str->cumulDegs[i]), edges[i].data(), sizeof(int) * edges[i].size());
+
+	std::cout << "Generating weights..." << std::endl;
+	for (size_t i = 0; i < str->nEdges; i++)
+		str->edgeWeights[i] = (float) MtRng() / std::numeric_limits<uint32_t>::max();
+
+	std::cout << "Calculating statistics..." << std::endl;
+	// max, min, mean deg
+	maxDeg = 0;
+	minDeg = nn;
+	for (uint32_t i = 0; i < nn; i++) {
+		if (str->deg(i) > maxDeg)
+			maxDeg = (uint32_t)str->deg(i);
+		if (str->deg(i) < minDeg)
+			minDeg = (uint32_t)str->deg(i);
+	}
+	density = (float)str->nEdges / (float)(nn * (nn - 1) / 2);
+	meanDeg = (float)str->nEdges / (float)nn;
+	if (minDeg == 0)
+		connected = false;
+	else
+		connected = true;
+
+	delete[] edges;
+}
 
 /**
  * Generate a new random graph
  * @param eng seed
  */
- // TODO: adeguare alla rimozione della Unified Memory
 template<typename nodeW, typename edgeW>
 void Graph<nodeW, edgeW>::randGraphUnweighted(float prob, std::default_random_engine & eng) {
 	if (prob < 0 || prob > 1) {

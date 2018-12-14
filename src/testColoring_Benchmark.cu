@@ -72,6 +72,7 @@ void newComponents(Graph<float, float> * test) {
 
 #include <fstream>
 
+// Nich, in dbg.h e' presente una funzione per lo split delle stringhe
 vector<string> split(const std::string& str, const std::string& delim)
 {
 	vector<std::string> tokens;
@@ -186,6 +187,7 @@ int main(int argc, char *argv[]) {
 
 	fileImporter fImport(graphFileName, labelsFileName);
 	Graph<float, float> test(&fImport, !GPUEnabled);
+	// Graph<float, float> test( 100000, 0.1, 1234 );
 	LOG(TRACE) << "Nodi: " << test.getStruct()->nNodes << " - Archi: " << test.getStruct()->nEdges;
 	LOG(TRACE) << "minDeg: " << test.getMinNodeDeg() << " - maxDeg: " << test.getMaxNodeDeg() << " - meanDeg: "
 		<< test.getMeanNodeDeg();
