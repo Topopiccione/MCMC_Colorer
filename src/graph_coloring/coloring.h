@@ -24,7 +24,7 @@ public:
 	Colorer(Graph<nodeW, edgeW>* g) : graph{ g } {
 		std::default_random_engine eng{};
 		std::uniform_real_distribution<> randU(0.0, 1.0);
-		seed = static_cast<float>(randU(eng));
+		//seed = static_cast<float>(randU(eng));
 	}
 	virtual ~Colorer() {};
 

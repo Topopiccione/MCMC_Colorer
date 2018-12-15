@@ -131,7 +131,6 @@ bool Colorer<nodeW,edgeW>::checkColoring() {
 	return true;
 }
 
-
 template<typename nodeW, typename edgeW>
 ColoringGreedyCPU<nodeW,edgeW>::ColoringGreedyCPU( Graph<nodeW, edgeW>* g ) : Colorer<nodeW, edgeW>( g ) {
 	this->coloring = new Coloring();
@@ -207,6 +206,8 @@ void ColoringGreedyCPU<nodeW,edgeW>::run() {
 	delete[] buffDeg;
 	delete[] C;
 }
+
+
 
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
