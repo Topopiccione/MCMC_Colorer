@@ -175,6 +175,41 @@ void ColoringLuby<nodeW, edgeW>::convert_to_standard_notation(){
 	delete[] cumulSize;
 }
 
+template<typename nodeW, typename edgeW>
+void ColoringLuby<nodeW, edgeW>::saveStats( size_t it, float duration, std::ofstream & outFile ) {
+	outFile << "Luby Colorer - GPU version - Report" << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
+	outFile << "GRAPH INFO" << std::endl;
+	outFile << "Nodes: " << nnodes << " - Edges: " << graphStruct_d->nEdges << std::endl;
+	outFile << "Max deg: " << this->graph->getMaxNodeDeg() << " - Min deg: " << this->graph->getMinNodeDeg() <<
+			" - Avg deg: " << this->graph->getMeanNodeDeg() << std::endl;
+	outFile << "Edge probability (for randomly generated graphs): " << this->graph->prob << std::endl;
+	//outFile << "Seed: " << seed << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
+	outFile << "EXECUTION INFO" << std::endl;
+	outFile << "Iteration: " << it << std::endl;
+	outFile << "Execution time: " << duration << std::endl;
+	//outFile << "Iteration performed: " << iter << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
+	outFile << "Number of colors: " << numOfColors << std::endl;
+	outFile << "Color histogram:" << std::endl;
+	std::vector<size_t> histBins(numOfColors, 0);
+	std::vector<uint32_t> C( nnodes );
+	cuSts = cudaMemcpy( C.data(), coloring_d, nnodes * sizeof( uint32_t ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val - 1]++;} );
+	size_t idx = 0;
+	size_t usedCols = 0;
+	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {outFile << idx << ": " << histBins[idx] << std::endl; idx++; if (val) usedCols++;} );
+	float mean = std::accumulate( std::begin(histBins), std::end(histBins), 0) / (float) numOfColors;
+	float variance = 0;
+	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {variance += ((val - mean) * (val - mean));} );
+	variance /= (float) numOfColors;
+	float std = sqrtf( variance );
+	outFile << "Average number of nodes for each color: " << mean << std::endl;
+	outFile << "Variance: " << variance << std::endl;
+	outFile << "StD: " << std << std::endl;
+}
+
 
 // Rimuove dal vettore dei candidati i nodi già colorati
 __global__ void ColoringLuby_k::prune_eligible( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d ) {

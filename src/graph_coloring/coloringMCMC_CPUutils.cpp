@@ -64,7 +64,38 @@ bool ColoringMCMC_CPU<nodeW, edgeW>::unlock_stall() {
 	return false;
 }
 
-
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::ofstream & outFile ) {
+	outFile << "MCMC Colorer - CPU version - Report" << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
+	outFile << "GRAPH INFO" << std::endl;
+	outFile << "Nodes: " << nNodes << " - Edges: " << str->nEdges << std::endl;
+	outFile << "Max deg: " << this->graph->getMaxNodeDeg() << " - Min deg: " << this->graph->getMinNodeDeg() <<
+			" - Avg deg: " << this->graph->getMeanNodeDeg() << std::endl;
+	outFile << "Edge probability (for randomly generated graphs): " << this->graph->prob << std::endl;
+	outFile << "Seed: " << seed << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
+	outFile << "EXECUTION INFO" << std::endl;
+	outFile << "Iteration: " << it << std::endl;
+	outFile << "Execution time: " << duration << std::endl;
+	outFile << "Iteration performed: " << iter << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
+	outFile << "Color histogram:" << std::endl;
+	std::vector<size_t> histBins(nCol, 0);
+	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+	size_t idx = 0;
+	size_t usedCols = 0;
+	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {outFile << idx << ": " << histBins[idx] << std::endl; idx++; if (val) usedCols++;} );
+	outFile << "Number of colors: " << nCol << " - Used colors: " << usedCols << std::endl;
+	float mean = std::accumulate( std::begin(histBins), std::end(histBins), 0) / (float) nCol;
+	float variance = 0;
+	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {variance += ((val - mean) * (val - mean));} );
+	variance /= (float) nCol;
+	float std = sqrtf( variance );
+	outFile << "Average number of nodes for each color: " << mean << std::endl;
+	outFile << "Variance: " << variance << std::endl;
+	outFile << "StD: " << std << std::endl;
+}
 
 /////////////////////
 template class Graph<float, float>;

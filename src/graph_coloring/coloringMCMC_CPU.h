@@ -3,6 +3,7 @@
 #include <iostream>
 #include <random>
 #include <numeric>
+#include <fstream>
 
 #include "graph/graph.h"
 #include "coloring.h"
@@ -26,6 +27,7 @@ public:
 		const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
 		std::vector<float> & qVect);
 	bool 			unlock_stall();
+	void 			saveStats( size_t iter, float duration, std::ofstream & outFile );
 
 	// Just for class dbg...
 	std::vector<uint32_t>	*	getC() { return &C; }
@@ -83,6 +85,7 @@ protected:
 
 	float										expLambda;
 	float										divider;
+	size_t 										iter;
 
 	// Vars
 	size_t										Cviol;		// # of violation in C
