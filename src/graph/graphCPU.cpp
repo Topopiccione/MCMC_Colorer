@@ -227,6 +227,9 @@ void Graph<nodeW, edgeW>::setupRedux(const uint32_t * const unlabelled, const ui
 	return;
 }
 
+#define DUPLICATE_CHECK
+#define BIDIR_CHECK
+
 template<typename nodeW, typename edgeW>
 void Graph<nodeW, edgeW>::setupRnd( node nn, float prob, uint32_t seed ) {
 	str = new GraphStruct<nodeW, edgeW>;
@@ -275,6 +278,41 @@ void Graph<nodeW, edgeW>::setupRnd( node nn, float prob, uint32_t seed ) {
 	std::cout << "Generating weights..." << std::endl;
 	for (size_t i = 0; i < str->nEdges; i++)
 		str->edgeWeights[i] = (float) MtRng() / std::numeric_limits<uint32_t>::max();
+
+#ifdef DUPLICATE_CHECK
+	std::cout << "Checking for duplicate edges in neighbor lists..." << std::endl;
+	for (size_t i = 0; i < nn; i++) {
+		size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
+		auto neighIdx = str->neighs + str->cumulDegs[i];
+		auto aa = std::unique(neighIdx, neighIdx + nodeDeg);
+		if (aa != (str->neighs + str->cumulDegs[i + 1])) {
+			std::cout << "Aborting: duplicate in edge list of node " << i << std::endl;
+			exit(-1);
+		}
+	}
+#endif
+
+#ifdef BIDIR_CHECK
+	for (size_t i = 0; i < nn; i++) {
+		size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
+		auto neighIdx = str->neighs + str->cumulDegs[i];
+		for (size_t j = 0; j < nodeDeg; j++) {
+			auto neighNode = neighIdx[j];
+			auto neighNodeDeg = str->cumulDegs[neighNode + 1] - str->cumulDegs[neighNode];
+			auto neighNodeIdx = str->neighs + str->cumulDegs[neighNode];
+			// look for i in the neigh list of neighNode. There should be none;
+			auto aa = std::find(neighNodeIdx, neighNodeIdx + neighNodeDeg, i);
+			if (aa == neighNodeIdx + neighNodeDeg) {
+				std::cout << "Aborting: bidirectional edge between nodes " << i << " and " << neighNode << " not found" << std::endl;
+				std::cout << i << " neighs list: ";
+				std::for_each(neighIdx, neighIdx + nodeDeg, [&](uint32_t val) {std::cout << val << " "; });
+				std::cout << std::endl << neighNode << " neighs list: ";
+				std::for_each(neighNodeIdx, neighNodeIdx + neighNodeDeg, [&](uint32_t val) {std::cout << val << " "; });
+				exit(-1);
+			}
+		}
+	}
+#endif
 
 	std::cout << "Calculating statistics..." << std::endl;
 	doStats();
