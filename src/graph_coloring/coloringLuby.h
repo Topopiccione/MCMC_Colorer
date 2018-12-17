@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <fstream>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
@@ -25,6 +26,7 @@ public:
 	void			run_fast();
 
 	Coloring	*	getColoringGPU();
+	void 			saveStats( size_t it, float duration, std::ofstream & outFile );
 
 protected:
 	uint32_t		nnodes;

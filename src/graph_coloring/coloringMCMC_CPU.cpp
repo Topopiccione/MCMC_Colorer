@@ -7,7 +7,7 @@ extern dbg * g_debugger;
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed) :
 	Colorer<nodeW, edgeW>(g), str(g->getStruct()), nNodes(g->getStruct()->nNodes), nCol(params.nCol), lambda(params.lambda),
-	epsilon(params.epsilon), ratioFreezed(params.ratioFreezed), seed(seed) {
+	epsilon(params.epsilon), ratioFreezed(params.ratioFreezed), iter( 0 ), seed(seed) {
 
 	std::cout << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 
@@ -107,7 +107,6 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	//size_t ii = 0;
 	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
 
-	size_t iter = 0;
 	size_t maxiter = nCol * 10;
 
 	// Count the number of violations on the extracted coloring
@@ -237,16 +236,16 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 // #else
 // 		auto minAlpha = min(alpha, 0.0f);
 // #endif
-		alpha = 1.0f;
-		if (alpha != 0) {
-			if (bernie(minAlpha)) {
-				LOG(TRACE) << "Rejecting coloration!" << std::endl;
-			}
-			else {
+		// alpha = 1.0f;
+		// if (alpha != 0) {
+		// 	if (bernie(minAlpha)) {
+		// 		LOG(TRACE) << "Rejecting coloration!" << std::endl;
+		// 	}
+		// 	else {
 				std::swap(C, Cstar);
 				std::swap(Cviol, Cstarviol);
-			}
-		}
+		// 	}
+		// }
 
 		iter++;
 		if (iter > maxiter) {

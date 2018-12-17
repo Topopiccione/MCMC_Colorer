@@ -176,19 +176,18 @@ int main(int argc, char *argv[]) {
 	// Commandline arguments
 	ArgHandle commandLine(argc, argv);
 	commandLine.processCommandLine();
-	uint32_t N, M;
+	uint32_t N;
 	float prob;
 
 	if (commandLine.simulate) {
 		N = commandLine.n;
-		M = commandLine.m;
+		//M = commandLine.m;
 		prob = (float)commandLine.prob;
 	}
 	uint32_t			seed = commandLine.seed;
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 
-	//seed = 10000;
 	for (int i = 0; i < 2; i++)
 	{
 		std::cout << "Iterazione: " << i << std::endl;
@@ -221,14 +220,6 @@ int main(int argc, char *argv[]) {
 #endif
 #endif // WRITE
 
-		//// CPU greedy coloring
-		//// Don't know if this still works...
-		// Graph<col, col> graph( N, GPUEnabled );  	// random graph
-		// ColoringGeedyCPU<col,col> colGreedyCPU(&graph);
-		// colGreedyCPU.run();
-		// cout << "Greedy-CPU coloring elapsed time: " << colGreedyCPU.getElapsedTime() << "(sec)" << endl;
-		// colGreedyCPU.print(0);
-
 		Graph<float, float> graph_d(test);
 
 		GPURand GPURandGen(test->getStruct()->nNodes, (long)commandLine.seed);
@@ -243,9 +234,10 @@ int main(int argc, char *argv[]) {
 
 #ifdef WRITE
 		std::ofstream lubyFile;
-		lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-LUBY" + ".txt");
-		lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
-		lubyFile << "time" << " " << duration << std::endl;
+		lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-LUBY-" + std::to_string(i) + ".txt");
+		//lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
+		//lubyFile << "time" << " " << duration << std::endl;
+		colLuby.saveStats( i, duration, lubyFile );
 		lubyFile.close();
 #endif // WRITE
 
@@ -275,8 +267,8 @@ int main(int argc, char *argv[]) {
 
 #ifdef WRITE
 		std::ofstream cpuFile;
-		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU" + ".txt");
-		cpuFile << "time" << " " << duration << std::endl;
+		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
+		mcmc_cpu.saveStats( i, duration, cpuFile );
 		cpuFile.close();
 #endif // WRITE
 
