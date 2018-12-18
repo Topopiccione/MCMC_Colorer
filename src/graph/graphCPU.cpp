@@ -25,7 +25,7 @@ Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb
 
 template<typename nodeW, typename edgeW>
 Graph<nodeW, edgeW>::Graph( node nn, float prob, uint32_t seed ) : GPUEnabled{ false }, prob{ prob } {
-	setupRnd( nn, prob, seed );
+	setupRnd2( nn, prob, seed );
 }
 
 template<typename nodeW, typename edgeW>
@@ -278,24 +278,39 @@ void Graph<nodeW, edgeW>::setupRnd( node nn, float prob, uint32_t seed ) {
 
 	std::cout << "Calculating statistics..." << std::endl;
 	doStats();
+#ifdef CHECKRANDGRAPH
+	checkRandGraph();
+#endif
 
 	delete[] edges;
 }
 
 template<typename nodeW, typename edgeW>
-void Graph<nodeW, edgeW>::setupRnd2( node nn, float prob, uint32_t seed ) {
+void Graph<nodeW, edgeW>::setupRnd2( node n, float prob, uint32_t seed ) {
 
 	Timer rndTime;
-	rndTime.startTime();
+	size_t nn = static_cast<size_t>( n );
 	size_t vecSize = nn * (nn + 1) / 2;
-	float adj = sqrtf( 2.0f * nn / (float)(nn + 1) );
-	std::cout << "adj: " << adj << std::endl;
 	std::vector<bool> boolGraph( vecSize );
-	std::cout << "Generating... " << std::flush;
-	for (size_t i = 0; i < vecSize; i++)
-		boolGraph[i] = ((double)rand() / (RAND_MAX)) >= (prob * adj) ? 0 : 1;
+	// Filing the progress bar values
+	std::vector<size_t> gaugeVals( 40 );
+	size_t idx = 1;
+	size_t aaa = vecSize / 40;
+	std::for_each(std::begin(gaugeVals), std::end(gaugeVals), [&](size_t &val) {val = aaa * idx++ - 1;} );
+	idx = 0;
+
+	std::cout << "Generating... " << std::endl;
+	std::cout << "|----------------------------------------|" << std::endl << "\033[F|";
+	rndTime.startTime();
+	for (size_t i = 0; i < vecSize; i++) {
+		boolGraph[i] = ((double)rand() / (RAND_MAX)) >= prob ? 0 : 1;
+		if (i == gaugeVals[idx]) {
+		 	std::cout << "#" << std::flush;
+			idx++;
+		}
+	}
 	rndTime.endTime();
-	std::cout << rndTime.duration() << std::endl;
+	std::cout << std::endl << rndTime.duration() / 1000 << " s" << std::endl;
 
 	size_t a = 0;
 	std::for_each( std::begin(boolGraph), std::end(boolGraph), [&](bool val) {a += val;} );
@@ -309,7 +324,9 @@ void Graph<nodeW, edgeW>::setupRnd2( node nn, float prob, uint32_t seed ) {
 
 	size_t i = 0;	// col
 	size_t j = 0;	// row
-	std::cout << "Calculating degs... " << std::flush;
+	idx = 0;		// progress bar
+	std::cout << "Calculating degs... " << std::endl;
+	std::cout << "|----------------------------------------|" << std::endl << "\033[F|";
 	rndTime.startTime();
 	for (size_t k = 0; k < vecSize; k++) {
 		if (j == i)
@@ -326,16 +343,21 @@ void Graph<nodeW, edgeW>::setupRnd2( node nn, float prob, uint32_t seed ) {
 			j++;
 			i = j;
 		}
+
+		if (k == gaugeVals[idx]) {
+		 	std::cout << "#" << std::flush;
+			idx++;
+		}
 	}
 	rndTime.endTime();
-	std::cout << rndTime.duration() << std::endl;
+	std::cout << std::endl << rndTime.duration() / 1000 << " s" << std::endl;
 
 	std::cout << "Cumulating cumulDegs... " << std::flush;
 	rndTime.startTime();
 	for (uint32_t i = 1; i < (nn + 1); i++)
 		str->cumulDegs[i] += str->cumulDegs[i - 1];
 	rndTime.endTime();
-	std::cout << rndTime.duration() << std::endl;
+	std::cout << std::endl << rndTime.duration() / 1000 << " s" << std::endl;
 
 	str->neighs = new node[str->nEdges];
 	str->edgeWeights = new edgeW[str->nEdges];
@@ -343,8 +365,9 @@ void Graph<nodeW, edgeW>::setupRnd2( node nn, float prob, uint32_t seed ) {
 
 	std::vector<size_t> tempDegs( nn, 0 );
 	size_t neighIdx;
-	i = j = 0;
-	std::cout << "Filling neighs and weights... " << std::flush;
+	idx = i = j = 0;
+	std::cout << "Filling neighs and weights... " << std::endl;
+	std::cout << "|----------------------------------------|" << std::endl << "\033[F|";
 	rndTime.startTime();
 	for (size_t k = 0; k < vecSize; k++) {
 		if (boolGraph[k]) {
@@ -363,13 +386,19 @@ void Graph<nodeW, edgeW>::setupRnd2( node nn, float prob, uint32_t seed ) {
 			j++;
 			i = j;
 		}
+
+		if (k == gaugeVals[idx]) {
+		 	std::cout << "#" << std::flush;
+			idx++;
+		}
 	}
 	rndTime.endTime();
-	std::cout << rndTime.duration() << std::endl;
+	std::cout << std::endl << rndTime.duration() / 1000 << " s" << std::endl;
 
 	doStats();
-
-
+#ifdef CHECKRANDGRAPH
+	checkRandGraph();
+#endif
 }
 
 /**
@@ -416,6 +445,60 @@ void Graph<nodeW, edgeW>::doStats() {
 		connected = false;
 	else
 		connected = true;
+}
+
+template<typename nodeW, typename edgeW>
+void Graph<nodeW, edgeW>::checkRandGraph() {
+	size_t nn = str->nNodes;
+	std::vector<size_t> gaugeVals( 40 );
+	size_t idx = 1;
+	size_t aaa = nn / 40;
+	std::for_each(std::begin(gaugeVals), std::end(gaugeVals), [&](size_t &val) {val = aaa * idx++ - 1;} );
+	idx = 0;
+
+	std::cout << "Checking for duplicate edges in neighbor lists..." << std::endl;
+	std::cout << "|----------------------------------------|" << std::endl << "\033[F|";
+	for (size_t i = 0; i < nn; i++) {
+		size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
+		auto neighIdx = str->neighs + str->cumulDegs[i];
+		auto aa = std::unique(neighIdx, neighIdx + nodeDeg);
+		if (aa != (str->neighs + str->cumulDegs[i + 1])) {
+			std::cout << "Aborting: duplicate in edge list of node " << i << std::endl;
+			exit( -1 );
+		}
+		if (i == gaugeVals[idx]) {
+		 	std::cout << "#" << std::flush;
+			idx++;
+		}
+	}
+
+	idx = 0;
+	std::cout << std::endl << "Checking for edge bidirectionality in neighbor lists..." << std::endl;
+	std::cout << "|----------------------------------------|" << std::endl << "\033[F|";
+	for (size_t i = 0; i < nn; i++) {
+		size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
+		auto neighIdx = str->neighs + str->cumulDegs[i];
+		for (size_t j = 0; j < nodeDeg; j++) {
+			auto neighNode = neighIdx[j];
+			auto neighNodeDeg = str->cumulDegs[neighNode + 1] - str->cumulDegs[neighNode];
+			auto neighNodeIdx = str->neighs + str->cumulDegs[neighNode];
+			// look for i in the neigh list of neighNode. There should be none;
+			auto aa = std::find(neighNodeIdx, neighNodeIdx + neighNodeDeg, i);
+			if (aa == neighNodeIdx + neighNodeDeg) {
+				std::cout << "Aborting: bidirectional edge between nodes " << i << " and " << neighNode << " not found" << std::endl;
+				std::cout << i << " neighs list: ";
+				std::for_each(neighIdx, neighIdx + nodeDeg, [&](uint32_t val) {std::cout << val << " "; });
+				std::cout << std::endl << neighNode << " neighs list: ";
+				std::for_each(neighNodeIdx, neighNodeIdx + neighNodeDeg, [&](uint32_t val) {std::cout << val << " "; });
+				exit( -1 );
+			}
+		}
+		if (i == gaugeVals[idx]) {
+		 	std::cout << "#" << std::flush;
+			idx++;
+		}
+	}
+	std::cout << std::endl;
 }
 
 // This sucks... we need to fix template declarations

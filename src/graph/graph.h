@@ -14,6 +14,8 @@
 #include "utils/timer.h"
 #include "GPUutils/GPURandomizer.h"
 
+#define CHECKRANDGRAPH
+
 typedef uint32_t node;     // graph node
 typedef uint32_t node_sz;
 
@@ -114,6 +116,7 @@ public:
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds );
 
 	void doStats();
+	void checkRandGraph();
 	void print(bool);
 	void print_d(bool);
 	GraphStruct<nodeW,edgeW>* getStruct() {return str;}
