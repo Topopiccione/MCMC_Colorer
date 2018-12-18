@@ -272,7 +272,9 @@ void ColoringMCMC<nodeW, edgeW>::getStatsFreeColors() {
 		statsFreeColors_min = (freeColors < statsFreeColors_min) ? freeColors : statsFreeColors_min;
 	}
 	statsFreeColors_avg /= (float)nnodes;
+#ifdef PRINTS
 	std::cout << "Max Free Colors: " << statsFreeColors_max << " - Min Free Colors: " << statsFreeColors_min << " - AVG Free Colors: " << statsFreeColors_avg << std::endl;
+#endif
 }
 
 template<typename nodeW, typename edgeW>
@@ -456,7 +458,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 
 #ifdef WRITE
 
-	std::cout << "prob: " << prob << std::endl;
 	std::string directory = std::to_string(nnodes) + "-" + std::to_string(prob) + "-results";
 
 	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-logFile-" + std::to_string(iteration) + ".txt");

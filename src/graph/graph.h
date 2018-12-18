@@ -14,7 +14,7 @@
 #include "utils/timer.h"
 #include "GPUutils/GPURandomizer.h"
 
-#define CHECKRANDGRAPH
+//#define CHECKRANDGRAPH
 
 typedef uint32_t node;     // graph node
 typedef uint32_t node_sz;
@@ -67,13 +67,13 @@ template<typename nodeW, typename edgeW> struct GraphStruct {
 
 	/// return the degree of node i
 	inline node_sz deg(node i) {
-		return ( cumulDegs[i + 1] - cumulDegs[i] );
+		return (cumulDegs[i + 1] - cumulDegs[i]);
 	}
 
 	/// check whether node i is a neighbor of node j
 	bool areNeighbor(node i, node j) {
 		for (uint32_t k = 0; k < deg(j); k++) {
-			if (neighs[cumulDegs[j]+k] == i)
+			if (neighs[cumulDegs[j] + k] == i)
 				return true;
 		}
 		return false;
@@ -94,33 +94,33 @@ template<typename nodeW, typename edgeW> class Graph {
 	bool GPUEnabled{ false };
 
 public:
-	Graph( node nn, bool GPUEnb ) : GPUEnabled{ GPUEnb } { setup(nn); }
-	Graph( node nn, float prob, uint32_t seed );
-	Graph( fileImporter * imp, bool GPUEnb );
-	Graph( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
+	Graph(node nn, bool GPUEnb) : GPUEnabled{ GPUEnb } { setup(nn); }
+	Graph(node nn, float prob, uint32_t seed);
+	Graph(fileImporter * imp, bool GPUEnb);
+	Graph(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
 		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F,
-		const float * const thresholds, bool GPUEnb );
-	Graph( Graph<nodeW, edgeW> * const fullGraph ); // takes a graph from CPU and copy to GPU
-	~Graph() {if (GPUEnabled) deleteMemGPU(); else delete str;};
+		const float * const thresholds, bool GPUEnb);
+	Graph(Graph<nodeW, edgeW> * const fullGraph); // takes a graph from CPU and copy to GPU
+	~Graph() { if (GPUEnabled) deleteMemGPU(); else delete str; };
 
 	void setup(node);
 	void setupImporter();
 	void setupImporterNew();
-	void setupRnd( node nn, float prob, uint32_t seed );
-	void setupRnd2( node nn, float prob, uint32_t seed );
-	void setupRedux( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
-		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds );
+	void setupRnd(node nn, float prob, uint32_t seed);
+	void setupRnd2(node nn, float prob, uint32_t seed);
+	void setupRedux(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
+		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds);
 
 	void setupImporterGPU();
-	void setupReduxGPU( const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
-		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds );
+	void setupReduxGPU(const uint32_t * const unlabelled, const uint32_t unlabSize, const int32_t * const labels,
+		GraphStruct<nodeW, edgeW> * const fullGraphStruct, const uint32_t * const f2R, const uint32_t * const r2F, const float * const thresholds);
 
 	void doStats();
 	void checkRandGraph();
 	void print(bool);
 	void print_d(bool);
-	GraphStruct<nodeW,edgeW>* getStruct() {return str;}
-	GraphStruct<nodeW,edgeW>* getStruct() const {return str;}
+	GraphStruct<nodeW, edgeW>* getStruct() { return str; }
+	GraphStruct<nodeW, edgeW>* getStruct() const { return str; }
 	void setMemGPU(node_sz nn, int mode);
 	void deleteMemGPU();
 	bool isGPUEnabled() { return GPUEnabled; }

@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		std::cout << "Iterazione: " << i << std::endl;
 
@@ -205,9 +205,12 @@ int main(int argc, char *argv[]) {
 			fImport = new fileImporter(graphFileName, labelsFileName);
 			test = new Graph<float, float>(fImport, !GPUEnabled);
 		}
-		LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
-		LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
-			<< test->getMeanNodeDeg();
+		//LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
+		//LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+		//<< test->getMeanNodeDeg();
+		std::cout << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges << std::endl;
+		std::cout << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+			<< test->getMeanNodeDeg() << std::endl;
 
 		newComponents(test);
 
@@ -229,15 +232,17 @@ int main(int argc, char *argv[]) {
 		start = std::clock();
 		colLuby.run_fast();
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-		LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+		//LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
+		//LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+		std::cout << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << std::endl;
+		std::cout << "LubyGPU elapsed time: " << duration << std::endl;
 
 #ifdef WRITE
 		std::ofstream lubyFile;
 		lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-LUBY-" + std::to_string(i) + ".txt");
 		//lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
 		//lubyFile << "time" << " " << duration << std::endl;
-		colLuby.saveStats( i, duration, lubyFile );
+		colLuby.saveStats(i, duration, lubyFile);
 		lubyFile.close();
 #endif // WRITE
 
@@ -263,12 +268,13 @@ int main(int argc, char *argv[]) {
 		mcmc_cpu.run();
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 		//mcmc_cpu.show_histogram();
-		LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
 
 #ifdef WRITE
 		std::ofstream cpuFile;
 		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
-		mcmc_cpu.saveStats( i, duration, cpuFile );
+		mcmc_cpu.saveStats(i, duration, cpuFile);
 		cpuFile.close();
 #endif // WRITE
 
@@ -278,7 +284,8 @@ int main(int argc, char *argv[]) {
 		colMCMC.run(i);
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-		LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+		std::cout << "MCMC Elapsed time: " << duration << std::endl;
 		std::cout << std::endl;
 
 		if (g_debugger != nullptr)

@@ -10,8 +10,8 @@
 
 //#define DEBUGPRINT_K
 //#define TESTCOLORINGCORRECTNESS
-#define PRINTCOLORINGTITLE
-#define VERBOSECOLORING
+//#define PRINTCOLORINGTITLE
+//#define VERBOSECOLORING
 //#define PRINT_COLORING
 
 
@@ -19,7 +19,7 @@ template<typename nodeW, typename edgeW>
 class ColoringLuby : public Colorer<nodeW, edgeW> {
 public:
 
-	ColoringLuby( Graph<nodeW, edgeW> * inGraph_d, curandState * randStates );
+	ColoringLuby(Graph<nodeW, edgeW> * inGraph_d, curandState * randStates);
 
 	~ColoringLuby();
 
@@ -27,7 +27,7 @@ public:
 	void			run_fast();
 
 	Coloring	*	getColoringGPU();
-	void 			saveStats( size_t it, float duration, std::ofstream & outFile );
+	void 			saveStats(size_t it, float duration, std::ofstream & outFile);
 
 protected:
 	uint32_t		nnodes;
@@ -69,24 +69,24 @@ protected:
 // Global kernels
 namespace ColoringLuby_k {
 
-	__global__ void prune_eligible( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d );
-	__global__ void set_initial_distr_k( uint32_t nnodes, curandState * states, const bool * const cands_d, bool * const i_i_d );
+	__global__ void prune_eligible(const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d);
+	__global__ void set_initial_distr_k(uint32_t nnodes, curandState * states, const bool * const cands_d, bool * const i_i_d);
 	template<typename nodeW, typename edgeW>
-	__global__ void check_conflicts_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d );
+	__global__ void check_conflicts_k(uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d);
 	template<typename nodeW, typename edgeW>
-	__global__ void update_eligible_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d );
-	__global__ void check_finished_k( uint32_t nnodes, const bool * const cands_d, bool * const nodeLeft_d );
-	__global__ void add_color_and_check_uncolored_k( uint32_t nnodes, uint32_t numOfColors, const bool * const is_d, bool * const uncoloredNodes_d, uint32_t * const coloring_d );
+	__global__ void update_eligible_k(uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d);
+	__global__ void check_finished_k(uint32_t nnodes, const bool * const cands_d, bool * const nodeLeft_d);
+	__global__ void add_color_and_check_uncolored_k(uint32_t nnodes, uint32_t numOfColors, const bool * const is_d, bool * const uncoloredNodes_d, uint32_t * const coloring_d);
 
 	template<typename nodeW, typename edgeW>
-	__global__ void print_graph_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs );
+	__global__ void print_graph_k(uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs);
 
-	__global__ void fast_colorer_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, curandState * randStates,
-	bool * const uncolored_d, bool * const nodeLeft_d, bool * const i_i_d, bool * const is_d, bool * const cands_d,	uint32_t * const numOfColors_d,
-	uint32_t * const coloring_d );
+	__global__ void fast_colorer_k(uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, curandState * randStates,
+		bool * const uncolored_d, bool * const nodeLeft_d, bool * const i_i_d, bool * const is_d, bool * const cands_d, uint32_t * const numOfColors_d,
+		uint32_t * const coloring_d);
 
-	__global__ void prune_eligible_clear_is( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d, bool * const is_d );
-	__global__ void check_conflicts_fast_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d );
-	__global__ void update_eligible_fast_k( uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d );
+	__global__ void prune_eligible_clear_is(const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d, bool * const is_d);
+	__global__ void check_conflicts_fast_k(uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, bool * const i_i_d);
+	__global__ void update_eligible_fast_k(uint32_t nnodes, const node_sz * const cumulSize, const node * const neighs, const bool * const i_i_d, bool * const cands_d, bool * const is_d);
 
 };

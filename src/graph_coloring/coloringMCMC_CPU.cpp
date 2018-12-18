@@ -7,9 +7,9 @@ extern dbg * g_debugger;
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed) :
 	Colorer<nodeW, edgeW>(g), str(g->getStruct()), nNodes(g->getStruct()->nNodes), nCol(params.nCol), lambda(params.lambda),
-	epsilon(params.epsilon), ratioFreezed(params.ratioFreezed), iter( 0 ), seed(seed) {
+	epsilon(params.epsilon), ratioFreezed(params.ratioFreezed), iter(0), seed(seed) {
 
-	std::cout << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
+	LOG(TRACE) << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 
 	LOG(TRACE) << TXT_COLMC << "Creating ColorerMCMC with parameters: nCol= " << nCol << " - lambda= " << lambda
 		<< " - epsilon= " << epsilon << " - ratioFreezed= " << ratioFreezed << " - seed= " << seed << TXT_NORML;
@@ -43,7 +43,7 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	LOG(TRACE) << TXT_COLMC << "Cviols: allocated " << Cviols.size() << " x " << sizeof(bool) << TXT_NORML;
 	LOG(TRACE) << TXT_COLMC << "Cstarviols: allocated " << Cstarviols.size() << " x " << sizeof(bool) << TXT_NORML;
 
-	colorIdx = std::vector<size_t>( nCol );
+	colorIdx = std::vector<size_t>(nCol);
 
 	// Starting the RNGs
 	gen = std::default_random_engine(seed);
@@ -103,7 +103,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	auto bernie = [&](float p) {return ((double)rand() / (RAND_MAX)) >= p ? 0 : 1; };
 
 	//std::vector<size_t> colorIdx( nCol );
-	std::vector<size_t> histBins( nCol );
+	std::vector<size_t> histBins(nCol);
 	//size_t ii = 0;
 	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
 
@@ -116,7 +116,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 
 	// No reordering (as in comment below)
 	size_t ii = 0;
-	std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+	std::for_each(std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++; });
 
 	// Stay in the loop until there are no more violations
 	while (Cviol != 0) {
@@ -242,8 +242,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 		// 		LOG(TRACE) << "Rejecting coloration!" << std::endl;
 		// 	}
 		// 	else {
-				std::swap(C, Cstar);
-				std::swap(Cviol, Cstarviol);
+		std::swap(C, Cstar);
+		std::swap(Cviol, Cstarviol);
 		// 	}
 		// }
 
@@ -257,10 +257,10 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	// Print stats
 	size_t usedCols = 0;
 	size_t idx = 0;
-	std::fill( std::begin(histBins), std::end(histBins), 0 );
-	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
-	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {if (val) usedCols++;} );
-	std::cout << "numero di colori: " << nCol << " - colori utilizzati: " << usedCols << std::endl;
+	std::fill(std::begin(histBins), std::end(histBins), 0);
+	std::for_each(std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++; });
+	std::for_each(std::begin(histBins), std::end(histBins), [&](size_t val) {if (val) usedCols++; });
+	LOG(TRACE) << "numero di colori: " << nCol << " - colori utilizzati: " << usedCols << std::endl;
 
 }
 
@@ -452,7 +452,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::extract_new_color(const size_t currentNode,
 	// fix for overflowing
 	if (idx >= nCol) {
 		idx = rand() % (nCol - 1);
-		std::cout << TXT_BIRED << "X" << TXT_NORML << std::endl;
+		LOG(TRACE) << TXT_BIRED << "X" << TXT_NORML << std::endl;
 	}
 
 	qVect[currentNode] = pVect[idx];
