@@ -1,33 +1,33 @@
 #include "dbg.h"
 
 
-dbg::dbg( Graph<float, float> * g, ColoringMCMC_CPU<float, float> * colMCMC ) :
-	gr( g ), col( colMCMC ) {
+dbg::dbg(Graph<float, float> * g, ColoringMCMC_CPU<float, float> * colMCMC) :
+	gr(g), col(colMCMC) {
 
 	// graphstruct
-	nNodes			= g->getStruct()->nNodes;
-	nEdges			= g->getStruct()->nEdges;
-	cumulDegs		= g->getStruct()->cumulDegs;
-	neighs			= g->getStruct()->neighs;
+	nNodes = g->getStruct()->nNodes;
+	nEdges = g->getStruct()->nEdges;
+	cumulDegs = g->getStruct()->cumulDegs;
+	neighs = g->getStruct()->neighs;
 
 	// colorer
-	C				= col->getC();
-	Cstar			= col->getCstar();
-	p				= col->getp();
-	pstar			= col->getpstar();
-	q				= col->getq();
-	qstar			= col->getqstar();
-	nodeProbab		= col->getnodeProbab();
-	freezed			= col->getfreezed();
-	freeColors		= col->getfreeColors();
-	Cviols			= col->getCviols();
-	Cstarviols		= col->getCstarviols();
-	nCol			= col->getnCol();
-	lambda			= col->getlambda();
-	epsilon			= col->getepsilon();
-	Cviol			= col->getCviol();
-	Cstarviol		= col->getCstarviol();
-	alpha			= col->getalpha();
+	C = col->getC();
+	Cstar = col->getCstar();
+	p = col->getp();
+	pstar = col->getpstar();
+	q = col->getq();
+	qstar = col->getqstar();
+	nodeProbab = col->getnodeProbab();
+	freezed = col->getfreezed();
+	freeColors = col->getfreeColors();
+	Cviols = col->getCviols();
+	Cstarviols = col->getCstarviols();
+	nCol = col->getnCol();
+	lambda = col->getlambda();
+	epsilon = col->getepsilon();
+	Cviol = col->getCviol();
+	Cstarviol = col->getCstarviol();
+	alpha = col->getalpha();
 };
 
 dbg::~dbg() {
@@ -39,14 +39,14 @@ dbg::~dbg() {
 // Due to non-portability of console-related commands, this function has to be implemented
 // in different ways depending on the OS
 bool dbg::check_F12keypress() {
-// on linux, use syscalls
-// https://stackoverflow.com/questions/421860/capture-characters-from-standard-input-without-waiting-for-enter-to-be-pressed
+	// on linux, use syscalls
+	// https://stackoverflow.com/questions/421860/capture-characters-from-standard-input-without-waiting-for-enter-to-be-pressed
 #ifdef __unix
 	int rr = system("stty raw -echo");
 	int i = 0;
 	int ii = 0;
 	int c;
-	if ( ii = kbhit() ) {
+	if (ii = kbhit()) {
 		c = getchar();
 		rr = system("stty cooked echo");
 		if (c == 27)	// Escape
@@ -73,14 +73,14 @@ void dbg::stop_and_debug() {
 	std::string inputStr;
 	std::vector<std::string> splittedStr;
 	do {
-		std::cout << ">>> " <<std::flush;
-		getline (std::cin, inputStr);
+		std::cout << ">>> " << std::flush;
+		getline(std::cin, inputStr);
 		if (inputStr == "")
 			continue;
-		splittedStr = split_str( inputStr );
+		splittedStr = split_str(inputStr);
 		//std::cout << "command size: " << splittedStr.size() << std::endl;
 		//std::for_each( std::begin(splittedStr), std::end(splittedStr), [&](std::string val) {std::cout << val << std::endl;} );
-		parse_and_exec( splittedStr );
+		parse_and_exec(splittedStr);
 		inputStr.clear();
 	} while (splittedStr[0] != "q");
 }
@@ -88,7 +88,7 @@ void dbg::stop_and_debug() {
 int dbg::kbhit() {
 #ifdef __unix
 	int i;
- 	ioctl( 0, FIONREAD, &i );
+	ioctl(0, FIONREAD, &i);
 	return i; /* return a count of chars available to read */
 #endif
 #ifdef WIN32
@@ -96,29 +96,32 @@ int dbg::kbhit() {
 #endif
 }
 
-std::vector<std::string> dbg::split_str( std::string s ) {
+std::vector<std::string> dbg::split_str(std::string s) {
 	std::vector<std::string> toBeRet;
 	std::string delimiters = " ";
 	size_t current;
 	size_t next = -1;
 	do {
 		current = next + 1;
-		next = s.find_first_of( delimiters, current );
-		if (s.substr( current, next - current ) != "")
- 			toBeRet.push_back( s.substr( current, next - current ) );
+		next = s.find_first_of(delimiters, current);
+		if (s.substr(current, next - current) != "")
+			toBeRet.push_back(s.substr(current, next - current));
 	} while (next != std::string::npos);
 	return toBeRet;
 }
 
-uint32_t dbg::parse_and_exec( std::vector<std::string> ss ) {
+uint32_t dbg::parse_and_exec(std::vector<std::string> ss) {
 	std::string comm = ss[0];
 	if ((comm == "p") | (comm == "print")) {
-		print_var( ss );
-	} else if ((comm == "e") | (comm == "edit")) {
-		edit_var( ss );
-	} else if ((comm == "q") | (comm == "quit")) {
+		print_var(ss);
+	}
+	else if ((comm == "e") | (comm == "edit")) {
+		edit_var(ss);
+	}
+	else if ((comm == "q") | (comm == "quit")) {
 		std::cout << "continuing execution..." << std::endl;
-	} else if ((comm == "h") | (comm == "help")) {
+	}
+	else if ((comm == "h") | (comm == "help")) {
 		std::cout << "  -- Available commands: " << std::endl;
 		std::cout << "  ----- p: print a variable " << std::endl;
 		std::cout << "  ----- e: edit a variable " << std::endl;
@@ -147,13 +150,14 @@ uint32_t dbg::parse_and_exec( std::vector<std::string> ss ) {
 		std::cout << "  ----- p epsilon:           prints the epsilon parameter" << std::endl;
 		std::cout << "  -- Available variable for editing: " << std::endl;
 		std::cout << "  ----- e epsilon <val>:     change epsilon value; range: 0 <= val < 1" << std::endl;
-	} else {
+	}
+	else {
 		std::cout << "Invalid command (type 'h' or 'help' for a quick guide)" << std::endl;
 	}
 	return 0;
 }
 
-void dbg::print_var( std::vector<std::string> ss ) {
+void dbg::print_var(std::vector<std::string> ss) {
 	std::string varName = ss[1];
 	std::string param;
 	int paramInt;
@@ -168,7 +172,7 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p deg 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else
@@ -179,14 +183,14 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p neighs 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else {
 				std::cout << "Neighbors of node " << paramInt << ": ";
 				size_t deg = cumulDegs[paramInt + 1] - cumulDegs[paramInt];
 				auto neighStart = neighs + cumulDegs[paramInt];
-				std::for_each( neighStart, neighStart + deg, [&](node val) {std::cout << val << " ";} );
+				std::for_each(neighStart, neighStart + deg, [&](node val) {std::cout << val << " "; });
 				std::cout << std::endl;
 			}
 		}
@@ -195,7 +199,7 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p color 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else
@@ -206,7 +210,7 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p nextcolor 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else
@@ -217,7 +221,7 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p p 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else {
@@ -228,20 +232,20 @@ void dbg::print_var( std::vector<std::string> ss ) {
 						std::cout << "Node is conflicting" << std::endl;
 					else
 						std::cout << "Node is NOT conflicting" << std::endl;
-					size_t Zvcomp = col->count_free_colors( paramInt, *C, *freeColors );
+					size_t Zvcomp = col->count_free_colors(paramInt, *C, *freeColors);
 					size_t Zv = *nCol - Zvcomp;
 					// Fill vect p.
-					col->fill_p( paramInt, Zv );
+					col->fill_p(paramInt, Zv);
 					size_t ccc = Cstar->at(paramInt);
 					//std::for_each( std::begin(*p), std::end(*p), [&](float val) {std::cout << val << " ";} );
 					for (size_t i = 0; i < p->size(); i++) {
 						if (i != ccc)
 							std::cout << p->at(i) << " ";
 						else
-							std::cout << TXT_BIBLU << p->at(i) << TXT_NORML <<" ";
+							std::cout << TXT_BIBLU << p->at(i) << TXT_NORML << " ";
 					}
 					std::cout << std::endl;
-					auto accTemp = std::accumulate( p->begin(), p->end(), 0.0f );
+					auto accTemp = std::accumulate(p->begin(), p->end(), 0.0f);
 					std::cout << TXT_BICYA << "Sum of probabilities: " << accTemp << TXT_NORML << std::endl;
 				}
 			}
@@ -251,7 +255,7 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p nodeProb 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else
@@ -266,8 +270,9 @@ void dbg::print_var( std::vector<std::string> ss ) {
 					std::cout << i << " ";
 			}
 			std::cout << std::endl;
-		} else {
-			paramInt = atoi( param.c_str() );
+		}
+		else {
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else {
@@ -282,11 +287,11 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the node (es. p freeColors 12)" << std::endl;
 		else {
-			paramInt = atoi( param.c_str() );
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else {
-				col->count_free_colors( paramInt, *C, *freeColors );
+				col->count_free_colors(paramInt, *C, *freeColors);
 				std::cout << "List of available colors for node " << paramInt << ": ";
 				for (size_t i = 0; i < freeColors->size(); i++) {
 					if (freeColors->at(i))
@@ -304,8 +309,9 @@ void dbg::print_var( std::vector<std::string> ss ) {
 					std::cout << i << " ";
 			}
 			std::cout << std::endl;
-		} else {
-			paramInt = atoi( param.c_str() );
+		}
+		else {
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else {
@@ -324,8 +330,9 @@ void dbg::print_var( std::vector<std::string> ss ) {
 					std::cout << i << " ";
 			}
 			std::cout << std::endl;
-		} else {
-			paramInt = atoi( param.c_str() );
+		}
+		else {
+			paramInt = atoi(param.c_str());
 			if (paramInt >= nNodes)
 				std::cout << "Node out of range" << std::endl;
 			else {
@@ -348,7 +355,7 @@ void dbg::print_var( std::vector<std::string> ss ) {
 		std::cout << "number of violations next coloring: " << *Cstarviol << std::endl;
 }
 
-void dbg::edit_var( std::vector<std::string> ss ) {
+void dbg::edit_var(std::vector<std::string> ss) {
 	std::string varName = ss[1];
 	std::string param1;
 	std::string param2;
@@ -362,10 +369,11 @@ void dbg::edit_var( std::vector<std::string> ss ) {
 		if (ss.size() < 3)
 			std::cout << "Specify the new value for epsilon (es. e epsilon 1e-4)" << std::endl;
 		else {
-			param1float = atof( param1.c_str() );
+			param1float = atof(param1.c_str());
 			if ((param1float < 0) | (param1float > 1)) {
 				std::cout << "New epsilon value out of range (0 < epsilon < 1)" << std::endl;
-			} else {
+			}
+			else {
 				*epsilon = param1float;
 			}
 		}

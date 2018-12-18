@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		std::cout << "Iterazione: " << i << std::endl;
 
@@ -273,7 +273,6 @@ int main(int argc, char *argv[]) {
 #endif // WRITE
 
 		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
-
 
 		start = std::clock();
 		colMCMC.run(i);

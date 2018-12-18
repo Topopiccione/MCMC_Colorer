@@ -6,6 +6,7 @@
 #include <curand_kernel.h>
 #include "graph/graph.h"
 #include "GPUutils/GPUStream.h"
+#include <numeric>
 
 //#define DEBUGPRINT_K
 //#define TESTCOLORINGCORRECTNESS
