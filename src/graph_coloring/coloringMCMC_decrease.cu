@@ -3,7 +3,7 @@
 #include "coloringMCMC.h"
 
 #if defined(COLOR_DECREASE_LINE_CUMULATIVE) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
-__global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
+__global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -28,7 +28,6 @@ __global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t n
 		reminder += (colorsChecker[i] != 0) * (probDistribution_d[i] - epsilon);
 	}
 	Zp -= Zn;
-	reminder /= Zp;
 
 	if (!Zp)													//manage exception of no free colors
 	{
@@ -43,17 +42,52 @@ __global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t n
 		return;
 	}
 
-	int i = 0;
+	float denomReminder = 0;
+	for (int i = 0; i < Zp; i++)
+	{
+		denomReminder += exp(-lambda * i);
+	}
+	/*if (idx == 0) {
+		printf("---------------------------------------\n");
+		printf("reminder: %f\n", reminder);
+		printf("denom reminder: %f\n", denomReminder);
+		float tot = 0, tot2 = 0;
+		float ex = reminder / Zp;
+		for (int i = 0; i < Zp; i++)
+		{
+			float r = reminder * (exp(-lambda * i) / denomReminder);
+			printf("r: %f\n", r);
+			printf("ex: %f\n", ex);
+			tot += r;
+			tot2 += ex;
+		}
+		printf("TOT: %f\n", tot);
+		printf("TOT ex: %f\n", tot2);
+		printf("---------------------------------------\n");
+	}*/
+
+
+	int i = 0, j = 0;
 	float q;
 	float threshold = 0;
 	float randnum = curand_uniform(&states[idx]);				//random number
 	if (colorsChecker[nodeCol])									//if node color is used by neighbors
 	{
 		do {
-			q = (probDistribution_d[i] + reminder) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
+			float r = reminder * (exp(-lambda * j) / denomReminder);
+			q = (probDistribution_d[i] + r) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
 			threshold += q;
+			/*if (idx == 0) {
+				printf("i = %d\n", i);
+				printf("probDistribution_d[i] = %f\n", probDistribution_d[i]);
+				printf("r = %f\n", r);
+				printf("q = %f\n", q);
+				printf("threshold = %f\n", threshold);
+				printf("randnum = %f\n", randnum);
+			}*/
+			j += !colorsChecker[i];
 			i++;
-		} while (threshold < randnum);
+		} while (threshold < randnum && i < nCol);
 	}
 	else
 	{
@@ -61,11 +95,9 @@ __global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t n
 			q = (1.0f - (nCol - 1) * epsilon) * (nodeCol == i) + (epsilon) * (nodeCol != i);
 			threshold += q;
 			i++;
-		} while (threshold < randnum);
+		} while (threshold < randnum && i < nCol);
 	}
 	qStar_d[idx] = q;											//save the probability of the color chosen
-	if ((i - 1) >= nCol)										//TEMP
-		i = nCol;
 	starColoring_d[idx] = i - 1;
 }
 #endif // COLOR_DECREASE_LINE_CUMULATIVE || COLOR_DECREASE_EXP_CUMULATIVE
