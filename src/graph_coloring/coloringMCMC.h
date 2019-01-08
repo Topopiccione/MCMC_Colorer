@@ -8,12 +8,12 @@
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <math.h>
-//#ifdef WIN32
-//#include <direct.h>
-//#else
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#endif
+#ifdef WIN32
+#include <direct.h>
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 
 #include "graph/graph.h"
 #include "coloring.h"
@@ -143,9 +143,9 @@ protected:
 	void			__customPrintRun7_end();
 #endif
 
-#ifdef WRITE
 	std::clock_t start;
 	double duration;
+#ifdef WRITE
 	std::ofstream logFile, resultsFile, colorsFile;
 #endif //WRITE
 
@@ -189,7 +189,7 @@ namespace ColoringMCMC_k {
 	__global__ void selectStarColoringBalanceOnNode_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float partition, float epsilon, uint32_t * statsFreeColors_d);
 #endif // !COLOR_BALANCE_ON_NODE_CUMULATIVE
 #if defined(COLOR_DECREASE_LINE_CUMULATIVE) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
-	__global__ void selectStarColoringDecrease_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
+	__global__ void selectStarColoringDecrease_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
 #endif // COLOR_DECREASE_LINE_CUMULATIVE || COLOR_DECREASE_EXP_CUMULATIVE
 
 	__global__ void lookOldColoring(uint32_t nnodes, float * q_d, col_sz nCol, uint32_t * starColoring_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon);

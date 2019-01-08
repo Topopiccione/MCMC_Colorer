@@ -70,81 +70,7 @@ void newComponents(Graph<float, float> * test) {
 	//test->getStruct()->edges = tempEdges.data();
 }
 
-#include <fstream>
-
-// Nich, in dbg.h e' presente una funzione per lo split delle stringhe
-vector<string> split(const std::string& str, const std::string& delim)
-{
-	vector<std::string> tokens;
-	size_t prev = 0, pos = 0;
-	do
-	{
-		pos = str.find(delim, prev);
-		if (pos == std::string::npos) pos = str.length();
-		std::string token = str.substr(prev, pos - prev);
-		if (!token.empty()) tokens.push_back(token);
-		prev = pos + delim.length();
-	} while (pos < str.length() && prev < str.length());
-	return tokens;
-}
-
-void combineFiles() {
-	std::string line;
-	std::string directory = "250000-312585727";
-	std::map< std::string, float> tempMap[10];
-	std::map< std::string, float> finalMap;
-
-	std::vector<std::string> keys = {
-		"numCol", "epsilon", "lambda", "ratioFreezed", "maxRip", "start_used_colors", "start_available_colors", "start_most_used_colors", "start_most_used_colors_n_times", "start_least_used_colors", "start_least_used_colors_n_times", "start_average", "start_variance", "start_standard_deviation", "time", "end_used_colors", "end_available_colors", "end_most_used_colors", "end_most_used_colors_n_times", "end_least_used_colors", "end_least_used_colors_n_times", "end_average", "end_variance", "end_standard_deviation"
-	};
-
-	for (int i = 0; i < 10; i++)
-	{
-		ifstream myfile(directory + "-results/" + directory + "-resultsFile-" + std::to_string(i) + ".txt");
-
-		if (myfile.is_open())
-		{
-			while (getline(myfile, line))
-			{
-				vector<string> v = split(line, " ");
-				tempMap[i][v[0]] = std::stof(v[1]);
-			}
-			myfile.close();
-		}
-	}
-
-	for (std::string key : keys)
-	{
-		finalMap[key] = 0.;
-	}
-
-	for (int i = 0; i < 10; i++)
-	{
-		for (std::string key : keys)
-		{
-			//std::cout << key << " " << tempMap[i][key] << std::endl;
-			finalMap[key] += tempMap[i][key];
-		}
-
-		//std::cout << "*************" << std::endl;
-	}
-
-	std::ofstream finalFile;
-	finalFile.open(directory + "-results/" + directory + "-FINAL" + ".txt");
-	for (std::string key : keys)
-	{
-		finalMap[key] /= 10;
-		std::cout << key << " " << finalMap[key] << std::endl;
-		finalFile << key << " " << finalMap[key] << std::endl;
-	}
-
-	finalFile.close();
-}
-
 int main(int argc, char *argv[]) {
-
-	//combineFiles();
-	//return EXIT_SUCCESS;
 
 	////EasyLogging++
 	START_EASYLOGGINGPP(argc, argv);
@@ -168,7 +94,7 @@ int main(int argc, char *argv[]) {
 
 	argc = 5;
 	argv[1] = "--simulate";
-	argv[2] = "0.01";
+	argv[2] = "0.001";
 	argv[3] = "-n";
 	argv[4] = "25000";
 #endif // INLINE_ARGS
@@ -232,16 +158,14 @@ int main(int argc, char *argv[]) {
 		start = std::clock();
 		colLuby.run_fast();
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		//LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-		//LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+		LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
+		LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
 		std::cout << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << std::endl;
 		std::cout << "LubyGPU elapsed time: " << duration << std::endl;
 
 #ifdef WRITE
 		std::ofstream lubyFile;
 		lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-LUBY-" + std::to_string(i) + ".txt");
-		//lubyFile << "nCol" << " " << colLuby.getColoringGPU()->nCol << std::endl;
-		//lubyFile << "time" << " " << duration << std::endl;
 		colLuby.saveStats(i, duration, lubyFile);
 		lubyFile.close();
 #endif // WRITE
@@ -255,28 +179,28 @@ int main(int argc, char *argv[]) {
 		params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
 		//params.startingNCol = 20;
 		params.epsilon = 1e-8f;
-		params.lambda = 0.01f;
+		params.lambda = 0.1f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
-		params.maxRip = params.nCol;
-		//params.maxRip = 4;
+		//params.maxRip = params.nCol;
+		params.maxRip = 500;
 		//params.maxRip = 5000;
 
-		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
-		g_debugger = new dbg(test, &mcmc_cpu);
-		start = std::clock();
-		mcmc_cpu.run();
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		//mcmc_cpu.show_histogram();
-		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
-		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+		//ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
+		//g_debugger = new dbg(test, &mcmc_cpu);
+		//start = std::clock();
+		//mcmc_cpu.run();
+		//duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		////mcmc_cpu.show_histogram();
+		////LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+		//std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
 
-#ifdef WRITE
-		std::ofstream cpuFile;
-		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
-		mcmc_cpu.saveStats(i, duration, cpuFile);
-		cpuFile.close();
-#endif // WRITE
+//#ifdef WRITE
+//		std::ofstream cpuFile;
+//		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
+//		mcmc_cpu.saveStats(i, duration, cpuFile);
+//		cpuFile.close();
+//#endif // WRITE
 
 		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 

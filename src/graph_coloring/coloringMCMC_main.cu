@@ -228,7 +228,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 #ifdef COLOR_DECREASE_EXP_CUMULATIVE
 #ifdef FIXED_N_COLORS
-		ColoringMCMC_k::selectStarColoringDecrease_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, randStates, param.epsilon, statsFreeColors_d);
+		ColoringMCMC_k::selectStarColoringDecrease_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
 #endif // FIXED_N_COLORS
 #ifdef DYNAMIC_N_COLORS
 		ColoringMCMC_k::selectStarColoringDecrease_cumulative << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, randStates, param.epsilon, statsFreeColors_d);
@@ -289,6 +289,8 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		coloring_d = starColoring_d;
 		starColoring_d = switchPointer;
 		//}
+
+		getStatsNumColors("running_");
 
 	} while (rip < param.maxRip);
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
