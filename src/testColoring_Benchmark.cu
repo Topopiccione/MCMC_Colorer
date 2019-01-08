@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		std::cout << "Iterazione: " << i << std::endl;
 
