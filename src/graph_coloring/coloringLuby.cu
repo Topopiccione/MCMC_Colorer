@@ -200,6 +200,8 @@ void ColoringLuby<nodeW, edgeW>::saveStats( size_t it, float duration, std::ofst
 	size_t idx = 0;
 	size_t usedCols = 0;
 	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {outFile << idx << ": " << histBins[idx] << std::endl; idx++; if (val) usedCols++;} );
+	outFile << "Color histogram end" << std::endl;
+	outFile << "-------------------------------------------" << std::endl;
 	float mean = std::accumulate( std::begin(histBins), std::end(histBins), 0) / (float) numOfColors;
 	float variance = 0;
 	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {variance += ((val - mean) * (val - mean));} );
