@@ -80,16 +80,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::
 	outFile << "Execution time: " << duration << std::endl;
 	outFile << "Iteration performed: " << iter << std::endl;
 	outFile << "-------------------------------------------" << std::endl;
-	outFile << "Number of colors: " << nCol << std::endl;
 	outFile << "Color histogram:" << std::endl;
 	std::vector<size_t> histBins(nCol, 0);
 	std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
 	size_t idx = 0;
 	size_t usedCols = 0;
 	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {outFile << idx << ": " << histBins[idx] << std::endl; idx++; if (val) usedCols++;} );
-	outFile << "Color histogram end" << std::endl;
-	outFile << "-------------------------------------------" << std::endl;
-	outFile << "Used colors: " << usedCols << std::endl;
+	outFile << "Number of colors: " << nCol << " - Used colors: " << usedCols << std::endl;
 	float mean = std::accumulate( std::begin(histBins), std::end(histBins), 0) / (float) nCol;
 	float variance = 0;
 	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {variance += ((val - mean) * (val - mean));} );
