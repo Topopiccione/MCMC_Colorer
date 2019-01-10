@@ -6,8 +6,11 @@ extern dbg * g_debugger;
 
 template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed) :
-	Colorer<nodeW, edgeW>(g), str(g->getStruct()), nNodes(g->getStruct()->nNodes), nCol(params.nCol), lambda(params.lambda),
-	epsilon(params.epsilon), ratioFreezed(params.ratioFreezed), iter(0), maxIterReached(false), seed(seed) {
+	Colorer<nodeW, edgeW>(g), str(g->getStruct()), nNodes(g->getStruct()->nNodes), nCol(params.nCol),
+	numColorRatio(params.numColorRatio), lambda(params.lambda), epsilon(params.epsilon),
+	ratioFreezed(params.ratioFreezed), iter(0), maxIterReached(false), seed(seed) {
+
+	nCol *= numColorRatio;
 
 	LOG(TRACE) << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 

@@ -79,6 +79,7 @@ protected:
 	const size_t								nNodes;
 	const uint32_t								seed;
 	uint32_t									nCol;
+	float										numColorRatio;
 	float										lambda;
 	float										epsilon;
 	float										ratioFreezed;

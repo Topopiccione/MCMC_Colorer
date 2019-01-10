@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
 	uint32_t			seed = commandLine.seed;
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
+	float				numColorRatio = 1.0f / (float) commandLine.numColRatio;
 
 	for (int i = 0; i < 10; i++)
 	{
@@ -173,6 +174,7 @@ int main(int argc, char *argv[]) {
 
 		ColoringMCMCParams params;
 		params.nCol = (N * prob > 0) ? N * prob : 1;
+		params.numColorRatio = numColorRatio;
 		//params.nCol = test->getMaxNodeDeg();
 		//params.nCol = 200;
 		//params.nCol = 80;
@@ -186,21 +188,21 @@ int main(int argc, char *argv[]) {
 		params.maxRip = 500;
 		//params.maxRip = 5000;
 
-		//ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
-		//g_debugger = new dbg(test, &mcmc_cpu);
-		//start = std::clock();
-		//mcmc_cpu.run();
-		//duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		////mcmc_cpu.show_histogram();
-		////LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
-		//std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
+		g_debugger = new dbg(test, &mcmc_cpu);
+		start = std::clock();
+		mcmc_cpu.run();
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		//mcmc_cpu.show_histogram();
+		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
 
-//#ifdef WRITE
-//		std::ofstream cpuFile;
-//		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
-//		mcmc_cpu.saveStats(i, duration, cpuFile);
-//		cpuFile.close();
-//#endif // WRITE
+#ifdef WRITE
+		std::ofstream cpuFile;
+		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
+		mcmc_cpu.saveStats(i, duration, cpuFile);
+		cpuFile.close();
+#endif // WRITE
 
 		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 

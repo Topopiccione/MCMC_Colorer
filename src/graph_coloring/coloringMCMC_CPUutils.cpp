@@ -89,6 +89,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::
 	size_t usedCols = 0;
 	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {outFile << idx << ": " << histBins[idx] << std::endl; idx++; if (val) usedCols++;} );
 	outFile << "Number of colors: " << nCol << " - Used colors: " << usedCols << std::endl;
+	outFile << "Color ratio: " << numColorRatio << std::endl;
 	float mean = std::accumulate( std::begin(histBins), std::end(histBins), 0) / (float) nCol;
 	float variance = 0;
 	std::for_each( std::begin(histBins), std::end(histBins), [&](size_t val) {variance += ((val - mean) * (val - mean));} );
