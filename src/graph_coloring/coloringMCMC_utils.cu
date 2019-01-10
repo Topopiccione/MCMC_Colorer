@@ -605,12 +605,18 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun7_end() {
 #ifdef PRINTS
 	std::cout << "COLORAZIONE FINALE" << std::endl;
 	std::cout << "Time " << duration << std::endl;
+	std::cout << "Max iteration reached: "; if (maxIterReached) std::cout << "yes"; else std::cout << "no";
+	std::cout << std::endl;
 #endif // PRINTS
 #ifdef WRITE
 	logFile << "COLORAZIONE FINALE" << std::endl;
 	logFile << "Time " << duration << std::endl;
+	logFile << "Max iteration reached: "; if (maxIterReached) logFile << "yes"; else logFile << "no";
+	logFile << std::endl;
 
 	resultsFile << "time " << duration << std::endl;
+	resultsFile << "max_iteration_reached: "; if (maxIterReached) resultsFile << "yes"; else resultsFile << "no";
+	resultsFile << std::endl;
 #endif // WRITE
 
 	getStatsNumColors("end_");
