@@ -15,7 +15,7 @@ ArgHandle::ArgHandle( int argc, char **argv ) :
 		statesOutFilename( "" ), foldsOutFilename( "" ), timeOutFilename( "" ),
 		m( 0 ), n( 0 ), prob( 0.0 ), numColRatio( 1.0 ),
 		nFolds( 0 ), seed( 0 ), verboseLevel(0),
-		nThreads( 0 ),
+		nThreads( 0 ), repetitions( 1 ),
 		generateRandomFold( false ), simulate( false ), argc( argc ), argv( argv ) {
 }
 
@@ -23,7 +23,7 @@ ArgHandle::~ArgHandle() {}
 
 void ArgHandle::processCommandLine() {
 
-	char const *short_options = "d:l:f:m:n:s:N:o:g:u:j:S:q:t:v:h";
+	char const *short_options = "d:l:f:m:n:s:N:o:b:g:u:j:S:q:r:t:v:h";
 	const struct option long_options[] = {
 
 		{ "data",			required_argument, 0, 'd' },
@@ -40,6 +40,7 @@ void ArgHandle::processCommandLine() {
 		{ "statesOut",		required_argument, 0, 'j' },
 		{ "seed",			required_argument, 0, 'S' },
 		{ "nThrd",			required_argument, 0, 'q' },
+		{ "repet",			required_argument, 0, 'r' },
 		{ "tttt",			required_argument, 0, 't' },
 		{ "verbose-level",	required_argument, 0, 'v' },
 		{ "help",			no_argument,	   0, 'h' },
@@ -194,6 +195,23 @@ void ArgHandle::processCommandLine() {
 			}
 			catch (...) {
 				std::cout << "\033[31;1mensThrd argument must be integer.\033[0m" << std::endl;
+				exit( -1 );
+			}
+			break;
+
+		case 'r':
+			try {
+				int temp = std::stoi( optarg );
+				if (temp < 1) {
+					std::cout << "\033[31;1mrepetitions must be a positive integer.\033[0m" << std::endl;
+					exit( -1 );
+				}
+				else {
+					repetitions = temp;
+				}
+			}
+			catch (...) {
+				std::cout << "\033[31;1mrepetitions must be a positive integer.\033[0m" << std::endl;
 				exit( -1 );
 			}
 			break;

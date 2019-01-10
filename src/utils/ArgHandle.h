@@ -34,6 +34,7 @@ public:
 	uint32_t		seed;
 	uint32_t		verboseLevel;
 	uint32_t		nThreads;
+	uint32_t		repetitions;
 
 	bool			generateRandomFold;
 	bool			simulate;

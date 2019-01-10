@@ -114,10 +114,11 @@ int main(int argc, char *argv[]) {
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 	float				numColorRatio = 1.0f / (float) commandLine.numColRatio;
+	int					repet = commandLine.repetitions;
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < repet; i++)
 	{
-		std::cout << "Iterazione: " << i << std::endl;
+		std::cout << "Ripetizione: " << i << std::endl;
 
 		std::clock_t start;
 		double duration;
