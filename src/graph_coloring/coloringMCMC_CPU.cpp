@@ -10,8 +10,6 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	numColorRatio(params.numColorRatio), lambda(params.lambda), epsilon(params.epsilon),
 	ratioFreezed(params.ratioFreezed), iter(0), maxIterReached(false), seed(seed) {
 
-	nCol *= numColorRatio;
-
 	LOG(TRACE) << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 
 	LOG(TRACE) << TXT_COLMC << "Creating ColorerMCMC with parameters: nCol= " << nCol << " - lambda= " << lambda

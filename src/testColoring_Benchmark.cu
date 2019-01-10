@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
 
 		ColoringMCMCParams params;
-		params.nCol = (N * prob > 0) ? N * prob : 1;
+		params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
 		params.numColorRatio = numColorRatio;
 		//params.nCol = test->getMaxNodeDeg();
 		//params.nCol = 200;

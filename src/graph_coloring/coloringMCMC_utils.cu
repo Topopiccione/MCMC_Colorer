@@ -454,6 +454,7 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 	std::cout << "lambda: " << param.lambda << std::endl;
 	std::cout << "ratioFreezed: " << param.ratioFreezed << std::endl;
 	std::cout << "maxRip: " << param.maxRip << std::endl << std::endl;
+	std::cout << "numColorRatio: " << param.numColorRatio << std::endl;
 #endif // PRINTS
 
 #ifdef WRITE
@@ -478,6 +479,7 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 	logFile << "lambda: " << param.lambda << std::endl;
 	logFile << "ratioFreezed: " << param.ratioFreezed << std::endl;
 	logFile << "maxRip: " << param.maxRip << std::endl << std::endl;
+	logFile << "numColorRatio: " << param.numColorRatio << std::endl;
 
 	resultsFile << "numCol " << param.nCol << std::endl;
 #ifdef DYNAMIC_N_COLORS
@@ -487,6 +489,7 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 	resultsFile << "lambda " << param.lambda << std::endl;
 	resultsFile << "ratioFreezed " << param.ratioFreezed << std::endl;
 	resultsFile << "maxRip " << param.maxRip << std::endl;
+	resultsFile << "numColorRatio " << param.numColorRatio << std::endl;
 #endif // WRITE
 }
 
