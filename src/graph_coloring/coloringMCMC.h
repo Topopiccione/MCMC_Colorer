@@ -46,7 +46,7 @@
 #define STANDARD_CUMULATIVE
 //#define STANDARD
 //#define COLOR_DECREASE_LINE_CUMULATIVE
-//#define COLOR_DECREASE_EXP_CUMULATIVE				
+//#define COLOR_DECREASE_EXP_CUMULATIVE
 //#define COLOR_BALANCE_ON_NODE_CUMULATIVE
 //#define COLOR_BALANCE_LINE_CUMULATIVE				TODO
 //#define COLOR_BALANCE_EXP_CUMULATIVE				TODO
@@ -78,7 +78,7 @@ protected:
 
 	//int *ret;
 
-	uint32_t	*	conflictCounter_h; // lo spazio occupato può essere grande quanto blocksPerGrid_half_edges se si usa solo la somma parallela, vale anche per gli altri punti in cui si usa la somma parallela
+	uint32_t	*	conflictCounter_h; // lo spazio occupato puï¿½ essere grande quanto blocksPerGrid_half_edges se si usa solo la somma parallela, vale anche per gli altri punti in cui si usa la somma parallela
 	uint32_t	*	conflictCounter_d;
 
 
