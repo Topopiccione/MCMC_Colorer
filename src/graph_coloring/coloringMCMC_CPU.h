@@ -86,6 +86,7 @@ protected:
 	float										expLambda;
 	float										divider;
 	size_t 										iter;
+	bool										maxIterReached;
 
 	// Vars
 	size_t										Cviol;		// # of violation in C

@@ -79,6 +79,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::
 	outFile << "Iteration: " << it << std::endl;
 	outFile << "Execution time: " << duration << std::endl;
 	outFile << "Iteration performed: " << iter << std::endl;
+	outFile << "Max iteration reached: ";
+	if (maxIterReached) std::cout << "1"; else std::cout << "0"; std::cout << std::endl;
 	outFile << "-------------------------------------------" << std::endl;
 	outFile << "Number of colors: " << nCol << std::endl;
 	outFile << "Color histogram:" << std::endl;
