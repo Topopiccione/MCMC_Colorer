@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 		newComponents(test);
 
 #ifdef WRITE
-		std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-results";
+		std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-" + std::to_string(numColorRatio) + "-results";
 #ifdef WIN32
 		mkdir(directory.c_str());
 #else
