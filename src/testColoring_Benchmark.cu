@@ -92,15 +92,16 @@ int main(int argc, char *argv[]) {
 	argv[5] = "--gene";
 	argv[6] = "gene.txt";*/
 
-	argc = 5;
-	argv[1] = "--simulate";
-	argv[2] = "0.001";
-	argv[3] = "-n";
-	argv[4] = "25000";
-	argv[5] = "--repet";
-	argv[6] = "1";
-	argv[7] = "--numColRatio";
-	argv[8] = "1.0";
+	uint32_t a = 1;
+	argv[a++] = "--simulate";
+	argv[a++] = "0.001";
+	argv[a++] = "-n";
+	argv[a++] = "25000";
+	argv[a++] = "--repet";
+	argv[a++] = "1";
+	argv[a++] = "--numColRatio";
+	argv[a++] = "1.0";
+	argc = a++;
 #endif // INLINE_ARGS
 
 	// Commandline arguments
@@ -118,7 +119,9 @@ int main(int argc, char *argv[]) {
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 	float				numColorRatio = 1.0f / (float)commandLine.numColRatio;
+	std::cout << "NUMCOLORRATIO +++++++++++++++++++ " << (float)commandLine.numColRatio << std::endl;
 	int					repet = commandLine.repetitions;
+	std::cout << "REPET +++++++++++++++++++ " << repet << std::endl;
 
 	for (int i = 0; i < repet; i++)
 	{
