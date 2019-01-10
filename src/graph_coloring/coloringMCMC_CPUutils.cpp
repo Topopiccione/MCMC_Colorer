@@ -76,7 +76,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::
 	outFile << "Seed: " << seed << std::endl;
 	outFile << "-------------------------------------------" << std::endl;
 	outFile << "EXECUTION INFO" << std::endl;
-	outFile << "Iteration: " << it << std::endl;
+	outFile << "Repetition: " << it << std::endl;
 	outFile << "Execution time: " << duration << std::endl;
 	outFile << "Iteration performed: " << iter << std::endl;
 	outFile << "Max iteration reached: "; if (maxIterReached) outFile << "yes"; else outFile << "no"; outFile << std::endl;
