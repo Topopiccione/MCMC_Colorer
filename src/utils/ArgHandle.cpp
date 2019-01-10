@@ -13,7 +13,7 @@
 ArgHandle::ArgHandle( int argc, char **argv ) :
 		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), geneOutFilename( "" ),
 		statesOutFilename( "" ), foldsOutFilename( "" ), timeOutFilename( "" ),
-		m( 0 ), n( 0 ), prob( 0.0 ),
+		m( 0 ), n( 0 ), prob( 0.0 ), numColRatio( 1.0 ),
 		nFolds( 0 ), seed( 0 ), verboseLevel(0),
 		nThreads( 0 ),
 		generateRandomFold( false ), simulate( false ), argc( argc ), argv( argv ) {
@@ -34,6 +34,7 @@ void ArgHandle::processCommandLine() {
 		{ "simulate",		required_argument, 0, 's' },
 		{ "nFolds",			required_argument, 0, 'N' },
 		{ "out",			required_argument, 0, 'o' },
+		{ "numColRatio",	required_argument, 0, 'b' },
 		{ "geneOut",		required_argument, 0, 'g' },
 		{ "foldsOut",		required_argument, 0, 'u' },
 		{ "statesOut",		required_argument, 0, 'j' },
@@ -101,6 +102,23 @@ void ArgHandle::processCommandLine() {
 
 		case 't':
 			timeOutFilename = std::string( optarg );
+			break;
+
+		case 'b':
+			try {
+				double temp = std::stod( optarg );
+				if ((temp < 1.0f) | (temp > 2.0f)) {
+					std::cout << "\033[31;1mColor ratio must be 1.0 < numColRatio < 2.0.\033[0m" << std::endl;
+					exit( -1 );
+				}
+				else {
+					numColRatio = temp;
+				}
+			}
+			catch (...) {
+				std::cout << "\033[31;1mArgument missing: specify color ratio 1 <= numColRatio <= 2.\033[0m" << std::endl;
+				exit( -1 );
+			}
 			break;
 
 		case 'n':

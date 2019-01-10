@@ -29,6 +29,7 @@ public:
 	uint32_t		m;
 	uint32_t		n;
 	double			prob;
+	double			numColRatio;
 	uint32_t		nFolds;
 	uint32_t		seed;
 	uint32_t		verboseLevel;
