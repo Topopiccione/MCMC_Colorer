@@ -602,22 +602,21 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun6_change() {
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::__customPrintRun7_end() {
 #if defined(STATS) && (defined(PRINTS) || defined(WRITE))
+	std::string maxIteration = rip < param.maxRip ? "no" : "yes";
 #ifdef PRINTS
 	std::cout << "COLORAZIONE FINALE" << std::endl;
 	std::cout << "Time " << duration << std::endl;
-	std::cout << "Max iteration reached: "; if (maxIterReached) std::cout << "yes"; else std::cout << "no";
-	std::cout << std::endl;
+	std::cout << "Max iteration reached " << maxIteration << std::endl;
 #endif // PRINTS
 #ifdef WRITE
 	logFile << "COLORAZIONE FINALE" << std::endl;
 	logFile << "Time " << duration << std::endl;
-	logFile << "Max iteration reached: "; if (maxIterReached) logFile << "yes"; else logFile << "no";
-	logFile << std::endl;
+	logFile << "Max iteration reached " << maxIteration << std::endl;
 
 	resultsFile << "time " << duration << std::endl;
-	resultsFile << "max_iteration_reached: "; if (maxIterReached) resultsFile << "yes"; else resultsFile << "no";
-	resultsFile << std::endl;
+	resultsFile << "max_iteration_reached " << maxIteration << std::endl;
 #endif // WRITE
+
 
 	getStatsNumColors("end_");
 

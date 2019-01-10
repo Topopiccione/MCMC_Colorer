@@ -97,6 +97,10 @@ int main(int argc, char *argv[]) {
 	argv[2] = "0.001";
 	argv[3] = "-n";
 	argv[4] = "25000";
+	argv[5] = "--repet";
+	argv[6] = "1";
+	argv[7] = "--numColRatio";
+	argv[8] = "1.0";
 #endif // INLINE_ARGS
 
 	// Commandline arguments
@@ -113,7 +117,7 @@ int main(int argc, char *argv[]) {
 	uint32_t			seed = commandLine.seed;
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
-	float				numColorRatio = 1.0f / (float) commandLine.numColRatio;
+	float				numColorRatio = 1.0f / (float)commandLine.numColRatio;
 	int					repet = commandLine.repetitions;
 
 	for (int i = 0; i < repet; i++)
