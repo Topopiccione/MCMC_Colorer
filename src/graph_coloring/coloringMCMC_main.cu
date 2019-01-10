@@ -290,7 +290,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		starColoring_d = switchPointer;
 		//}
 
-		getStatsNumColors("running_");
+		//getStatsNumColors("running_");
 
 	} while (rip < param.maxRip);
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
