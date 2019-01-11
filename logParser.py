@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 
 def clusterParser( logFile ):
@@ -17,62 +18,72 @@ def lineParser( logFile ):
 		if 'Color histogram:' in line:
 			line, tempDict["colorClusters"] = clusterParser( logFile )
 		if 'Max deg:' in line:
-			tempDict["maxDeg"] = int( line.split( sep = ' ')[2] )
-			tempDict["minDeg"] = int( line.split( sep = ' ')[6] )
-			tempDict["avgDeg"] = float( line.split( sep = ' ')[10] )
+			tempDict["maxDeg"] = int( line.split(sep = ' ')[2] )
+			tempDict["minDeg"] = int( line.split(sep = ' ')[6] )
+			tempDict["avgDeg"] = float( line.split(sep = ' ')[10] )
 		if 'Nodes:' in line:
-			tempDict["nnodes"] = int( line.split( sep = ' ')[1] )
-			tempDict["nedges"] = int( line.split( sep = ' ')[4] )
-		if 'Max Deg:' in line:
-			tempDict["maxDeg"] = int( line.split( sep = ' ')[2] )
-			tempDict["minDeg"] = int( line.split( sep = ' ')[6] )
-			tempDict["avgDeg"] = float( line.split( sep = ' ')[10] )
+			tempDict["nnodes"] = int( line.split(sep = ' ')[1] )
+			tempDict["nedges"] = int( line.split(sep = ' ')[4] )
 		if 'Edge probability' in line:
-			tempDict["edgeProb"] = float( line.split( sep = ' ')[6] )
-		if 'Iteration:' in line:
-			tempDict["repet"] = int( line.split( sep = ' ')[1] )
+			tempDict["edgeProb"] = float( line.split(sep = ' ')[6] )
+		if 'Repetition:' in line:
+			tempDict["repet"] = int( line.split(sep = ' ')[1] )
 		if 'Iteration performed:' in line:
-			tempDict["performedIter"] = int( line.split( sep = ' ')[2] )
+			tempDict["performedIter"] = int( line.split(sep = ' ')[2] )
+		if 'Max iteration' in line:
+			if 'no' in line:
+				tempDict["convergence"] = True
+			else:
+				tempDict["convergence"] = False
 		if 'Execution time:' in line:
-			tempDict["execTime"] = float( line.split( sep = ' ')[2] )
+			tempDict["execTime"] = float( line.split(sep = ' ')[2] )
 		if 'Number of colors:' in line:
-			tempDict["numColors"] = int( line.split( sep = ' ')[3] )
+			tempDict["numColors"] = int( line.split(sep = ' ')[3] )
 		if 'Used colors:' in line:
-			tempDict["usedColors"] = int( line.split( sep = ' ')[7] )
+			tempDict["usedColors"] = int( line.split(sep = ' ')[7] )
+		if 'Color ratio:' in line:
+			tempDict["colorRatio"] = float( line.split(sep = ' ')[2] )
 		if 'Average number' in line:
-			tempDict["avgNodesPerColor"] = float( line.split( sep = ' ')[7] )
+			tempDict["avgNodesPerColor"] = float( line.split(sep = ' ')[7] )
 		if 'Variance:' in line:
-			tempDict["varNodesPerColor"] = float( line.split( sep = ' ')[1] )
+			tempDict["varNodesPerColor"] = float( line.split(sep = ' ')[1] )
 		if 'StD:' in line:
-			tempDict["stdNodesPerColor"] = float( line.split( sep = ' ')[1] )
+			tempDict["stdNodesPerColor"] = float( line.split(sep = ' ')[1] )
 	return tempDict
 
 def mcmcGpuLineParser( logFile ):
 	tempDict = {}
 	iterCount = 0
 	for line in logFile:
-		if 'time ' in line:
-			tempDict["execTime"] = float( line.split( sep = ' ')[1] )
+		if 'max_iteration_reached' in line:
+			if 'no' in line:
+				tempDict["convergence"] = True
+			else:
+				tempDict["convergence"] = False
 			line, tempDict["colorClusters"] = clusterParser( logFile )
+		if 'time ' in line:
+			tempDict["execTime"] = float( line.split(sep = ' ')[1] )
 		if 'iteration_' in line:
 			iterCount = iterCount + 1
-		if 'numCol' in line:
-			tempDict["numColors"] = int( line.split( sep = ' ')[1] )
+		if 'numCol ' in line:
+			tempDict["numColors"] = int( line.split(sep = ' ')[1] )
+		if 'numColorRatio' in line:
+			tempDict["colorRatio"] = float( line.split(sep = ' ')[1] )
 		if 'end_used_colors' in line:
-			tempDict["usedColors"] = int( line.split( sep = ' ')[1] )
+			tempDict["usedColors"] = int( line.split(sep = ' ')[1] )
 		if 'end_average' in line:
-			tempDict["avgNodesPerColor"] = float( line.split( sep = ' ')[1] )
+			tempDict["avgNodesPerColor"] = float( line.split(sep = ' ')[1] )
 		if 'end_variance' in line:
-			tempDict["varNodesPerColor"] = float( line.split( sep = ' ')[1] )
+			tempDict["varNodesPerColor"] = float( line.split(sep = ' ')[1] )
 		if 'end_standard_deviation' in line:
-			tempDict["stdNodesPerColor"] = float( line.split( sep = ' ')[1] )
+			tempDict["stdNodesPerColor"] = float( line.split(sep = ' ')[1] )
 
 	tempDict["performedIter"] = iterCount
 	return tempDict
 
-def parseDirs():
+def parseDirs( baseDir ):
 	s = os.sep
-	basePath = '.' + s + 'expMCMC'
+	basePath = baseDir
 	subDir = os.listdir( basePath )
 	totResLuby = {}
 	totResMCMC_CPU = {}
@@ -84,9 +95,11 @@ def parseDirs():
 		lubyRes = []
 		mcmcCpuRes = []
 		mcmcGpuRes = []
+		colorRatio = currDir.split(sep = '-')[2]
 		for currLog in filesInDir:
 			numNodes = currLog.split( sep='-' )[0]
 			prob = currLog.split( sep='-' )[1]
+
 
 			if 'LUBY' in currLog:
 				with open( basePath + s + currDir + s + currLog ) as logFile:
@@ -106,11 +119,11 @@ def parseDirs():
 					mcmcGpuRes.append( tempItem )
 
 		if lubyRes:
-			totResLuby[str(numNodes) + '-' + str(prob)] = lubyRes
+			totResLuby[str(numNodes) + '-' + str(prob) + '-' + str(colorRatio)] = lubyRes
 		if mcmcCpuRes:
-			totResMCMC_CPU[str(numNodes) + '-' + str(prob)] = mcmcCpuRes
+			totResMCMC_CPU[str(numNodes) + '-' + str(prob) + '-' +  str(colorRatio)] = mcmcCpuRes
 		if mcmcGpuRes:
-			totResMCMC_GPU[str(numNodes) + '-' + str(prob)] = mcmcGpuRes
+			totResMCMC_GPU[str(numNodes) + '-' + str(prob) + '-' +  str(colorRatio)] = mcmcGpuRes
 
 	with open( basePath + s + 'outLuby.json', "w") as outFile:
 		json.dump( totResLuby, outFile )
@@ -125,9 +138,9 @@ def avgCalc( exp, item ):
 		itemAccum += expRun[item]
 	return itemAccum / len( exp )
 
-def statMakerFromJson():
+def statMakerFromJson( baseDir ):
 	s = os.sep
-	basePath = '.' + s + 'expMCMC'
+	basePath = baseDir
 	with open( basePath + s + "outLuby.json", "r" ) as read_file:
 		dataLuby = json.load( read_file )
 	with open( basePath + s + "outMCMC_CPU.json", "r") as read_file:
@@ -137,27 +150,30 @@ def statMakerFromJson():
 
 	results = {}
 
-	for exp in dataLuby:
+	for exxp in dataLuby:
 		lubyAvg = {}
-		graphDict = {}
-		graphDict["nNodes"] = dataLuby[exp][0]["nnodes"]
-		graphDict["nEdges"] = dataLuby[exp][0]["nedges"]
-		graphDict["edgeProb"] = dataLuby[exp][0]["edgeProb"]
-		graphDict["maxDeg"] = dataLuby[exp][0]["maxDeg"]
-		graphDict["minDeg"] = dataLuby[exp][0]["minDeg"]
-		graphDict["avgDeg"] = dataLuby[exp][0]["avgDeg"]
-		lubyAvg["numColors"] = avgCalc( dataLuby[exp], "numColors")
-		lubyAvg["execTime"] = avgCalc( dataLuby[exp], "execTime")
-		lubyAvg["avgNodesPerColor"] = avgCalc( dataLuby[exp], "avgNodesPerColor")
-		lubyAvg["varNodesPerColor"] = avgCalc( dataLuby[exp], "varNodesPerColor")
-		lubyAvg["stdNodesPerColor"] = avgCalc( dataLuby[exp], "stdNodesPerColor")
+		graphs = []
+		lubyAvg["numColors"] = avgCalc(dataLuby[exxp], "numColors")
+		lubyAvg["execTime"] = avgCalc(dataLuby[exxp], "execTime")
+		lubyAvg["avgNodesPerColor"] = avgCalc(dataLuby[exxp], "avgNodesPerColor")
+		lubyAvg["varNodesPerColor"] = avgCalc(dataLuby[exxp], "varNodesPerColor")
+		lubyAvg["stdNodesPerColor"] = avgCalc(dataLuby[exxp], "stdNodesPerColor")
+		for exp in dataLuby[exxp]:
+			graphDict = {}
+			graphDict["nNodes"] = exp["nnodes"]
+			graphDict["nEdges"] = exp["nedges"]
+			graphDict["edgeProb"] = exp["edgeProb"]
+			graphDict["maxDeg"] = exp["maxDeg"]
+			graphDict["minDeg"] = exp["minDeg"]
+			graphDict["avgDeg"] = exp["avgDeg"]
+			graphs.append(graphDict)
 
-		results[exp] = {}
-		results[exp]["graph"] = graphDict
-		results[exp]["Luby"] = {}
-		results[exp]["Luby"]["Exp"] = dataLuby[exp]
-		results[exp]["Luby"]["Avg"] = lubyAvg
-		for ee in results[exp]["Luby"]["Exp"]:
+		results[exxp] = {}
+		results[exxp]["graphs"] = graphs
+		results[exxp]["Luby"] = {}
+		results[exxp]["Luby"]["Exp"] = dataLuby[exxp]
+		results[exxp]["Luby"]["Avg"] = lubyAvg
+		for ee in results[exxp]["Luby"]["Exp"]:
 			ee.pop("nnodes")
 			ee.pop("nedges")
 			ee.pop("maxDeg")
@@ -167,13 +183,13 @@ def statMakerFromJson():
 
 	for exp in dataMcmcCpu:
 		mcmcDict = {}
-		mcmcDict["numColors"] = avgCalc( dataMcmcCpu[exp], "numColors")
-		mcmcDict["usedColors"] = avgCalc( dataMcmcCpu[exp], "usedColors")
-		mcmcDict["execTime"] = avgCalc( dataMcmcCpu[exp], "execTime")
-		mcmcDict["avgNodesPerColor"] = avgCalc( dataMcmcCpu[exp], "avgNodesPerColor")
-		mcmcDict["varNodesPerColor"] = avgCalc( dataMcmcCpu[exp], "varNodesPerColor")
-		mcmcDict["stdNodesPerColor"] = avgCalc( dataMcmcCpu[exp], "stdNodesPerColor")
-		mcmcDict["performedIter"] = avgCalc( dataMcmcCpu[exp], "performedIter")
+		mcmcDict["numColors"] = avgCalc(dataMcmcCpu[exp], "numColors")
+		mcmcDict["usedColors"] = avgCalc(dataMcmcCpu[exp], "usedColors")
+		mcmcDict["execTime"] = avgCalc(dataMcmcCpu[exp], "execTime")
+		mcmcDict["avgNodesPerColor"] = avgCalc(dataMcmcCpu[exp], "avgNodesPerColor")
+		mcmcDict["varNodesPerColor"] = avgCalc(dataMcmcCpu[exp], "varNodesPerColor")
+		mcmcDict["stdNodesPerColor"] = avgCalc(dataMcmcCpu[exp], "stdNodesPerColor")
+		mcmcDict["performedIter"] = avgCalc(dataMcmcCpu[exp], "performedIter")
 
 		results[exp]["MCMC_CPU"] = {}
 		results[exp]["MCMC_CPU"]["Exp"] = dataMcmcCpu[exp]
@@ -188,21 +204,45 @@ def statMakerFromJson():
 
 	for exp in dataMcmcGpu:
 		mcmcDict = {}
-		mcmcDict["numColors"] = avgCalc( dataMcmcGpu[exp], "numColors")
-		mcmcDict["usedColors"] = avgCalc( dataMcmcGpu[exp], "usedColors")
-		mcmcDict["execTime"] = avgCalc( dataMcmcGpu[exp], "execTime")
-		mcmcDict["avgNodesPerColor"] = avgCalc( dataMcmcGpu[exp], "avgNodesPerColor")
-		mcmcDict["varNodesPerColor"] = avgCalc( dataMcmcGpu[exp], "varNodesPerColor")
-		mcmcDict["stdNodesPerColor"] = avgCalc( dataMcmcGpu[exp], "stdNodesPerColor")
-		mcmcDict["performedIter"] = avgCalc( dataMcmcGpu[exp], "performedIter")
+		mcmcDict["numColors"] = avgCalc(dataMcmcGpu[exp], "numColors")
+		mcmcDict["usedColors"] = avgCalc(dataMcmcGpu[exp], "usedColors")
+		mcmcDict["execTime"] = avgCalc(dataMcmcGpu[exp], "execTime")
+		mcmcDict["avgNodesPerColor"] = avgCalc(dataMcmcGpu[exp], "avgNodesPerColor")
+		mcmcDict["varNodesPerColor"] = avgCalc(dataMcmcGpu[exp], "varNodesPerColor")
+		mcmcDict["stdNodesPerColor"] = avgCalc(dataMcmcGpu[exp], "stdNodesPerColor")
+		mcmcDict["performedIter"] = avgCalc(dataMcmcGpu[exp], "performedIter")
 
 		results[exp]["MCMC_GPU"] = {}
 		results[exp]["MCMC_GPU"]["Exp"] = dataMcmcGpu[exp]
 		results[exp]["MCMC_GPU"]["Avg"] = mcmcDict
 
+	colorRatiosSet = set()
+	finalDict = {}
+	for exp in results:
+		colorRatiosSet.add( exp.split(sep = '-')[2] )
+	for rs in colorRatiosSet:
+		expList = []
+		for exp in results:
+			if exp.split(sep = '-')[2] == rs:
+				expList.append( results[exp] )
+
+		finalDict[rs] = expList
+
+	for rs in finalDict:
+		colorRatio = float( rs )
+		invColorRatio = 1 / float( rs )
+		for exp in finalDict[rs]:
+			exp["colorRatio"] = colorRatio
+			exp["invColorRatio"] = invColorRatio
+			exp["edgeProb"] = exp["graphs"][0]["edgeProb"]
+			exp["nNodes"] = exp["graphs"][0]["nNodes"]
+
 	with open( basePath + s + 'finalRes.json', "w") as outFile:
-		json.dump( results, outFile )
+		json.dump( finalDict, outFile )
 
 if __name__ == '__main__':
-	parseDirs()
-	statMakerFromJson()
+	baseDir = sys.argv[1]
+	if not baseDir:
+		exit()
+	parseDirs( baseDir )
+	statMakerFromJson( baseDir )
