@@ -134,11 +134,21 @@ def parseDirs( baseDir ):
 	with open( basePath + s + 'outMCMC_GPU.json', "w") as outFile:
 		json.dump( totResMCMC_GPU, outFile )
 
-def avgCalc( exp, item ):
+def avgCalc( exp, item, discardNotConvergent = True ):
 	itemAccum = 0
+	itemCounter = 0
 	for expRun in exp:
-		itemAccum += expRun[item]
-	return itemAccum / len( exp )
+		if discardNotConvergent:
+			if expRun["convergence"]:
+				itemAccum += expRun[item]
+				itemCounter += 1
+		else:
+			itemAccum += expRun[item]
+			itemCounter += 1
+	if itemCounter > 0:
+		return itemAccum / itemCounter
+	else:
+		return None
 
 def statMakerFromJson( baseDir ):
 	s = os.sep
@@ -155,11 +165,11 @@ def statMakerFromJson( baseDir ):
 	for exxp in dataLuby:
 		lubyAvg = {}
 		graphs = []
-		lubyAvg["numColors"] = avgCalc(dataLuby[exxp], "numColors")
-		lubyAvg["execTime"] = avgCalc(dataLuby[exxp], "execTime")
-		lubyAvg["avgNodesPerColor"] = avgCalc(dataLuby[exxp], "avgNodesPerColor")
-		lubyAvg["varNodesPerColor"] = avgCalc(dataLuby[exxp], "varNodesPerColor")
-		lubyAvg["stdNodesPerColor"] = avgCalc(dataLuby[exxp], "stdNodesPerColor")
+		lubyAvg["numColors"] = avgCalc(dataLuby[exxp], "numColors", discardNotConvergent = False)
+		lubyAvg["execTime"] = avgCalc(dataLuby[exxp], "execTime", discardNotConvergent = False)
+		lubyAvg["avgNodesPerColor"] = avgCalc(dataLuby[exxp], "avgNodesPerColor", discardNotConvergent = False)
+		lubyAvg["varNodesPerColor"] = avgCalc(dataLuby[exxp], "varNodesPerColor", discardNotConvergent = False)
+		lubyAvg["stdNodesPerColor"] = avgCalc(dataLuby[exxp], "stdNodesPerColor", discardNotConvergent = False)
 		for exp in dataLuby[exxp]:
 			graphDict = {}
 			graphDict["nNodes"] = exp["nnodes"]
@@ -184,18 +194,8 @@ def statMakerFromJson( baseDir ):
 			ee.pop("edgeProb")
 
 	for exp in dataMcmcCpu:
-		mcmcDict = {}
-		mcmcDict["numColors"] = avgCalc(dataMcmcCpu[exp], "numColors")
-		mcmcDict["usedColors"] = avgCalc(dataMcmcCpu[exp], "usedColors")
-		mcmcDict["execTime"] = avgCalc(dataMcmcCpu[exp], "execTime")
-		mcmcDict["avgNodesPerColor"] = avgCalc(dataMcmcCpu[exp], "avgNodesPerColor")
-		mcmcDict["varNodesPerColor"] = avgCalc(dataMcmcCpu[exp], "varNodesPerColor")
-		mcmcDict["stdNodesPerColor"] = avgCalc(dataMcmcCpu[exp], "stdNodesPerColor")
-		mcmcDict["performedIter"] = avgCalc(dataMcmcCpu[exp], "performedIter")
-
 		results[exp]["MCMC_CPU"] = {}
 		results[exp]["MCMC_CPU"]["Exp"] = dataMcmcCpu[exp]
-		results[exp]["MCMC_CPU"]["Avg"] = mcmcDict
 		for ee in results[exp]["MCMC_CPU"]["Exp"]:
 			ee.pop("nnodes")
 			ee.pop("nedges")
@@ -204,30 +204,41 @@ def statMakerFromJson( baseDir ):
 			ee.pop("avgDeg")
 			ee.pop("edgeProb")
 			if version == "Old":
-				if int( ee["performedIter"] ) > float( ee["numColors"] ):
+				if int( ee["performedIter"] ) >= float( ee["numColors"] ):
 					ee["convergence"] = False
 				else:
 					ee["convergence"] = True
+
+		mcmcDict = {}
+		mcmcDict["numColors"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "numColors")
+		mcmcDict["usedColors"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "usedColors")
+		mcmcDict["execTime"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "execTime")
+		mcmcDict["avgNodesPerColor"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "avgNodesPerColor")
+		mcmcDict["varNodesPerColor"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "varNodesPerColor")
+		mcmcDict["stdNodesPerColor"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "stdNodesPerColor")
+		mcmcDict["performedIter"] = avgCalc(results[exp]["MCMC_CPU"]["Exp"], "performedIter")
+		results[exp]["MCMC_CPU"]["Avg"] = mcmcDict
 
 	for exp in dataMcmcGpu:
-		mcmcDict = {}
-		mcmcDict["numColors"] = avgCalc(dataMcmcGpu[exp], "numColors")
-		mcmcDict["usedColors"] = avgCalc(dataMcmcGpu[exp], "usedColors")
-		mcmcDict["execTime"] = avgCalc(dataMcmcGpu[exp], "execTime")
-		mcmcDict["avgNodesPerColor"] = avgCalc(dataMcmcGpu[exp], "avgNodesPerColor")
-		mcmcDict["varNodesPerColor"] = avgCalc(dataMcmcGpu[exp], "varNodesPerColor")
-		mcmcDict["stdNodesPerColor"] = avgCalc(dataMcmcGpu[exp], "stdNodesPerColor")
-		mcmcDict["performedIter"] = avgCalc(dataMcmcGpu[exp], "performedIter")
-
 		results[exp]["MCMC_GPU"] = {}
 		results[exp]["MCMC_GPU"]["Exp"] = dataMcmcGpu[exp]
-		results[exp]["MCMC_GPU"]["Avg"] = mcmcDict
+
 		for ee in results[exp]["MCMC_GPU"]["Exp"]:
 			if version == "Old":
-				if int( ee["performedIter"] ) > float( ee["numColors"] ):
+				if int( ee["performedIter"] ) >= float( ee["numColors"] ):
 					ee["convergence"] = False
 				else:
 					ee["convergence"] = True
+
+		mcmcDict = {}
+		mcmcDict["numColors"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "numColors")
+		mcmcDict["usedColors"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "usedColors")
+		mcmcDict["execTime"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "execTime")
+		mcmcDict["avgNodesPerColor"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "avgNodesPerColor")
+		mcmcDict["varNodesPerColor"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "varNodesPerColor")
+		mcmcDict["stdNodesPerColor"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "stdNodesPerColor")
+		mcmcDict["performedIter"] = avgCalc(results[exp]["MCMC_GPU"]["Exp"], "performedIter")
+		results[exp]["MCMC_GPU"]["Avg"] = mcmcDict
 
 	if version == "New":
 		colorRatiosSet = set()
@@ -262,7 +273,6 @@ if __name__ == '__main__':
 		version = sys.argv[2]
 	if version not in ["Old", "New"]:
 		version = "New"
-	print( version )
 	if not baseDir:
 		exit()
 	parseDirs( baseDir )
