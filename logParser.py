@@ -2,6 +2,8 @@ import os
 import sys
 import json
 
+version = "New"
+
 def clusterParser( logFile ):
 	cluster = []
 	for line in logFile:
@@ -201,6 +203,11 @@ def statMakerFromJson( baseDir ):
 			ee.pop("minDeg")
 			ee.pop("avgDeg")
 			ee.pop("edgeProb")
+			if version == "Old":
+				if int( ee["performedIter"] ) > float( ee["numColors"] ):
+					ee["convergence"] = False
+				else:
+					ee["convergence"] = True
 
 	for exp in dataMcmcGpu:
 		mcmcDict = {}
@@ -215,33 +222,47 @@ def statMakerFromJson( baseDir ):
 		results[exp]["MCMC_GPU"] = {}
 		results[exp]["MCMC_GPU"]["Exp"] = dataMcmcGpu[exp]
 		results[exp]["MCMC_GPU"]["Avg"] = mcmcDict
+		for ee in results[exp]["MCMC_GPU"]["Exp"]:
+			if version == "Old":
+				if int( ee["performedIter"] ) > float( ee["numColors"] ):
+					ee["convergence"] = False
+				else:
+					ee["convergence"] = True
 
-	colorRatiosSet = set()
-	finalDict = {}
-	for exp in results:
-		colorRatiosSet.add( exp.split(sep = '-')[2] )
-	for rs in colorRatiosSet:
-		expList = []
+	if version == "New":
+		colorRatiosSet = set()
+		finalDict = {}
 		for exp in results:
-			if exp.split(sep = '-')[2] == rs:
-				expList.append( results[exp] )
+			colorRatiosSet.add( exp.split(sep = '-')[2] )
+		for rs in colorRatiosSet:
+			expList = []
+			for exp in results:
+				if exp.split(sep = '-')[2] == rs:
+					expList.append( results[exp] )
 
-		finalDict[rs] = expList
+			finalDict[rs] = expList
 
-	for rs in finalDict:
-		colorRatio = float( rs )
-		invColorRatio = 1 / float( rs )
-		for exp in finalDict[rs]:
-			exp["colorRatio"] = colorRatio
-			exp["invColorRatio"] = invColorRatio
-			exp["edgeProb"] = exp["graphs"][0]["edgeProb"]
-			exp["nNodes"] = exp["graphs"][0]["nNodes"]
+		for rs in finalDict:
+			colorRatio = float( rs )
+			invColorRatio = 1 / float( rs )
+			for exp in finalDict[rs]:
+				exp["colorRatio"] = colorRatio
+				exp["invColorRatio"] = invColorRatio
+				exp["edgeProb"] = exp["graphs"][0]["edgeProb"]
+				exp["nNodes"] = exp["graphs"][0]["nNodes"]
+	else:
+		finalDict = results
 
 	with open( basePath + s + 'finalRes.json', "w") as outFile:
 		json.dump( finalDict, outFile )
 
 if __name__ == '__main__':
 	baseDir = sys.argv[1]
+	if len( sys.argv ) > 2:
+		version = sys.argv[2]
+	if version not in ["Old", "New"]:
+		version = "New"
+	print( version )
 	if not baseDir:
 		exit()
 	parseDirs( baseDir )
