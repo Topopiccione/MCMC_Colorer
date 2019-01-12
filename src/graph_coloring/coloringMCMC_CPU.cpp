@@ -108,7 +108,7 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	//size_t ii = 0;
 	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
 
-	size_t maxiter = nCol;
+	size_t maxiter = 2000;
 
 	// Count the number of violations on the extracted coloring
 	// Remember: 1: node is in a current violation state, 0: is not
