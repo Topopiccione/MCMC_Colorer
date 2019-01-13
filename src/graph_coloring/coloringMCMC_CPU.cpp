@@ -8,7 +8,7 @@ template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed) :
 	Colorer<nodeW, edgeW>(g), str(g->getStruct()), nNodes(g->getStruct()->nNodes), nCol(params.nCol),
 	numColorRatio(params.numColorRatio), lambda(params.lambda), epsilon(params.epsilon),
-	ratioFreezed(params.ratioFreezed), iter(0), maxIterReached(false), seed(seed) {
+	ratioFreezed(params.ratioFreezed), iter(0), maxiter(params.maxRip), maxIterReached(false), seed(seed) {
 
 	LOG(TRACE) << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 
@@ -107,8 +107,6 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	std::vector<size_t> histBins(nCol);
 	//size_t ii = 0;
 	//std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
-
-	size_t maxiter = 2000;
 
 	// Count the number of violations on the extracted coloring
 	// Remember: 1: node is in a current violation state, 0: is not
