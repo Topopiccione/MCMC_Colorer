@@ -193,8 +193,17 @@ int main(int argc, char *argv[]) {
 		params.maxRip = 2000;
 		//params.maxRip = 5000;
 
-		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
+		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
+		start = std::clock();
+		colMCMC.run(i);
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+
+		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+		std::cout << "MCMC Elapsed time: " << duration << std::endl;
+		std::cout << std::endl;
+
+		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
 		g_debugger = new dbg(test, &mcmc_cpu);
 		start = std::clock();
 		mcmc_cpu.run();
@@ -210,25 +219,14 @@ int main(int argc, char *argv[]) {
 		cpuFile.close();
 #endif // WRITE
 
-		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
-
-		start = std::clock();
-		colMCMC.run(i);
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-
-		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
-		std::cout << "MCMC Elapsed time: " << duration << std::endl;
-		std::cout << std::endl;
-
 		if (g_debugger != nullptr)
 			delete g_debugger;
-
 	}
 
 
-                delete test;
-                if (!commandLine.simulate)
-                        delete fImport;
+	delete test;
+	if (!commandLine.simulate)
+		delete fImport;
 
 
 	return EXIT_SUCCESS;
