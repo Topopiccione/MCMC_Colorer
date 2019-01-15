@@ -58,54 +58,55 @@ def readDataFromJson( baseDir ):
 
 	return finalDict
 
-def draw3Dgraph( resList ):
-	# x = []
-	# y = []
-	# z = []
+def draw3Dgraph( resList, expKey ):
+	xset = set()
+	yset = set()
+	for res in resList:
+		xset.add(float(res["colorRatio"]))
+		yset.add(int(res["density"]))
+	xlst = list(xset)
+	ylst = list(yset)
+
+	xlst.sort()
+	ylst.sort()
+	xsize = len(xlst)
+	ysize = len(ylst)
+	print(xlst)
+	print(ylst)
+
+	X, Y = np.meshgrid(xlst, ylst)
+	Z = np.array(X, copy=True)
+	Z2 = np.array(X, copy=True)
+
+	for i in range(0,xsize):
+		for j in range(0,ysize):
+			#print (str(X[j][i]) + " " + str(Y[j][i]))
+			for res in resList:
+				if (float(res["colorRatio"]) == X[j][i]) and (int(res["density"]) == Y[j][i]):
+					Z[j][i] = float(res[expKey])
+					Z2[j][i] = float(res["avg_MGPU"])
+
 	# for res in resList:
-	# 	x.append(res["colorRatio"])
-	# 	y.append(res["density"])
-	# 	z.append(res["avg_Luby"])
-	#
-	# x = np.array( x )
-	# y = np.array( y )
-	# z = np.array( z )
-	# ix = np.argsort( x )
-	# iy = np.argsort( y )
+	# 	print(str(res["colorRatio"]) + " " + str(res["density"]) + " " + str(res["avg_Luby"]) )
+	# print(X)
+	# print(Y)
+	# print(Z)
 
-	X = np.arange(-5, 5, 0.25)
-	Y = np.arange(-5, 5, 0.25)
-	print(Y)
-	print( len(X) )
-	print( len(Y) )
-	X, Y = np.meshgrid(X, Y)
-	R = np.sqrt(X**2 + Y**2)
-	Z = np.sin(R)
-	print(Y)
-
-	print( len(X) )
-	print( len(Y) )
-	print( len(Z) )
 
 	fig = plt.figure()
 	ax = fig.gca(projection='3d')
-
-	surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
-
-	ax.set_zlim(-1.01, 1.01)
-	ax.zaxis.set_major_locator(LinearLocator(10))
-	ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-
-	# Add a color bar which maps values to colors.
-	fig.colorbar(surf, shrink=0.5, aspect=5)
+	surf = ax.plot_surface(X, Y, Z, cmap=cm.winter, linewidth=0, antialiased=True)
+	surf2 = ax.plot_surface(X, Y, Z2, cmap=cm.autumn, linewidth=0, antialiased=True)
+	ax.set_xlabel('Color reduction')
+	ax.set_ylabel('Density')
+	ax.set_zlabel('Balancing Index')
+	ax.legend()
+	cbar  = fig.colorbar(surf, shrink=0.5, aspect=5)
+	cbar2 = fig.colorbar(surf2, shrink=0.5, aspect=5)
+	cbar.set_label('Luby')
+	cbar2.set_label('MCMC GPU')
 
 	plt.show()
-
-
-	# fig = plt.figure()
-	# ax = plt.axes( projection='3d' )
-	# plt.show()
 
 
 
@@ -114,4 +115,5 @@ if __name__ == '__main__':
 	filename = sys.argv[1]
 	dataFromDirs = readDataFromJson( filename )
 	# print( dataFromDirs )
-	draw3Dgraph( dataFromDirs )
+	draw3Dgraph( dataFromDirs, "avg_Luby" )
+	# draw3Dgraph( dataFromDirs, "avg_MGPU" )
