@@ -58,7 +58,7 @@ def readDataFromJson( baseDir ):
 
 	return finalDict
 
-def draw3Dgraph( resList, expKey ):
+def draw3Dgraph( resList ):
 	xset = set()
 	yset = set()
 	for res in resList:
@@ -83,7 +83,7 @@ def draw3Dgraph( resList, expKey ):
 			#print (str(X[j][i]) + " " + str(Y[j][i]))
 			for res in resList:
 				if (float(res["colorRatio"]) == X[j][i]) and (int(res["density"]) == Y[j][i]):
-					Z[j][i] = float(res[expKey])
+					Z[j][i] = float(res["avg_Luby"])
 					Z2[j][i] = float(res["avg_MGPU"])
 
 	# for res in resList:
@@ -115,5 +115,4 @@ if __name__ == '__main__':
 	filename = sys.argv[1]
 	dataFromDirs = readDataFromJson( filename )
 	# print( dataFromDirs )
-	draw3Dgraph( dataFromDirs, "avg_Luby" )
-	# draw3Dgraph( dataFromDirs, "avg_MGPU" )
+	draw3Dgraph( dataFromDirs )
