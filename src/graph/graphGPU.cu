@@ -32,10 +32,6 @@ void Graph<nodeW, edgeW>::setMemGPU(node_sz nn, int mode) {
 		cuSts = cudaMalloc(&(str->neighs), str->nEdges * sizeof(node)); cudaCheck(cuSts, __FILE__, __LINE__);
 		//GPUMemTracker::graphNeighsSize = str->nEdges*sizeof(node);
 	}
-	else if (mode == GPUINIT_CEDGES) {
-		cuSts = cudaMalloc(&(str->edges), str->nCleanEdges * 2 * sizeof(node)); cudaCheck(cuSts, __FILE__, __LINE__);
-		//GPUMemTracker::graphNeighsSize = str->nEdges*sizeof(node);
-	}
 	else if (mode == GPUINIT_NODEW) {
 		cuSts = cudaMalloc(&(str->nodeWeights), str->nEdges * sizeof(nodeW)); cudaCheck(cuSts, __FILE__, __LINE__);
 		//GPUMemTracker::graphNodeWSize = str->nEdges*sizeof(nodeW);
@@ -217,12 +213,9 @@ Graph<nodeW, edgeW>::Graph(Graph<nodeW, edgeW> * const graph_h) {
 	setMemGPU(graphStruct_h->nNodes, GPUINIT_NODES);
 	str->nNodes = graphStruct_h->nNodes;
 	str->nEdges = graphStruct_h->nEdges;
-	str->nCleanEdges = graphStruct_h->nCleanEdges;
 	setMemGPU(graphStruct_h->nNodes, GPUINIT_EDGES);
 	cudaMemcpy(str->cumulDegs, graphStruct_h->cumulDegs, (str->nNodes + 1) * sizeof(node_sz), cudaMemcpyHostToDevice);
 	cudaMemcpy(str->neighs, graphStruct_h->neighs, str->nEdges * sizeof(node), cudaMemcpyHostToDevice);
-	setMemGPU(graphStruct_h->nNodes, GPUINIT_CEDGES);
-	cudaMemcpy(str->edges, graphStruct_h->edges, str->nCleanEdges * 2 * sizeof(node_sz), cudaMemcpyHostToDevice);
 	maxDeg = graph_h->maxDeg;
 	minDeg = graph_h->minDeg;
 	meanDeg = graph_h->meanDeg;
@@ -273,10 +266,6 @@ void Graph<nodeW, edgeW>::deleteMemGPU() {
 	if (str->cumulDegs != nullptr) {
 		cudaFree(str->cumulDegs);
 		str->cumulDegs = nullptr;
-	}
-	if (str->edges != nullptr) {
-		cudaFree(str->edges);
-		str->edges = nullptr;
 	}
 	if (str->nodeWeights != nullptr) {
 		cudaFree(str->nodeWeights);

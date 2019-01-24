@@ -66,4 +66,4 @@ Creare un file bash sh:
 -------------------------------------------------------------------
 
 scaricare i file da dalab direttamente:
-	"pscp -r aspes@dalab.ricerca.di.unimi.it:/home/aspes/MCMC_Colorer/*000* ."
+	"pscp -r aspes@dalab.di.unimi.it:/home/aspes/MCMC_Colorer/*000* ."

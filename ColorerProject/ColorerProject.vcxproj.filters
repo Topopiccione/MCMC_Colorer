@@ -35,6 +35,9 @@
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC_utils.cu">
       <Filter>graph_coloring</Filter>
     </CudaCompile>
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_prints.cu">
+      <Filter>graph_coloring</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="graph">

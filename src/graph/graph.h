@@ -37,10 +37,8 @@ enum GPUMEMINITTYPES {
 template<typename nodeW, typename edgeW> struct GraphStruct {
 	node			nNodes{ 0 };				// num of graph nodes
 	node_sz			nEdges{ 0 };				// num of graph edges
-	node_sz			nCleanEdges{ 0 };				// num of graph clean edges
 	node_sz		*	cumulDegs{ nullptr };		// cumsum of node degrees
 	node		*	neighs{ nullptr };			// list of neighbors for all nodes (edges)
-	node_sz		*	edges{ nullptr };			// list of edges
 	nodeW		*	nodeWeights{ nullptr };		// list of weights for all nodes
 	edgeW		*	edgeWeights{ nullptr };		// list of weights for all edges
 	nodeW		*	nodeThresholds{ nullptr };
@@ -48,7 +46,6 @@ template<typename nodeW, typename edgeW> struct GraphStruct {
 	~GraphStruct() {
 		if (neighs != nullptr)			delete[] neighs;
 		if (cumulDegs != nullptr)		delete[] cumulDegs;
-		if (edges != nullptr)			delete[] edges;
 		if (nodeWeights != nullptr)		delete[] nodeWeights;
 		if (edgeWeights != nullptr)		delete[] edgeWeights;
 		if (nodeThresholds != nullptr)	delete[] nodeThresholds;

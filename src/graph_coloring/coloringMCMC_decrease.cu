@@ -2,8 +2,8 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "coloringMCMC.h"
 
-#if defined(COLOR_DECREASE_LINE_CUMULATIVE) || defined(COLOR_DECREASE_EXP_CUMULATIVE)
-__global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d) {
+#if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
+__global__ void ColoringMCMC_k::selectStarColoringDecrease(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -100,5 +100,5 @@ __global__ void ColoringMCMC_k::selectStarColoringDecrease_cumulative(uint32_t n
 	qStar_d[idx] = q;											//save the probability of the color chosen
 	starColoring_d[idx] = i - 1;
 }
-#endif // COLOR_DECREASE_LINE_CUMULATIVE || COLOR_DECREASE_EXP_CUMULATIVE
+#endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
 

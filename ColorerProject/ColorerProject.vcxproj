@@ -95,6 +95,7 @@
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC_balance.cu" />
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC_decrease.cu" />
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC_main.cu" />
+    <CudaCompile Include="..\src\graph_coloring\coloringMCMC_prints.cu" />
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC_standard.cu" />
     <CudaCompile Include="..\src\graph_coloring\coloringMCMC_utils.cu" />
     <CudaCompile Include="..\src\testColoring_Benchmark.cu" />

@@ -37,39 +37,6 @@ dbg		*	g_debugger;
 
 INITIALIZE_EASYLOGGINGPP
 
-void newComponents(Graph<float, float> * test) {
-
-	// arches rappresenta una lista di coppie di nodi che consistono nei singoli archi del grafo (senza ripetizioni)
-	std::vector<node_sz> tempEdges;
-
-	for (int i = 0; i < test->getStruct()->nNodes; i++)
-	{
-		int index = test->getStruct()->cumulDegs[i];
-		int numOfNeighbors = test->getStruct()->cumulDegs[i + 1] - index;
-
-		for (int j = 0; j < numOfNeighbors; j++)
-		{
-			if (i < test->getStruct()->neighs[index + j]) {
-				tempEdges.push_back(i);
-				tempEdges.push_back(test->getStruct()->neighs[index + j]);
-			}
-		}
-	}
-
-	test->getStruct()->nCleanEdges = tempEdges.size() / 2;
-	test->getStruct()->edges = new node_sz[tempEdges.size()];
-	for (int i = 0; i < tempEdges.size(); i++)
-	{
-		test->getStruct()->edges[i] = tempEdges[i];
-	}
-
-	std::cout << "Archi singoli: " << (tempEdges.size() / 2) << std::endl;
-
-	//node_sz	* edges = &tempEdges[0];
-	//test->getStruct()->edges = edges;
-	//test->getStruct()->edges = tempEdges.data();
-}
-
 int main(int argc, char *argv[]) {
 
 	////EasyLogging++
@@ -96,7 +63,7 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "--simulate";
 	argv[a++] = "0.001";
 	argv[a++] = "-n";
-	argv[a++] = "25000";
+	argv[a++] = "100000";
 	argv[a++] = "--repet";
 	argv[a++] = "1";
 	argv[a++] = "--numColRatio";
@@ -146,8 +113,6 @@ int main(int argc, char *argv[]) {
 		std::cout << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges << std::endl;
 		std::cout << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
 			<< test->getMeanNodeDeg() << std::endl;
-
-		newComponents(test);
 
 #ifdef WRITE
 		std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-results";
