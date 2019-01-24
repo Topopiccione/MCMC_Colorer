@@ -218,7 +218,6 @@ void ColoringMCMC<nodeW, edgeW>::calcProbs() {
 	}
 }
 
-
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
 template class ColoringMCMC<col, col>;

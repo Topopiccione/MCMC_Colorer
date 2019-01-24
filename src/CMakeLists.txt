@@ -87,6 +87,7 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph_coloring/coloringMCMC_decrease.cu"
 					"graph_coloring/coloringMCMC_balance.cu"
 					"graph_coloring/coloringMCMC_utils.cu"
+					"graph_coloring/coloringMCMC_prints.cu"
 					"testColoring_Benchmark.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
 SET(LOGGINGPP		"easyloggingpp/easyloggingpp/easylogging++.cc")

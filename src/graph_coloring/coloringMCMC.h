@@ -59,6 +59,7 @@ protected:
 
 	ColoringMCMCParams param;
 	uint32_t		rip = 0;
+	bool			maxIterReached = false;
 
 	//dati del grafo
 	const GraphStruct<nodeW, edgeW>	* const	graphStruct_d;

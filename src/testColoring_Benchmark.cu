@@ -90,42 +90,42 @@ int main(int argc, char *argv[]) {
 	int					repet = commandLine.repetitions;
 	std::cout << "REPET +++++++++++++++++++ " << repet << std::endl;
 
+	bool GPUEnabled = 1;
+	Graph<float, float> *	test;
+	fileImporter 		*	fImport;
+
+	if (commandLine.simulate)
+		test = new Graph<float, float>(N, prob, seed);
+	else {
+		fImport = new fileImporter(graphFileName, labelsFileName);
+		test = new Graph<float, float>(fImport, !GPUEnabled);
+	}
+	//LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
+	//LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+	//<< test->getMeanNodeDeg();
+	std::cout << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges << std::endl;
+	std::cout << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+		<< test->getMeanNodeDeg() << std::endl;
+
+#ifdef WRITE
+	std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-" + std::to_string(numColorRatio) + "-results";
+#ifdef WIN32
+	mkdir(directory.c_str());
+#else
+	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
+#endif // WRITE
+
+	Graph<float, float> graph_d(test);
+
+	GPURand GPURandGen(test->getStruct()->nNodes, (long)commandLine.seed);
+
 	for (int i = 0; i < repet; i++)
 	{
 		std::cout << "Ripetizione: " << i << std::endl;
 
 		std::clock_t start;
 		double duration;
-
-		bool GPUEnabled = 1;
-		Graph<float, float> *	test;
-		fileImporter 		*	fImport;
-
-		if (commandLine.simulate)
-			test = new Graph<float, float>(N, prob, i);
-		else {
-			fImport = new fileImporter(graphFileName, labelsFileName);
-			test = new Graph<float, float>(fImport, !GPUEnabled);
-		}
-		//LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
-		//LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
-		//<< test->getMeanNodeDeg();
-		std::cout << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges << std::endl;
-		std::cout << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
-			<< test->getMeanNodeDeg() << std::endl;
-
-#ifdef WRITE
-		std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-results";
-#ifdef WIN32
-		mkdir(directory.c_str());
-#else
-		mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif
-#endif // WRITE
-
-		Graph<float, float> graph_d(test);
-
-		GPURand GPURandGen(test->getStruct()->nNodes, (long)commandLine.seed);
 
 		//// GPU Luby coloring
 		ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
@@ -158,10 +158,20 @@ int main(int argc, char *argv[]) {
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		//params.maxRip = params.nCol;
-		params.maxRip = 500;
+		params.maxRip = 2000;
 		//params.maxRip = 5000;
 
-		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed);
+		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+
+		start = std::clock();
+		colMCMC.run(i);
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+
+		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
+		std::cout << "MCMC Elapsed time: " << duration << std::endl;
+		std::cout << std::endl;
+
+		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
 		g_debugger = new dbg(test, &mcmc_cpu);
 		start = std::clock();
 		mcmc_cpu.run();
@@ -177,23 +187,15 @@ int main(int argc, char *argv[]) {
 		cpuFile.close();
 #endif // WRITE
 
-		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
-
-		start = std::clock();
-		colMCMC.run(i);
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-
-		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
-		std::cout << "MCMC Elapsed time: " << duration << std::endl;
-		std::cout << std::endl;
-
 		if (g_debugger != nullptr)
 			delete g_debugger;
-
-		delete test;
-		if (!commandLine.simulate)
-			delete fImport;
 	}
+
+
+	delete test;
+	if (!commandLine.simulate)
+		delete fImport;
+
 
 	return EXIT_SUCCESS;
 }

@@ -87,6 +87,7 @@ protected:
 	float										expLambda;
 	float										divider;
 	size_t 										iter;
+	size_t										maxiter;
 	bool										maxIterReached;
 
 	// Vars

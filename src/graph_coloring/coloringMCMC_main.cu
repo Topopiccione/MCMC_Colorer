@@ -290,6 +290,9 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	} while (rip < param.maxRip);
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
+	if (rip == param.maxRip)
+		maxIterReached = true;
+
 	__customPrintRun7_end();
 }
 
