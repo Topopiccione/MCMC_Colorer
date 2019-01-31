@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "--simulate";
 	argv[a++] = "0.001";
 	argv[a++] = "-n";
-	argv[a++] = "100000";
+	argv[a++] = "50000";
 	argv[a++] = "--repet";
 	argv[a++] = "1";
 	argv[a++] = "--numColRatio";
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 		params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
 		//params.startingNCol = 20;
 		params.epsilon = 1e-8f;
-		params.lambda = 0.1f;
+		params.lambda = 0.01f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		//params.maxRip = params.nCol;

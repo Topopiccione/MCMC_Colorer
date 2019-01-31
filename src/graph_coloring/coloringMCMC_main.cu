@@ -40,6 +40,11 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cuSts = cudaMalloc((void**)&probDistributionExp_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP
 
+#ifdef COLOR_BALANCE_EXP
+	orderedIndex_h = (uint32_t *)malloc(param.nCol * sizeof(uint32_t));
+	cuSts = cudaMalloc((void**)&orderedIndex_d, param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // COLOR_BALANCE_EXP
+
 
 #ifdef STATS
 	coloring_h = (uint32_t *)malloc(nnodes * sizeof(uint32_t));
@@ -62,6 +67,11 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP)
 	cuSts = cudaFree(probDistributionExp_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP
+
+#ifdef COLOR_BALANCE_EXP
+	free(orderedIndex_h);
+	cuSts = cudaFree(orderedIndex_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // COLOR_BALANCE_EXP
 
 	cuSts = cudaFree(conflictCounter_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(q_d); 							cudaCheck(cuSts, __FILE__, __LINE__);
@@ -126,7 +136,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	}
 	ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
 #endif // DYNAMIC_N_COLORS
-
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
 
@@ -254,6 +263,41 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #endif // DYNAMIC_N_COLORS
 #endif // COLOR_DECREASE_EXP
 
+#ifdef COLOR_BALANCE_EXP
+#ifdef FIXED_N_COLORS
+		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
+		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
+		for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
+		std::sort(&orderedIndex_h[0], &orderedIndex_h[param.nCol], [&](int i, int j) {return statsColors_h[i] < statsColors_h[j]; });
+		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
+
+		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+#endif // FIXED_N_COLORS
+#ifdef DYNAMIC_N_COLORS
+		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, probDistributionExp_d, orderedIndex_d, randStates, param.epsilon, statsFreeColors_d);
+		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
+		{
+			//if (coloring_h[i] == param.startingNCol)
+			if (qStar_h[i] == 1)
+			{
+				//param.startingNCol++;
+				param.startingNCol += 1;
+				float denomE = 0;
+				for (int i = 0; i < param.startingNCol; i++)
+				{
+					denomE += exp(-param.lambda * i);
+				}
+				ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
+				i = nnodes;
+			}
+
+		}
+		std::cout << "startingNCol = " << param.startingNCol << std::endl;
+#endif // DYNAMIC_N_COLORS
+#endif // COLOR_BALANCE_EXP
+
 		cudaDeviceSynchronize();
 
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
@@ -287,14 +331,14 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 		//getStatsNumColors("running_");
 
-	} while (rip < param.maxRip);
-	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+			} while (rip < param.maxRip);
+			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-	if (rip == param.maxRip)
-		maxIterReached = true;
+			if (rip == param.maxRip)
+				maxIterReached = true;
 
-	__customPrintRun7_end();
-}
+			__customPrintRun7_end();
+		}
 
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main

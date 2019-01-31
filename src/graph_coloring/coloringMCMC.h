@@ -30,18 +30,18 @@
 /**
 * choose one to indicate how to initialize the colors
 */
-#define STANDARD_INIT
+//#define STANDARD_INIT
 //#define DISTRIBUTION_LINE_INIT
-//#define DISTRIBUTION_EXP_INIT
+#define DISTRIBUTION_EXP_INIT
 
 /**
 * choose one to indicate the desired colorer
 */
-#define STANDARD
+//#define STANDARD
 //#define COLOR_DECREASE_LINE
 //#define COLOR_DECREASE_EXP				
 //#define COLOR_BALANCE_LINE				TODO
-//#define COLOR_BALANCE_EXP					TODO
+#define COLOR_BALANCE_EXP
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
@@ -95,6 +95,11 @@ protected:
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP)
 	float		*	probDistributionExp_d;
 #endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP
+
+#ifdef COLOR_BALANCE_EXP
+	uint32_t	*	orderedIndex_h;
+	uint32_t	*	orderedIndex_d;
+#endif // COLOR_BALANCE_EXP
 
 	// STATS
 	uint32_t	*	coloring_h;			// each element denotes a color
@@ -166,6 +171,9 @@ namespace ColoringMCMC_k {
 #if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
 	__global__ void selectStarColoringDecrease(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP)
+	__global__ void selectStarColoringBalance(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
+#endif // COLOR_BALANCE_LINE || COLOR_BALANCE_EXP
 
 	__global__ void lookOldColoring(uint32_t nnodes, uint32_t * starColoring_d, float * q_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon);
 }
