@@ -51,23 +51,24 @@ int main(int argc, char *argv[]) {
 	g_debugger = nullptr;
 
 #ifdef INLINE_ARGS
-	//argc = 7;
-	/*argv[1] = "--data";
-	argv[2] = "net50k001.txt";
-	argv[3] = "--label";
-	argv[4] = "lab50k001.txt";
-	argv[5] = "--gene";
-	argv[6] = "gene.txt";*/
-
 	uint32_t a = 1;
+
+	/*argv[a++] = "--data";
+	argv[a++] = "net50k001.txt";
+	argv[a++] = "--label";
+	argv[a++] = "lab50k001.txt";
+	argv[a++] = "--gene";
+	argv[a++] = "gene.txt";*/
+
 	argv[a++] = "--simulate";
 	argv[a++] = "0.001";
 	argv[a++] = "-n";
-	argv[a++] = "50000";
+	argv[a++] = "150000";
 	argv[a++] = "--repet";
 	argv[a++] = "1";
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
+
 	argc = a++;
 #endif // INLINE_ARGS
 

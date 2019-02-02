@@ -25,23 +25,25 @@
 #define WRITE
 
 #define FIXED_N_COLORS
-//#define DYNAMIC_N_COLORS					
+//#define DYNAMIC_N_COLORS		
+
+#define TABOO
 
 /**
 * choose one to indicate how to initialize the colors
 */
-//#define STANDARD_INIT
+#define STANDARD_INIT
 //#define DISTRIBUTION_LINE_INIT
-#define DISTRIBUTION_EXP_INIT
+//#define DISTRIBUTION_EXP_INIT
 
 /**
 * choose one to indicate the desired colorer
 */
-//#define STANDARD
+#define STANDARD
 //#define COLOR_DECREASE_LINE
 //#define COLOR_DECREASE_EXP				
 //#define COLOR_BALANCE_LINE				TODO
-#define COLOR_BALANCE_EXP
+//#define COLOR_BALANCE_EXP
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
@@ -78,6 +80,8 @@ protected:
 	uint32_t	*	coloring_d;			// each element denotes a color
 	uint32_t	*	starColoring_d;		// each element denotes a new color
 	uint32_t	*	switchPointer;
+
+	uint32_t	*	taboo_d;			// each element denotes a color
 
 	float			p;
 	float		*	q_h;
@@ -166,7 +170,7 @@ namespace ColoringMCMC_k {
 	__device__ void warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize);
 
 #ifdef STANDARD
-	__global__ void selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
+	__global__ void selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
 #endif // STANDARD
 #if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
 	__global__ void selectStarColoringDecrease(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);

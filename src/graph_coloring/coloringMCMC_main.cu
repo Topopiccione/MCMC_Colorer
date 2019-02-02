@@ -25,6 +25,10 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cuSts = cudaMalloc((void**)&coloring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&starColoring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 
+#ifdef TABOO
+	cuSts = cudaMalloc((void**)&taboo_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // TABOO
+
 	q_h = (float *)malloc(nnodes * sizeof(float));
 	cuSts = cudaMalloc((void**)&q_d, nnodes * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
 	qStar_h = (float *)malloc(nnodes * sizeof(float));
@@ -59,6 +63,10 @@ template<typename nodeW, typename edgeW>
 ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(coloring_d); 					cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(starColoring_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
+
+#ifdef TABOO
+	cuSts = cudaFree(taboo_d); 						cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // TABOO
 
 	cuSts = cudaFree(colorsChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
@@ -97,6 +105,10 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	__customPrintRun0_start(iteration);
 
 	cuSts = cudaMemset(coloring_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
+
+#ifdef TABOO
+	cuSts = cudaMemset(taboo_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // TABOO
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
 #ifdef FIXED_N_COLORS
@@ -186,7 +198,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 #ifdef STANDARD
 #ifdef FIXED_N_COLORS
-		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, randStates, param.epsilon, statsFreeColors_d);
+		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, randStates, param.epsilon, statsFreeColors_d);
 		cudaDeviceSynchronize();
 #endif // FIXED_N_COLORS
 #ifdef DYNAMIC_N_COLORS
@@ -331,14 +343,14 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 		//getStatsNumColors("running_");
 
-			} while (rip < param.maxRip);
-			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+	} while (rip < param.maxRip);
+	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-			if (rip == param.maxRip)
-				maxIterReached = true;
+	if (rip == param.maxRip)
+		maxIterReached = true;
 
-			__customPrintRun7_end();
-		}
+	__customPrintRun7_end();
+}
 
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main

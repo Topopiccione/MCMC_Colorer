@@ -7,12 +7,19 @@
 * This will be write in starColoring_d and the probability of the chosen color will be write in qStar_d
 */
 #ifdef STANDARD
-__global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
+__global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nnodes)
 		return;
+
+#ifdef TABOO
+	if (taboo_d[idx] > 0) {
+		taboo_d[idx]--;
+		return;
+	}
+#endif // TABOO
 
 	uint32_t index = cumulDegs[idx];							//index of the node in neighs
 	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
@@ -80,6 +87,10 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 	//}
 	qStar_d[idx] = q;											//save the probability of the color chosen
 	starColoring_d[idx] = selectedIndex - 1;
+
+#ifdef TABOO
+	taboo_d[idx] = (starColoring_d[idx] == nodeCol) * 2;
+#endif // TABOO
 }
 #endif // STANDARD
 
