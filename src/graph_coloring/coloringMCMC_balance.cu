@@ -47,25 +47,7 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	{
 		denomReminder += exp(-lambda * i);
 	}
-	/*if (idx == 0) {
-		printf("---------------------------------------\n");
-		printf("reminder: %f\n", reminder);
-		printf("denom reminder: %f\n", denomReminder);
-		float tot = 0, tot2 = 0;
-		float ex = reminder / Zp;
-		for (int i = 0; i < Zp; i++)
-		{
-			float r = reminder * (exp(-lambda * i) / denomReminder);
-			printf("r: %f\n", r);
-			printf("ex: %f\n", ex);
-			tot += r;
-			tot2 += ex;
-		}
-		printf("TOT: %f\n", tot);
-		printf("TOT ex: %f\n", tot2);
-		printf("---------------------------------------\n");
-	}*/
-
+	//denomReminder = Zp;
 
 	int i = 0, j = 0;
 	float q;
@@ -75,16 +57,9 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	{
 		do {
 			float r = reminder * (exp(-lambda * j) / denomReminder);
+			//float r = reminder / denomReminder;
 			q = (probDistribution_d[orderedIndex_d[i]] + r) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
 			threshold += q;
-			/*if (idx == 0) {
-				printf("i = %d\n", i);
-				printf("probDistribution_d[i] = %f\n", probDistribution_d[i]);
-				printf("r = %f\n", r);
-				printf("q = %f\n", q);
-				printf("threshold = %f\n", threshold);
-				printf("randnum = %f\n", randnum);
-			}*/
 			j += !colorsChecker[i];
 			i++;
 		} while (threshold < randnum && i < nCol);
@@ -99,6 +74,6 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	}
 	qStar_d[idx] = q;											//save the probability of the color chosen
 	starColoring_d[idx] = i - 1;
-	}
+}
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
 

@@ -1,7 +1,11 @@
 ﻿
 
-- Provare a ottenere il risultato di bilanciamento.
-- Provare a tagliare l'algoritmo (quale strategia? come fare sequenziale?)
-- Provare a inserire Taboo
+- Provare a tagliare l'algoritmo (per farlo ordinare i colori in base all'utilizzo e poi applicare una strategia greedy seguendo l'ordine definito. Quando tagliare la coda?)
+- Inserire Taboo e TailCutting su tutte le configurazioni
+- Inserire bilanciamento colore anche con distribuzione lineare
+- Testare Taboo e TailCutting su Dalab
+- Controllare che Hastings nella versione base funzioni
+- Finire primo capitolo della tesi.
 
-- Hastings
+- Provare a ottenere il risultato di bilanciamento. [stato dell'arte: il bilanciamento funziona ma non migliora di molto rispetto alla versione standard la deviazione standard. Inoltre funziona solamente utilizzando distribuzioni di probabilità poco marcate/verticali, altrimenti si favoriscono troppo i colori meno utilizzati e si finisce per sbilanciare il grafo]
+- Il prof suggeriva di provare a fare il bilanciamento utilizzando Hastings, come si fa?

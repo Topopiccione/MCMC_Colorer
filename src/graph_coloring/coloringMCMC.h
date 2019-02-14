@@ -21,13 +21,14 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-#define PRINTS
+//#define PRINTS
 #define WRITE
 
 #define FIXED_N_COLORS
 //#define DYNAMIC_N_COLORS		
 
 #define TABOO
+#define TAIL_CUTTING
 
 /**
 * choose one to indicate how to initialize the colors
@@ -96,14 +97,14 @@ protected:
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
 	float		*	probDistributionLine_d;
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
-#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP)
+#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
 	float		*	probDistributionExp_d;
-#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP
+#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
 
-#ifdef COLOR_BALANCE_EXP
+#if defined(COLOR_BALANCE_EXP) || defined(TAIL_CUTTING)
 	uint32_t	*	orderedIndex_h;
 	uint32_t	*	orderedIndex_d;
-#endif // COLOR_BALANCE_EXP
+#endif // COLOR_BALANCE_EXP || TAIL_CUTTING
 
 	// STATS
 	uint32_t	*	coloring_h;			// each element denotes a color
@@ -152,9 +153,9 @@ namespace ColoringMCMC_k {
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
 	__global__ void initDistributionLine(float nCol, float denom, float lambda, float * probDistributionLine_d);
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
-#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP)
+#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
 	__global__ void initDistributionExp(float nCol, float denom, float lambda, float * probDistributionExp_d);
-#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP
+#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
 
 #ifdef STANDARD_INIT
 	__global__ void initColoring(uint32_t nnodes, uint32_t * coloring_d, float nCol, curandState * states);
@@ -165,12 +166,14 @@ namespace ColoringMCMC_k {
 
 	__global__ void logarithmer(uint32_t nnodes, float * values);
 
+	__global__ void tailCutting(uint32_t nnodes, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, int conflictCounter, uint32_t * conflictCounter_d, uint32_t * orderedIndex_d);
+
 	__global__ void conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs);
 	__global__ void sumReduction(uint32_t n, float * conflictCounter_d);
 	__device__ void warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize);
 
 #ifdef STANDARD
-	__global__ void selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
+	__global__ void selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, curandState * states, float epsilon, uint32_t * statsFreeColors_d);
 #endif // STANDARD
 #if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
 	__global__ void selectStarColoringDecrease(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistributionLine_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);

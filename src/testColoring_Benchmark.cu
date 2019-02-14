@@ -63,11 +63,13 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "--simulate";
 	argv[a++] = "0.001";
 	argv[a++] = "-n";
-	argv[a++] = "150000";
+	argv[a++] = "50000";
 	argv[a++] = "--repet";
 	argv[a++] = "1";
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
+	argv[a++] = "--tabooIteration";
+	argv[a++] = "2";
 
 	argc = a++;
 #endif // INLINE_ARGS
@@ -147,20 +149,38 @@ int main(int argc, char *argv[]) {
 
 
 		ColoringMCMCParams params;
-		params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
+		//params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
+		params.nCol = test->getMaxNodeDeg();
 		params.numColorRatio = numColorRatio;
-		//params.nCol = test->getMaxNodeDeg();
 		//params.nCol = 200;
 		//params.nCol = 80;
 		params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
 		//params.startingNCol = 20;
 		params.epsilon = 1e-8f;
-		params.lambda = 0.01f;
+		params.lambda = 0.00005f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		//params.maxRip = params.nCol;
 		params.maxRip = 2000;
 		//params.maxRip = 5000;
+		params.tabooIteration = commandLine.tabooIteration;
+		//params.tabooIteration = 2;
+
+//		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
+//		g_debugger = new dbg(test, &mcmc_cpu);
+//		start = std::clock();
+//		mcmc_cpu.run();
+//		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+//		//mcmc_cpu.show_histogram();
+//		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+//		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+//
+//#ifdef WRITE
+//		std::ofstream cpuFile;
+//		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
+//		mcmc_cpu.saveStats(i, duration, cpuFile);
+//		cpuFile.close();
+//#endif // WRITE
 
 		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
@@ -171,22 +191,6 @@ int main(int argc, char *argv[]) {
 		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
 		std::cout << "MCMC Elapsed time: " << duration << std::endl;
 		std::cout << std::endl;
-
-		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
-		g_debugger = new dbg(test, &mcmc_cpu);
-		start = std::clock();
-		mcmc_cpu.run();
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		//mcmc_cpu.show_histogram();
-		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
-		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
-
-#ifdef WRITE
-		std::ofstream cpuFile;
-		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
-		mcmc_cpu.saveStats(i, duration, cpuFile);
-		cpuFile.close();
-#endif // WRITE
 
 		if (g_debugger != nullptr)
 			delete g_debugger;

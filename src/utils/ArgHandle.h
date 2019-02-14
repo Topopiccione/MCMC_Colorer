@@ -35,6 +35,7 @@ public:
 	uint32_t		verboseLevel;
 	uint32_t		nThreads;
 	uint32_t		repetitions;
+	uint32_t		tabooIteration;
 
 	bool			generateRandomFold;
 	bool			simulate;

@@ -70,4 +70,5 @@ struct ColoringMCMCParams {
 	float			lambda;
 	float			epsilon;
 	float			ratioFreezed;
+	uint32_t		tabooIteration;
 };

@@ -14,7 +14,7 @@ __global__ void ColoringMCMC_k::initDistributionLine(float nCol, float denom, fl
 }
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
 
-#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP)
+#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
 __global__ void ColoringMCMC_k::initDistributionExp(float nCol, float denom, float lambda, float * probDistributionExp_d) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -23,7 +23,7 @@ __global__ void ColoringMCMC_k::initDistributionExp(float nCol, float denom, flo
 
 	probDistributionExp_d[idx] = exp(-lambda * idx) / denom;
 }
-#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP
+#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
 
 /**
 * Set coloring_d with random colors
@@ -90,6 +90,37 @@ __global__ void ColoringMCMC_k::logarithmer(uint32_t nnodes, float * values) {
 		return;
 
 	values[idx] = log(values[idx]);
+}
+
+__global__ void ColoringMCMC_k::tailCutting(uint32_t nnodes, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, int conflictCounter, uint32_t * conflictCounter_d, uint32_t * orderedIndex_d) {
+
+	if (threadIdx.x + blockDim.x * blockIdx.x >= 1)
+		return;
+
+	int resolved = 0;
+	for (uint32_t idx = 0; idx < nnodes && resolved < conflictCounter; idx++) {
+		if (conflictCounter_d[idx]) {
+			resolved++;
+
+			uint32_t index = cumulDegs[idx];								//index of the node in neighs
+			uint32_t nneighs = cumulDegs[idx + 1] - index;					//number of neighbors
+
+			uint32_t nodeCol = coloring_d[idx];								//node color
+
+			bool * colorsChecker = &(colorsChecker_d[idx * nCol]);			//array used to set to 1 or 0 the colors occupied from the neighbors
+			for (int i = 0; i < nneighs; i++)
+				colorsChecker[coloring_d[neighs[index + i]]] = 1;
+
+			int j = 0;
+			while (colorsChecker[nodeCol] && j < nCol) {
+				nodeCol = orderedIndex_d[j];
+				j++;
+			}
+
+			coloring_d[idx] = nodeCol;
+		}
+	}
+
 }
 
 __global__ void ColoringMCMC_k::conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs) {
