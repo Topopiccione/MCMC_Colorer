@@ -353,9 +353,9 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 		cudaDeviceSynchronize();
 
-		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
-		ColoringMCMC_k::lookOldColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, q_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, param.epsilon);
-		cudaDeviceSynchronize();
+		//cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
+		//ColoringMCMC_k::lookOldColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, q_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, param.epsilon);
+		//cudaDeviceSynchronize();
 
 		calcConflicts(conflictCounterStar, starColoring_d);
 
