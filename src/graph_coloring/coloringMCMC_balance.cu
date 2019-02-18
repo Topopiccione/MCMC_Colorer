@@ -39,14 +39,8 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 
 	if (!Zp)													//manage exception of no free colors
 	{
-#ifdef FIXED_N_COLORS
 		starColoring_d[idx] = nodeCol;
 		qStar_d[idx] = 1;
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-		starColoring_d[idx] = nodeCol;
-		qStar_d[idx] = 1;
-#endif // DYNAMIC_N_COLORS
 		return;
 	}
 

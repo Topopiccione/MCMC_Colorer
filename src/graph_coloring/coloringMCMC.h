@@ -24,9 +24,6 @@
 //#define PRINTS
 #define WRITE
 
-#define FIXED_N_COLORS
-//#define DYNAMIC_N_COLORS		
-
 #define TABOO
 #define TAIL_CUTTING
 
@@ -45,6 +42,7 @@
 //#define COLOR_DECREASE_EXP				
 //#define COLOR_BALANCE_LINE
 //#define COLOR_BALANCE_EXP
+//#define COLOR_BALANCE_DYNAMIC_DISTR
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
@@ -54,11 +52,7 @@ public:
 	~ColoringMCMC();
 
 	void			run(int iteration);
-
-#ifdef  WRITE
 	void setDirectoryPath(std::string directory) { this->directory = directory; }
-#endif //  WRITE
-
 
 protected:
 	uint32_t		nnodes;
@@ -131,7 +125,6 @@ protected:
 	void			getStatsNumColors(char * prefix);
 	void			calcProbs();
 
-#if defined(PRINTS) || defined(WRITE)
 	void			__customPrintConstructor0_start();
 	void			__customPrintConstructor1_end();
 	void			__customPrintRun0_start(int iteration);
@@ -142,15 +135,12 @@ protected:
 	void			__customPrintRun5();
 	void			__customPrintRun6_change();
 	void			__customPrintRun7_end();
-#endif
 
 	std::clock_t start;
 	double duration;
-#ifdef WRITE
+
 	std::ofstream logFile, resultsFile, colorsFile;
 	std::string directory;
-#endif //WRITE
-
 };
 
 

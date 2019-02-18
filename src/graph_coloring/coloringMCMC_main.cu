@@ -111,71 +111,35 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #endif // TABOO
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
-#ifdef FIXED_N_COLORS
 	float denomL = 0;
 	for (int i = 0; i < param.nCol; i++)
 	{
 		denomL += exp(-param.lambda * i);
 	}
 	ColoringMCMC_k::initDistributionLine << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, denomL, param.lambda, probDistributionLine_d);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-	float denomL = 0;
-	for (int i = 0; i < param.startingNCol; i++)
-	{
-		denomL += exp(-param.lambda * i);
-	}
-	ColoringMCMC_k::initDistributionLine << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomL, param.lambda, probDistributionLine_d);
-#endif // DYNAMIC_N_COLORS
-
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE || COLOR_BALANCE_LINE
 
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
-#ifdef FIXED_N_COLORS
 	float denomE = 0;
 	for (int i = 0; i < param.nCol; i++)
 	{
 		denomE += exp(-param.lambda * i);
 	}
 	ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, denomE, param.lambda, probDistributionExp_d);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-	float denomE = 0;
-	for (int i = 0; i < param.startingNCol; i++)
-	{
-		denomE += exp(-param.lambda * i);
-	}
-	ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
-#endif // DYNAMIC_N_COLORS
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE || COLOR_BALANCE_EXP
 
 #ifdef STANDARD_INIT
-#ifdef FIXED_N_COLORS
 	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, randStates);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.startingNCol, randStates);
-#endif // DYNAMIC_N_COLORS
 #endif // STANDARD_INIT
 
 #ifdef DISTRIBUTION_LINE_INIT
-#ifdef FIXED_N_COLORS
 	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistributionLine_d, randStates);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.startingNCol, probDistributionLine_d, randStates);
-#endif // DYNAMIC_N_COLORS
 #endif // DISTRIBUTION_LINE_INIT
 
 #ifdef DISTRIBUTION_EXP_INIT
-#ifdef FIXED_N_COLORS
 	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, probDistributionExp_d, randStates);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-	ColoringMCMC_k::initColoringWithDistribution << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.startingNCol, probDistributionExp_d, randStates);
-#endif // DYNAMIC_N_COLORS
 #endif // DISTRIBUTION_EXP_INIT
 	cudaDeviceSynchronize();
 
@@ -203,86 +167,19 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
 
 #ifdef STANDARD
-#ifdef FIXED_N_COLORS
 		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, randStates, param.epsilon, statsFreeColors_d);
 		cudaDeviceSynchronize();
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, randStates, param.epsilon, statsFreeColors_d);
-		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
-		{
-			//if (coloring_h[i] == param.startingNCol)
-			if (qStar_h[i] == 1)
-			{
-				//param.startingNCol++;
-				param.startingNCol += 1;
-				i = nnodes;
-			}
-
-		}
-		std::cout << "startingNCol = " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 #endif // STANDARD
 
 #ifdef COLOR_DECREASE_LINE
-#ifdef FIXED_N_COLORS
 		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionLine_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionLine_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
-		{
-			//if (coloring_h[i] == param.startingNCol)
-			if (qStar_h[i] == 1)
-			{
-				//param.startingNCol++;
-				param.startingNCol += 1;
-				float denomL = 0;
-				for (int i = 0; i < param.startingNCol; i++)
-				{
-					denomL += exp(-param.lambda * i);
-				}
-				ColoringMCMC_k::initDistributionLine << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomL, param.lambda, probDistributionLine_d);
-				i = nnodes;
-			}
-
-		}
-		std::cout << "startingNCol = " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 #endif // COLOR_DECREASE_LINE
 
 #ifdef COLOR_DECREASE_EXP
-#ifdef FIXED_N_COLORS
 		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionExp_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionExp_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
-		{
-			//if (coloring_h[i] == param.startingNCol)
-			if (qStar_h[i] == 1)
-			{
-				//param.startingNCol++;
-				param.startingNCol += 1;
-				float denomE = 0;
-				for (int i = 0; i < param.startingNCol; i++)
-				{
-					denomE += exp(-param.lambda * i);
-				}
-				ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
-				i = nnodes;
-			}
-
-		}
-		std::cout << "startingNCol = " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 #endif // COLOR_DECREASE_EXP
 
 #ifdef COLOR_BALANCE_LINE
-#ifdef FIXED_N_COLORS
 		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
 		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
@@ -291,33 +188,9 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
 
 		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionLine_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionLine_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
-		{
-			//if (coloring_h[i] == param.startingNCol)
-			if (qStar_h[i] == 1)
-			{
-				//param.startingNCol++;
-				param.startingNCol += 1;
-				float denomL = 0;
-				for (int i = 0; i < param.startingNCol; i++)
-				{
-					denomL += exp(-param.lambda * i);
-				}
-				ColoringMCMC_k::initDistributionLine << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomL, param.lambda, probDistributionLine_d);
-				i = nnodes;
-			}
-
-		}
-		std::cout << "startingNCol = " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 #endif // COLOR_BALANCE_EXP
 
 #ifdef COLOR_BALANCE_EXP
-#ifdef FIXED_N_COLORS
 		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
 		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
@@ -326,29 +199,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
 
 		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionExp_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.startingNCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionExp_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-		cuSts = cudaMemcpy(qStar_h, qStar_d, nnodes * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		for (uint32_t i = 0; i < nnodes && param.startingNCol < param.nCol; i++)
-		{
-			//if (coloring_h[i] == param.startingNCol)
-			if (qStar_h[i] == 1)
-			{
-				//param.startingNCol++;
-				param.startingNCol += 1;
-				float denomE = 0;
-				for (int i = 0; i < param.startingNCol; i++)
-				{
-					denomE += exp(-param.lambda * i);
-				}
-				ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.startingNCol, denomE, param.lambda, probDistributionExp_d);
-				i = nnodes;
-			}
-
-		}
-		std::cout << "startingNCol = " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 #endif // COLOR_BALANCE_EXP
 
 		cudaDeviceSynchronize();

@@ -66,7 +66,6 @@ struct ColoringMCMCParams {
 	uint32_t		maxRip;
 	col_sz			nCol;
 	float			numColorRatio;
-	col_sz			startingNCol;
 	float			lambda;
 	float			epsilon;
 	float			ratioFreezed;

@@ -36,9 +36,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 #ifdef PRINTS
 	std::cout << std::endl << "ColoringMCMC GPU" << std::endl;
 	std::cout << "numCol: " << param.nCol << std::endl;
-#ifdef DYNAMIC_N_COLORS
-	std::cout << "startingNCol: " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 	std::cout << "epsilon: " << param.epsilon << std::endl;
 	std::cout << "lambda: " << param.lambda << std::endl;
 	std::cout << "ratioFreezed: " << param.ratioFreezed << std::endl;
@@ -59,9 +56,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 	resultsFile << "free_memory " << free_mem << std::endl;
 
 	logFile << "numCol: " << param.nCol << std::endl;
-#ifdef DYNAMIC_N_COLORS
-	logFile << "startingNCol: " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 	logFile << "epsilon: " << param.epsilon << std::endl;
 	logFile << "lambda: " << param.lambda << std::endl;
 	logFile << "ratioFreezed: " << param.ratioFreezed << std::endl;
@@ -69,9 +63,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 	logFile << "numColorRatio: " << param.numColorRatio << std::endl;
 
 	resultsFile << "numCol " << param.nCol << std::endl;
-#ifdef DYNAMIC_N_COLORS
-	resultsFile << "startingNCol " << param.startingNCol << std::endl;
-#endif // DYNAMIC_N_COLORS
 	resultsFile << "epsilon " << param.epsilon << std::endl;
 	resultsFile << "lambda " << param.lambda << std::endl;
 	resultsFile << "ratioFreezed " << param.ratioFreezed << std::endl;
@@ -256,12 +247,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	int max_i = 0, min_i = nnodes;
 	int max_c = 0, min_c = nnodes;
 
-#ifdef FIXED_N_COLORS
 	int numberOfCol = param.nCol;
-#endif // FIXED_N_COLORS
-#ifdef DYNAMIC_N_COLORS
-	int numberOfCol = param.startingNCol;
-#endif // DYNAMIC_N_COLORS
 
 	float average = 0, variance = 0, standardDeviation;
 	//float cAverage = 0, cVariance = 0, cStandardDeviation;
