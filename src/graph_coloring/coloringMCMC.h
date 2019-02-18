@@ -55,6 +55,11 @@ public:
 
 	void			run(int iteration);
 
+#ifdef  WRITE
+	void setDirectoryPath(std::string directory) { this->directory = directory; }
+#endif //  WRITE
+
+
 protected:
 	uint32_t		nnodes;
 	float			prob;
@@ -143,6 +148,7 @@ protected:
 	double duration;
 #ifdef WRITE
 	std::ofstream logFile, resultsFile, colorsFile;
+	std::string directory;
 #endif //WRITE
 
 };

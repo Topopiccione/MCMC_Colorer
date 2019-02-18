@@ -48,8 +48,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 
 #ifdef WRITE
 
-	std::string directory = std::to_string(nnodes) + "-" + std::to_string(prob) + "-results";
-
 	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-logFile-" + std::to_string(iteration) + ".txt");
 	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-resultsFile-" + std::to_string(iteration) + ".txt");
 	colorsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-colorsFile-" + std::to_string(iteration) + ".txt");

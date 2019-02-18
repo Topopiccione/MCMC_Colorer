@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
 	argv[a++] = "--tabooIteration";
-	argv[a++] = "2";
+	argv[a++] = "4";
 
 	argc = a++;
 #endif // INLINE_ARGS
@@ -183,6 +183,11 @@ int main(int argc, char *argv[]) {
 //#endif // WRITE
 
 		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+
+#ifdef WRITE
+		colMCMC.setDirectoryPath(directory);
+#endif
+
 
 		start = std::clock();
 		colMCMC.run(i);
