@@ -3,12 +3,20 @@
 #include "coloringMCMC.h"
 
 #if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP)
-__global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float * probDistribution_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d) {
+__global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistribution_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nnodes)
 		return;
+
+#ifdef TABOO
+	if (taboo_d[idx] > 0) {
+		taboo_d[idx]--;
+		qStar_d[idx] = (1.0f - (nCol - 1) * epsilon);			//save the probability of the color chosen
+		return;
+	}
+#endif // TABOO
 
 	uint32_t index = cumulDegs[idx];							//index of the node in neighs
 	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
@@ -74,6 +82,10 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	}
 	qStar_d[idx] = q;											//save the probability of the color chosen
 	starColoring_d[idx] = i - 1;
+
+#ifdef TABOO
+	taboo_d[idx] = (starColoring_d[idx] == nodeCol) * tabooIteration;
+#endif // TABOO
 }
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
 

@@ -170,11 +170,11 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun4() {
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::__customPrintRun5() {
 #ifdef PRINTS
-	/*std::cout << "lambda: " << param.lambda << std::endl;
+	std::cout << "lambda: " << param.lambda << std::endl;
 	std::cout << "probs star: " << pStar << " old:" << p << std::endl;
 	std::cout << "left: " << param.lambda * (conflictCounter - conflictCounterStar) << " right:" << p - pStar << std::endl;
-	std::cout << "result: " << result << std::endl;*/
-	//std::cout << "random: " << random << std::endl;
+	std::cout << "result: " << result << std::endl;
+	std::cout << "random: " << random << std::endl;
 #endif // PRINTS
 }
 

@@ -17,6 +17,7 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 #ifdef TABOO
 	if (taboo_d[idx] > 0) {
 		taboo_d[idx]--;
+		qStar_d[idx] = (1.0f - (nCol - 1) * epsilon);			//save the probability of the color chosen
 		return;
 	}
 #endif // TABOO
