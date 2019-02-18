@@ -365,11 +365,9 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 #ifdef HASTINGS
 		calcProbs();
-#endif //HASTINGS
 
 		//param.lambda = -numberOfChangeColorStar * log(param.epsilon); numberOfChangeColorStar cos'è? qualche tentativo vecchio di definire lambda?
 
-#ifdef HASTINGS
 		result = param.lambda * (conflictCounter - conflictCounterStar) + p - pStar;
 		result = exp(result);
 
