@@ -22,12 +22,17 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 
 	__customPrintConstructor0_start();
 
-	cuSts = cudaMalloc((void**)&coloring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
+	cuSts = cudaMalloc((void**)&coloring_d, nnodes * sizeof(uint32_t));		cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&starColoring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 
 #ifdef TABOO
 	cuSts = cudaMalloc((void**)&taboo_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // TABOO
+
+#ifdef STATS2
+	cuSts = cudaMalloc((void**)&degreeChecker_d, nnodes * sizeof(bool));		cudaCheck(cuSts, __FILE__, __LINE__);
+	cuSts = cudaMalloc((void**)&degreeCounter_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
+#endif //STATS2
 
 	q_h = (float *)malloc(nnodes * sizeof(float));
 	cuSts = cudaMalloc((void**)&q_d, nnodes * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
@@ -43,8 +48,11 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
 	cuSts = cudaMalloc((void**)&probDistributionExp_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
+#ifdef COLOR_BALANCE_DYNAMIC_DISTR
+	cuSts = cudaMalloc((void**)&probDistributionDynamic_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // COLOR_BALANCE_DYNAMIC_DISTR
 
-#if defined(COLOR_BALANCE_EXP) || defined(TAIL_CUTTING)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR) || defined(TAIL_CUTTING)
 	orderedIndex_h = (uint32_t *)malloc(param.nCol * sizeof(uint32_t));
 	cuSts = cudaMalloc((void**)&orderedIndex_d, param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // COLOR_BALANCE_EXP || TAIL_CUTTING
@@ -53,6 +61,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 #ifdef STATS
 	coloring_h = (uint32_t *)malloc(nnodes * sizeof(uint32_t));
 	statsColors_h = conflictCounter_h;
+	statsColors_d = conflictCounter_d;
 	statsFreeColors_d = conflictCounter_d;
 #endif
 
@@ -68,6 +77,11 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(taboo_d); 						cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // TABOO
 
+#ifdef STATS2
+	cuSts = cudaFree(degreeChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
+	cuSts = cudaFree(degreeCounter_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
+#endif //STATS2
+
 	cuSts = cudaFree(colorsChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
 	cuSts = cudaFree(probDistributionLine_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
@@ -75,8 +89,11 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
 	cuSts = cudaFree(probDistributionExp_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
+#ifdef COLOR_BALANCE_DYNAMIC_DISTR
+	cuSts = cudaFree(probDistributionDynamic_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
+#endif // COLOR_BALANCE_DYNAMIC_DISTR
 
-#if defined(COLOR_BALANCE_EXP) || defined(TAIL_CUTTING)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR) || defined(TAIL_CUTTING)
 	free(orderedIndex_h);
 	cuSts = cudaFree(orderedIndex_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // COLOR_BALANCE_EXP || TAIL_CUTTING
@@ -110,6 +127,24 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	cuSts = cudaMemset(taboo_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // TABOO
 
+#ifdef STATS2
+	// set degreeChecker_d vector with 1 or 0 to indicate nodes with degree > nCol
+	ColoringMCMC_k::degreeCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, (uint32_t *)degreeChecker_d, param.nCol, graphStruct_d->cumulDegs);
+	ColoringMCMC_k::degreeCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, degreeCounter_d, param.nCol, graphStruct_d->cumulDegs);
+
+	ColoringMCMC_k::sumReduction << < blocksPerGrid_half, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nnodes, (float*)degreeCounter_d);
+	cudaDeviceSynchronize();
+
+	cuSts = cudaMemcpy(statsColors_h, degreeCounter_d, blocksPerGrid_half.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+
+	int degreeCounter = 0;
+
+	for (int i = 0; i < blocksPerGrid_half.x; i++)
+		degreeCounter += statsColors_h[i];
+
+	std::cout << "degreeCounter " << degreeCounter << std::endl;
+#endif // STATS2
+
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
 	float denomL = 0;
 	for (int i = 0; i < param.nCol; i++)
@@ -129,6 +164,11 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	ColoringMCMC_k::initDistributionExp << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, denomE, param.lambda, probDistributionExp_d);
 	cudaDeviceSynchronize();
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE || COLOR_BALANCE_EXP
+
+#if defined(COLOR_BALANCE_DYNAMIC_DISTR)
+	for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
+	cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
+#endif
 
 #ifdef STANDARD_INIT
 	ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.nCol, randStates);
@@ -162,7 +202,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #endif // TAIL_CUTTING
 
 
-		__customPrintRun2_conflicts();
+		__customPrintRun2_conflicts(false);
 
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
 
@@ -171,35 +211,57 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		cudaDeviceSynchronize();
 #endif // STANDARD
 
+#if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
 #ifdef COLOR_DECREASE_LINE
-		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionLine_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+		float * probDistribution_d = probDistributionLine_d;
 #endif // COLOR_DECREASE_LINE
-
 #ifdef COLOR_DECREASE_EXP
-		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionExp_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+		float * probDistribution_d = probDistributionExp_d;
 #endif // COLOR_DECREASE_EXP
 
+		ColoringMCMC_k::selectStarColoringDecrease << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistribution_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+#endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
+
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP)
+		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
+		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
+		for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
+		std::sort(&orderedIndex_h[0], &orderedIndex_h[param.nCol], [&](int i, int j) {return statsColors_h[i] < statsColors_h[j]; });
+		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
+
 #ifdef COLOR_BALANCE_LINE
-		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
-		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
-		for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
-		std::sort(&orderedIndex_h[0], &orderedIndex_h[param.nCol], [&](int i, int j) {return statsColors_h[i] < statsColors_h[j]; });
-		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionLine_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-#endif // COLOR_BALANCE_EXP
-
+		float * probDistribution_d = probDistributionLine_d;
+#endif // COLOR_DECREASE_LINE
 #ifdef COLOR_BALANCE_EXP
+		float * probDistribution_d = probDistributionExp_d;
+#endif // COLOR_DECREASE_EXP
+
+		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistribution_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+#endif // COLOR_BALANCE_LINE || COLOR_BALANCE_EXP
+
+#if defined(COLOR_BALANCE_DYNAMIC_DISTR)
 		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
 		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
-		for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
-		std::sort(&orderedIndex_h[0], &orderedIndex_h[param.nCol], [&](int i, int j) {return statsColors_h[i] < statsColors_h[j]; });
-		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
+		cuSts = cudaMemcpy(statsColors_d, statsColors_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
 
-		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionExp_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
-#endif // COLOR_BALANCE_EXP
+		ColoringMCMC_k::genDynamicDistribution << < blocksPerGrid_nCol, threadsPerBlock >> > (probDistributionDynamic_d, param.nCol, nnodes, statsColors_d);
+
+		cuSts = cudaMemcpy(qStar_h, probDistributionDynamic_d, param.nCol * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+
+		/*float tot = 0;
+		std::cout << std::endl;
+		std::cout << std::endl;
+		for (int i = 0; i < param.nCol; i++)
+		{
+			tot += qStar_h[i];
+			std::cout << "color " << i << " prob " << qStar_h[i] << std::endl;
+		}
+		std::cout << "TOT " << tot << std::endl;*/
+
+		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionDynamic_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+#endif
 
 		cudaDeviceSynchronize();
 
@@ -247,8 +309,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
 
 	while (conflictCounter > 0) {
-		std::cout << "TAGLIO" << std::endl;
-		__customPrintRun2_conflicts();
+		__customPrintRun2_conflicts(true);
 		// set conflictCounter_d vector with 1 or 0 to indicate conflicts
 		ColoringMCMC_k::conflictCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, conflictCounter_d, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
 		// set colorsChecker_d vector values to 0

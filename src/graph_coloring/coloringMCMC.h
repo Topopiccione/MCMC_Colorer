@@ -21,6 +21,7 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
+//#define STATS2
 //#define PRINTS
 #define WRITE
 
@@ -82,6 +83,8 @@ protected:
 	uint32_t	*	switchPointer;
 
 	uint32_t	*	taboo_d;			// each element denotes a color
+	bool		*	degreeChecker_d;
+	uint32_t	*	degreeCounter_d;
 
 	float			p;
 	float		*	q_h;
@@ -99,8 +102,11 @@ protected:
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
 	float		*	probDistributionExp_d;
 #endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
+#ifdef COLOR_BALANCE_DYNAMIC_DISTR
+	float		*	probDistributionDynamic_d;
+#endif // COLOR_BALANCE_DYNAMIC_DISTR
 
-#if defined(COLOR_BALANCE_EXP) || defined(TAIL_CUTTING)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR) || defined(TAIL_CUTTING)
 	uint32_t	*	orderedIndex_h;
 	uint32_t	*	orderedIndex_d;
 #endif // COLOR_BALANCE_EXP || TAIL_CUTTING
@@ -108,6 +114,7 @@ protected:
 	// STATS
 	uint32_t	*	coloring_h;			// each element denotes a color
 	uint32_t	*	statsColors_h;		// used to get differents data from gpu memory
+	uint32_t	*	statsColors_d;
 	uint32_t	*	statsFreeColors_d;	// used to see free colors for nodes
 
 	uint32_t		threadId;
@@ -129,7 +136,7 @@ protected:
 	void			__customPrintConstructor1_end();
 	void			__customPrintRun0_start(int iteration);
 	void			__customPrintRun1_init();
-	void			__customPrintRun2_conflicts();
+	void			__customPrintRun2_conflicts(bool isTailCutting);
 	void			__customPrintRun3_newConflicts();
 	void			__customPrintRun4();
 	void			__customPrintRun5();
@@ -160,9 +167,9 @@ namespace ColoringMCMC_k {
 	__global__ void initColoringWithDistribution(uint32_t nnodes, uint32_t * coloring_d, float nCol, float * probDistribution_d, curandState * states);
 #endif // DISTRIBUTION_LINE_INIT || DISTRIBUTION_EXP_INIT
 
-	__global__ void logarithmer(uint32_t nnodes, float * values);
-
 	__global__ void tailCutting(uint32_t nnodes, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, int conflictCounter, uint32_t * conflictCounter_d, uint32_t * orderedIndex_d);
+
+	__global__ void degreeCounter(uint32_t nnodes, uint32_t * degreeCounter_d, uint32_t nCol, node_sz * cumulDegs);
 
 	__global__ void conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs);
 	__global__ void sumReduction(uint32_t n, float * conflictCounter_d);
@@ -174,9 +181,13 @@ namespace ColoringMCMC_k {
 #if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
 	__global__ void selectStarColoringDecrease(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistributionLine_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
-#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR)
 	__global__ void selectStarColoringBalance(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistributionLine_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
 #endif // COLOR_BALANCE_LINE || COLOR_BALANCE_EXP
+#if defined(COLOR_BALANCE_DYNAMIC_DISTR)
+	__global__ void genDynamicDistribution(float * probDistributionDynamic_d, uint32_t nCol, uint32_t nnodes, uint32_t * statsColors_d);
+#endif // COLOR_BALANCE_DYNAMIC_DISTR
 
+	__global__ void logarithmer(uint32_t nnodes, float * values);
 	__global__ void lookOldColoring(uint32_t nnodes, uint32_t * starColoring_d, float * q_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon);
 }

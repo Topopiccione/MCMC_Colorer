@@ -147,15 +147,12 @@ int main(int argc, char *argv[]) {
 		lubyFile.close();
 #endif // WRITE
 
-
 		ColoringMCMCParams params;
-		//params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
-		params.nCol = test->getMaxNodeDeg();
+		params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
+		//params.nCol = test->getMaxNodeDeg();
 		params.numColorRatio = numColorRatio;
 		//params.nCol = 200;
 		//params.nCol = 80;
-		params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
-		//params.startingNCol = 20;
 		params.epsilon = 1e-8f;
 		params.lambda = 0.00005f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );

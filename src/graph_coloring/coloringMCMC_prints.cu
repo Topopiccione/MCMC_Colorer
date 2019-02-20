@@ -93,16 +93,21 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun1_init() {
 }
 
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::__customPrintRun2_conflicts() {
+void ColoringMCMC<nodeW, edgeW>::__customPrintRun2_conflicts(bool isTailCutting) {
 #ifdef PRINTS
 	std::cout << "***** Tentativo numero: " << rip << std::endl;
+	if (isTailCutting)
+		std::cout << "---> TailCutting" << std::endl;
 	std::cout << "conflitti rilevati: " << conflictCounter << std::endl;
 #endif // PRINTS
 #ifdef WRITE
 	logFile << "***** Tentativo numero: " << rip << std::endl;
+	if (isTailCutting)
+		logFile << "---> TailCutting" << std::endl;
 	logFile << "conflitti rilevati: " << conflictCounter << std::endl;
 
-	resultsFile << "iteration " << rip << std::endl;
+	resultsFile << "iteration " << rip << std::endl; if (isTailCutting)
+		resultsFile << "---> TailCutting" << std::endl;
 	resultsFile << "iteration_" << rip << "_conflicts " << conflictCounter << std::endl;
 #endif // WRITE
 }
@@ -231,7 +236,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsFreeColors() {
 #ifdef PRINTS
 	std::cout << "Max Free Colors: " << statsFreeColors_max << " - Min Free Colors: " << statsFreeColors_min << " - AVG Free Colors: " << statsFreeColors_avg << std::endl;
 #endif
-}
+	}
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
@@ -249,8 +254,9 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 
 	int numberOfCol = param.nCol;
 
-	float average = 0, variance = 0, standardDeviation;
-	//float cAverage = 0, cVariance = 0, cStandardDeviation;
+	float average = 0, variance = 0, standardDeviation, balancingIndex;
+
+	average = (float)nnodes / numberOfCol;
 
 	for (int i = 0; i < numberOfCol; i++)
 	{
@@ -264,20 +270,18 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 				min_i = i;
 				min_c = statsColors_h[i];
 			}
+			balancingIndex += pow(statsColors_h[i] - average, 2.f);
 		}
-
-		//cAverage += i * statsColors_h[i];
 	}
-	average = (float)nnodes / numberOfCol;
-	//cAverage /= nnodes;
+	balancingIndex /= numberOfCol;
+	balancingIndex = sqrtf(balancingIndex);
+
 	for (int i = 0; i < numberOfCol; i++) {
 		variance += pow((statsColors_h[i] - average), 2.f);
-		//cVariance += i * pow((statsColors_h[i] - cAverage), 2.f);
 	}
 	variance /= numberOfCol;
-	//cVariance /= nnodes;
+
 	standardDeviation = sqrt(variance);
-	//cStandardDeviation = sqrt(cVariance);
 
 	int divider = (max_c / (param.nCol / 3) > 0) ? max_c / (param.nCol / 3) : 1;
 
@@ -303,6 +307,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	std::cout << "Average " << average << std::endl;
 	std::cout << "Variance " << variance << std::endl;
 	std::cout << "StandardDeviation " << standardDeviation << std::endl;
+	std::cout << "BalancingIndex " << balancingIndex << std::endl;
 	//std::cout << std::endl;
 	//std::cout << "Colors average " << cAverage << std::endl;
 	//std::cout << "Colors variance " << cVariance << std::endl;
@@ -334,6 +339,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	logFile << "Average " << average << std::endl;
 	logFile << "Variance " << variance << std::endl;
 	logFile << "StandardDeviation " << standardDeviation << std::endl;
+	logFile << "BalancingIndex " << balancingIndex << std::endl;
 	//logFile << std::endl;
 	//logFile << "Colors average " << cAverage << std::endl;
 	//logFile << "Colors variance " << cVariance << std::endl;
@@ -353,6 +359,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	resultsFile << prefix << "average " << average << std::endl;
 	resultsFile << prefix << "variance " << variance << std::endl;
 	resultsFile << prefix << "standard_deviation " << standardDeviation << std::endl;
+	resultsFile << prefix << "balancing_index " << balancingIndex << std::endl;
 	//logFile << "Colors average " << cAverage << std::endl;
 	//logFile << "Colors variance " << cVariance << std::endl;
 	//logFile << "Colors standardDeviation " << cStandardDeviation << std::endl;

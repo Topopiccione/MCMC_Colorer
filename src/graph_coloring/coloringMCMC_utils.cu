@@ -80,17 +80,25 @@ __global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, ui
 }
 #endif // DISTRIBUTION_LINE_INIT
 
-/**
-* Apply logarithm to all values
-*/
-__global__ void ColoringMCMC_k::logarithmer(uint32_t nnodes, float * values) {
+#if defined(COLOR_BALANCE_DYNAMIC_DISTR)
+__global__ void ColoringMCMC_k::genDynamicDistribution(float * probDistributionDynamic_d, uint32_t nCol, uint32_t nnodes, uint32_t * statsColors_d) {
+
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (idx >= nnodes)
+	if (idx >= nCol)
 		return;
 
-	values[idx] = log(values[idx]);
+	float alfa = (float)statsColors_d[idx] - ((float)nnodes / (float)nCol);
+	probDistributionDynamic_d[idx] = (1 / (float)nCol) - (alfa / (float)(nnodes * (nCol - 1)));
+
+	printf("color %d prob1 %f prob2 %f\n", idx, probDistributionDynamic_d[idx], (1 - ((float)statsColors_d[idx] / (float)nnodes)) / (float)(nCol - 1));
+
+	//probDistributionDynamic_d[idx] = (1 - ((float)statsColors_d[idx] / (float)nnodes)) / (float)(nCol - 1);
+
+	//p(j) = (1 / k) - (alfa(j) / N(k - 1)), dove j è un colore, k = nCol, N = nnodes e alfa(j) = #j - (N / K)
+	//p(j) = (1 - (#j / N)) / (k - 1))
 }
+#endif // COLOR_BALANCE_DYNAMIC_DISTR
 
 __global__ void ColoringMCMC_k::tailCutting(uint32_t nnodes, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, int conflictCounter, uint32_t * conflictCounter_d, uint32_t * orderedIndex_d) {
 
@@ -122,6 +130,19 @@ __global__ void ColoringMCMC_k::tailCutting(uint32_t nnodes, col_sz nCol, uint32
 	}
 
 }
+
+__global__ void ColoringMCMC_k::degreeCounter(uint32_t nnodes, uint32_t * degreeCounter_d, uint32_t nCol, node_sz * cumulDegs) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes)
+		return;
+
+	uint32_t index = cumulDegs[idx];							//index of the node in neighs
+	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
+
+	degreeCounter_d[idx] = nneighs > nCol;
+}
+
 
 __global__ void ColoringMCMC_k::conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -224,6 +245,18 @@ void ColoringMCMC<nodeW, edgeW>::calcConflicts(int &conflictCounter, uint32_t * 
 
 	for (int i = 0; i < blocksPerGrid_half.x; i++)
 		conflictCounter += conflictCounter_h[i];
+}
+
+/**
+* Apply logarithm to all values
+*/
+__global__ void ColoringMCMC_k::logarithmer(uint32_t nnodes, float * values) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes)
+		return;
+
+	values[idx] = log(values[idx]);
 }
 
 template<typename nodeW, typename edgeW>

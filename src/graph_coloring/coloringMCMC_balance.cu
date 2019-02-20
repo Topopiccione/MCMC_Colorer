@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "coloringMCMC.h"
 
-#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR)
 __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistribution_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d) {
 
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
@@ -45,11 +45,11 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	}
 
 	float denomReminder = 0;
-	for (int i = 0; i < Zp; i++)
-	{
-		denomReminder += exp(-lambda * i);
-	}
-	//denomReminder = Zp;
+	//for (int i = 0; i < Zp; i++)
+	//{
+	//	denomReminder += exp(-lambda * i);
+	//}
+	denomReminder = Zp;
 
 	int i = 0, j = 0;
 	float q;
@@ -58,8 +58,8 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	if (colorsChecker[nodeCol])									//if node color is used by neighbors
 	{
 		do {
-			float r = reminder * (exp(-lambda * j) / denomReminder);
-			//float r = reminder / denomReminder;
+			//float r = reminder * (exp(-lambda * j) / denomReminder);
+			float r = reminder / denomReminder;
 			q = (probDistribution_d[orderedIndex_d[i]] + r) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
 			threshold += q;
 			j += !colorsChecker[i];
