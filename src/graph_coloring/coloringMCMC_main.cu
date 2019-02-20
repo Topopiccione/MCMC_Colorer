@@ -250,16 +250,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 		cuSts = cudaMemcpy(qStar_h, probDistributionDynamic_d, param.nCol * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 
-		/*float tot = 0;
-		std::cout << std::endl;
-		std::cout << std::endl;
-		for (int i = 0; i < param.nCol; i++)
-		{
-			tot += qStar_h[i];
-			std::cout << "color " << i << " prob " << qStar_h[i] << std::endl;
-		}
-		std::cout << "TOT " << tot << std::endl;*/
-
 		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionDynamic_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
 #endif
 

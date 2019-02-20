@@ -88,15 +88,7 @@ __global__ void ColoringMCMC_k::genDynamicDistribution(float * probDistributionD
 	if (idx >= nCol)
 		return;
 
-	float alfa = (float)statsColors_d[idx] - ((float)nnodes / (float)nCol);
-	probDistributionDynamic_d[idx] = (1 / (float)nCol) - (alfa / (float)(nnodes * (nCol - 1)));
-
-	printf("color %d prob1 %f prob2 %f\n", idx, probDistributionDynamic_d[idx], (1 - ((float)statsColors_d[idx] / (float)nnodes)) / (float)(nCol - 1));
-
-	//probDistributionDynamic_d[idx] = (1 - ((float)statsColors_d[idx] / (float)nnodes)) / (float)(nCol - 1);
-
-	//p(j) = (1 / k) - (alfa(j) / N(k - 1)), dove j è un colore, k = nCol, N = nnodes e alfa(j) = #j - (N / K)
-	//p(j) = (1 - (#j / N)) / (k - 1))
+	probDistributionDynamic_d[idx] = (1 - ((float)statsColors_d[idx] / (float)nnodes)) / (float)(nCol - 1);
 }
 #endif // COLOR_BALANCE_DYNAMIC_DISTR
 

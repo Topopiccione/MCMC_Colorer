@@ -25,8 +25,8 @@
 //#define PRINTS
 #define WRITE
 
-#define TABOO
-#define TAIL_CUTTING
+//#define TABOO
+//#define TAIL_CUTTING
 
 /**
 * choose one to indicate how to initialize the colors
@@ -38,12 +38,12 @@
 /**
 * choose one to indicate the desired colorer
 */
-#define STANDARD
+//#define STANDARD
 //#define COLOR_DECREASE_LINE
 //#define COLOR_DECREASE_EXP				
 //#define COLOR_BALANCE_LINE
 //#define COLOR_BALANCE_EXP
-//#define COLOR_BALANCE_DYNAMIC_DISTR
+#define COLOR_BALANCE_DYNAMIC_DISTR
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {

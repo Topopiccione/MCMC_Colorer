@@ -236,7 +236,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsFreeColors() {
 #ifdef PRINTS
 	std::cout << "Max Free Colors: " << statsFreeColors_max << " - Min Free Colors: " << statsFreeColors_min << " - AVG Free Colors: " << statsFreeColors_avg << std::endl;
 #endif
-	}
+}
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
@@ -273,7 +273,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 			balancingIndex += pow(statsColors_h[i] - average, 2.f);
 		}
 	}
-	balancingIndex /= numberOfCol;
+	balancingIndex /= nnodes * prob;
 	balancingIndex = sqrtf(balancingIndex);
 
 	for (int i = 0; i < numberOfCol; i++) {
