@@ -288,7 +288,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 #ifdef PRINTS
 	//for (int i = 0; i < numberOfCol; i++)
 		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
-	for (int i = 0; i < numberOfCol; i++)
+	/*for (int i = 0; i < numberOfCol; i++)
 	{
 		std::cout << "Color " << i << " ";
 		for (int j = 0; j < statsColors_h[i] / divider; j++)
@@ -298,7 +298,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 		std::cout << std::endl;
 	}
 	std::cout << "Every * is " << divider << " nodes" << std::endl;
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 
 	std::cout << "Number of used colors is " << counter << " on " << numberOfCol << " available" << std::endl;
 	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;

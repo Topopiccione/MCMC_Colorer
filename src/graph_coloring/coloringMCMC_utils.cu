@@ -123,7 +123,7 @@ __global__ void ColoringMCMC_k::tailCutting(uint32_t nnodes, col_sz nCol, uint32
 
 }
 
-__global__ void ColoringMCMC_k::degreeCounter(uint32_t nnodes, uint32_t * degreeCounter_d, uint32_t nCol, node_sz * cumulDegs) {
+__global__ void ColoringMCMC_k::degreeChecker(uint32_t nnodes, uint32_t * degreeCounter_d, uint32_t nCol, node_sz * cumulDegs) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= nnodes)
@@ -133,6 +133,34 @@ __global__ void ColoringMCMC_k::degreeCounter(uint32_t nnodes, uint32_t * degree
 	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
 
 	degreeCounter_d[idx] = nneighs > nCol;
+}
+
+__global__ void ColoringMCMC_k::degreeCheckerPlusPlus(uint32_t nnodes, uint32_t * degreeCounterPlusPlus_d, uint32_t * degreeCounter_d, node_sz * cumulDegs, node * neighs) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes || !degreeCounter_d[idx])
+		return;
+
+	uint32_t index = cumulDegs[idx];							//index of the node in neighs
+	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
+
+	for (int i = 0; i < nneighs; i++)
+		if (degreeCounter_d[neighs[index + i]])
+			degreeCounterPlusPlus_d[idx] = 1;
+}
+
+__global__ void ColoringMCMC_k::degreeCounterPlusPlus(uint32_t nnodes, uint32_t * degreeCounterPlusPlus_d, uint32_t * degreeCounter_d, node_sz * cumulDegs, node * neighs) {
+	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= nnodes || !degreeCounter_d[idx])
+		return;
+
+	uint32_t index = cumulDegs[idx];							//index of the node in neighs
+	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
+
+	for (int i = 0; i < nneighs; i++)
+		if (degreeCounter_d[neighs[index + i]])
+			degreeCounterPlusPlus_d[idx] ++;;
 }
 
 
