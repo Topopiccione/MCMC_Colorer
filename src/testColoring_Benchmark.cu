@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "gene.txt";*/
 
 	argv[a++] = "--simulate";
-	argv[a++] = "0.001";
+	argv[a++] = "0.005";
 	argv[a++] = "-n";
 	argv[a++] = "50000";
 	argv[a++] = "--repet";
