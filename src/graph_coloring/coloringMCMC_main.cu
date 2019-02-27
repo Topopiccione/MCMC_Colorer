@@ -29,13 +29,6 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cuSts = cudaMalloc((void**)&taboo_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // TABOO
 
-#ifdef STATS2
-	cuSts = cudaMalloc((void**)&degreeChecker_d, nnodes * sizeof(uint32_t));		cudaCheck(cuSts, __FILE__, __LINE__);
-
-	cuSts = cudaMalloc((void**)&degreePlusPlusChecker_d, nnodes * sizeof(uint32_t));		cudaCheck(cuSts, __FILE__, __LINE__);
-	cuSts = cudaMalloc((void**)&degreePlusPlusCounter_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
-#endif //STATS2
-
 	q_h = (float *)malloc(nnodes * sizeof(float));
 	cuSts = cudaMalloc((void**)&q_d, nnodes * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
 	qStar_h = (float *)malloc(nnodes * sizeof(float));
@@ -78,13 +71,6 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #ifdef TABOO
 	cuSts = cudaFree(taboo_d); 						cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // TABOO
-
-#ifdef STATS2
-	cuSts = cudaFree(degreeChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
-
-	cuSts = cudaFree(degreePlusPlusChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
-	cuSts = cudaFree(degreePlusPlusCounter_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
-#endif //STATS2
 
 	cuSts = cudaFree(colorsChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
@@ -130,51 +116,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #ifdef TABOO
 	cuSts = cudaMemset(taboo_d, 0, nnodes * sizeof(uint32_t)); cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // TABOO
-
-#ifdef STATS2
-
-	// set degreeChecker_d vector with 1 or 0 to indicate nodes with degree > nCol
-	int nc = (nnodes * prob + 2 * param.lambda) / 3;
-	std::cout << "medDeg = " << param.nCol << " maxDeg = " << param.lambda << " nc = " << nc << std::endl;
-	ColoringMCMC_k::degreeChecker << < blocksPerGrid, threadsPerBlock >> > (nnodes, degreeChecker_d, nc, graphStruct_d->cumulDegs);
-	cudaDeviceSynchronize();
-
-	// set degreePlusPlusChecker_d vector with 1 or 0 to indicate nodes with degree > nCol and with neighboors with degree > nCol
-	ColoringMCMC_k::degreeCheckerPlusPlus << < blocksPerGrid, threadsPerBlock >> > (nnodes, degreePlusPlusChecker_d, degreeChecker_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
-	cudaDeviceSynchronize();
-
-	// set degreePlusPlusCounter_d vector with the number of neighboors with degree > nCol if the node has degree > nCol
-	ColoringMCMC_k::degreeCounterPlusPlus << < blocksPerGrid, threadsPerBlock >> > (nnodes, degreePlusPlusCounter_d, degreeChecker_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
-	cudaDeviceSynchronize();
-
-	ColoringMCMC_k::sumReduction << < blocksPerGrid_half, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nnodes, (float*)degreeChecker_d);
-	cudaDeviceSynchronize();
-	ColoringMCMC_k::sumReduction << < blocksPerGrid_half, threadsPerBlock, threadsPerBlock.x * sizeof(uint32_t) >> > (nnodes, (float*)degreePlusPlusChecker_d);
-	cudaDeviceSynchronize();
-
-	cuSts = cudaMemcpy(statsColors_h, degreeChecker_d, blocksPerGrid_half.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-	int degreeCounter = 0;
-	for (int i = 0; i < blocksPerGrid_half.x; i++)
-		degreeCounter += statsColors_h[i];
-	std::cout << "degreeCounter " << degreeCounter << std::endl;
-
-	cuSts = cudaMemcpy(statsColors_h, degreePlusPlusChecker_d, blocksPerGrid_half.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-	int degreeCounterPlusPlus = 0;
-	for (int i = 0; i < blocksPerGrid_half.x; i++)
-		degreeCounterPlusPlus += statsColors_h[i];
-	std::cout << "degreeCounterPlusPlus " << degreeCounterPlusPlus << std::endl;
-
-	cuSts = cudaMemcpy(statsColors_h, degreePlusPlusCounter_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-	int cont = 0;
-	for (int i = 0; i < nnodes; i++)
-	{
-		//if (statsColors_h[i] > 0)
-			//std::cout << "node " << i << " has " << statsColors_h[i] << " neighs inside V+" << std::endl;
-		if (statsColors_h[i] > 1)
-			cont++;
-	}
-	std::cout << cont << " nodes have more than 1 neighs inside V+" << std::endl;
-#endif // STATS2
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
 	float denomL = 0;
@@ -236,27 +177,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		__customPrintRun2_conflicts(false);
 
 		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
-
-#ifdef STATS2
-		ColoringMCMC_k::conflictCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, conflictCounter_d, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
-		cudaDeviceSynchronize();
-
-		cuSts = cudaMemcpy(coloring_h, conflictCounter_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__,
-			__LINE__);
-		cuSts = cudaMemcpy(statsColors_h, degreePlusPlusCounter_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__,
-			__LINE__);
-
-		int contA = 0, contB = 0;
-		for (int i = 0; i < nnodes; i++)
-		{
-			if (coloring_h[i] && statsColors_h[i] > 0)
-				contA++;
-			if (coloring_h[i] && statsColors_h[i] > 1)
-				contB++;
-		}
-		std::cout << "V++ in conf " << contA << std::endl;
-		std::cout << "V++ with > 1 V+ in conf " << contB << std::endl;
-#endif // STATS2
 
 #ifdef STANDARD
 		ColoringMCMC_k::selectStarColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, randStates, param.epsilon, statsFreeColors_d);

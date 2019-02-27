@@ -21,7 +21,6 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-#define STATS2
 #define PRINTS
 #define WRITE
 
@@ -44,6 +43,8 @@
 //#define COLOR_BALANCE_LINE
 //#define COLOR_BALANCE_EXP
 //#define COLOR_BALANCE_DYNAMIC_DISTR
+
+#define HASTINGS
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
@@ -83,10 +84,6 @@ protected:
 	uint32_t	*	switchPointer;
 
 	uint32_t	*	taboo_d;			// each element denotes a color
-	uint32_t	*	degreeChecker_d;
-	uint32_t	*	degreeCounter_d;
-	uint32_t	*	degreePlusPlusChecker_d;
-	uint32_t	*	degreePlusPlusCounter_d;
 
 	float			p;
 	float		*	q_h;
@@ -170,10 +167,6 @@ namespace ColoringMCMC_k {
 #endif // DISTRIBUTION_LINE_INIT || DISTRIBUTION_EXP_INIT
 
 	__global__ void tailCutting(uint32_t nnodes, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, int conflictCounter, uint32_t * conflictCounter_d, uint32_t * orderedIndex_d);
-
-	__global__ void degreeChecker(uint32_t nnodes, uint32_t * degreeCounter_d, uint32_t nCol, node_sz * cumulDegs);
-	__global__ void degreeCheckerPlusPlus(uint32_t nnodes, uint32_t * degreeCounterPlusPlus_d, uint32_t * degreeCounter_d, node_sz * cumulDegs, node * neighs);
-	__global__ void degreeCounterPlusPlus(uint32_t nnodes, uint32_t * degreeCounterPlusPlus_d, uint32_t * degreeCounter_d, node_sz * cumulDegs, node * neighs);
 
 	__global__ void conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs);
 	__global__ void sumReduction(uint32_t n, float * conflictCounter_d);
