@@ -14,7 +14,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	param(param) {
 
 	// configuro la griglia e i blocchi
-	numThreads = 32;
+	numThreads = 64;
 	threadsPerBlock = dim3(numThreads, 1, 1);
 	blocksPerGrid = dim3((nnodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_nCol = dim3((param.nCol + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
@@ -165,6 +165,10 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 		calcConflicts(conflictCounter, coloring_d);
 
+#ifdef HASTINGS
+		calcStdDev(stdDev, coloring_d);
+#endif // HASTINGS
+
 #if !defined(TAIL_CUTTING)
 		if (conflictCounter == 0)
 			break;
@@ -220,16 +224,16 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 		ColoringMCMC_k::genDynamicDistribution << < blocksPerGrid_nCol, threadsPerBlock >> > (probDistributionDynamic_d, param.nCol, nnodes, statsColors_d);
 
-		cuSts = cudaMemcpy(qStar_h, probDistributionDynamic_d, param.nCol * sizeof(float), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-
-		ColoringMCMC_k::selectStarColoringBalance << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionDynamic_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsFreeColors_d);
+		ColoringMCMC_k::selectStarColoringBalanceDynamic << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, qStar_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, taboo_d, param.tabooIteration, probDistributionDynamic_d, orderedIndex_d, randStates, param.lambda, param.epsilon, statsColors_d);
 #endif
 
 		cudaDeviceSynchronize();
 
-		//cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
-		//ColoringMCMC_k::lookOldColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, q_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, param.epsilon);
-		//cudaDeviceSynchronize();
+#ifdef HASTINGS
+		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
+		ColoringMCMC_k::lookOldColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, q_d, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, param.epsilon);
+		cudaDeviceSynchronize();
+#endif //HASTINGS
 
 		calcConflicts(conflictCounterStar, starColoring_d);
 
@@ -238,14 +242,29 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		__customPrintRun4();
 
 #ifdef HASTINGS
+		/*calcStdDev(stdDevStar, starColoring_d);
+
+		std::cout << "stdDev " << stdDev << std::endl;
+		std::cout << "stdDevStar " << stdDevStar << std::endl;
+
+		float conflPart = (float)(conflictCounterStar - conflictCounter) / float(conflictCounter);
+		std::cout << "conflPart " << -conflPart << std::endl;
+
+		float balancePart = (stdDevStar - stdDev) / stdDev;
+		std::cout << "balancePart " << -balancePart << std::endl;
+
+		float l = 0.3, g = 1 - l;
+		result = -l * conflPart
+			- g * balancePart;
+		std::cout << "result " << result << std::endl;*/
+
+		//exec the sums of logs of q and qstar
 		calcProbs();
-
-		//param.lambda = -numberOfChangeColorStar * log(param.epsilon); numberOfChangeColorStar cos'è? qualche tentativo vecchio di definire lambda?
-
-		result = param.lambda * (conflictCounter - conflictCounterStar) + p - pStar;
+		result = -param.lambda * (conflictCounterStar - conflictCounter) + (p - pStar);
 		result = exp(result);
 
 		random = ((float)rand() / (float)RAND_MAX);
+		std::cout << "random " << random << std::endl;
 
 		__customPrintRun5();
 

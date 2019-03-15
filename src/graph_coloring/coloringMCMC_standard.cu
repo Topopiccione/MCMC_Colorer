@@ -53,16 +53,16 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 
 	float threshold = 0;
 	float q;
-	uint32_t selectedIndex = 0;									//selected index for orderedColors to select the new color
+	uint32_t color = 0;
 	do {
 		q =
-			(((1 - epsilon * Zn) / Zp) * (!colorsChecker[selectedIndex]) + (epsilon) * (colorsChecker[selectedIndex]))
+			(((1 - epsilon * Zn) / Zp) * (!colorsChecker[color]) + (epsilon) * (colorsChecker[color]))
 			* colorsChecker[nodeCol]
-			+ ((1.0f - (nCol - 1) * epsilon) * (nodeCol == selectedIndex) + (epsilon) * (nodeCol != selectedIndex))
+			+ ((1.0f - (nCol - 1) * epsilon) * (nodeCol == color) + (epsilon) * (nodeCol != color))
 			* !colorsChecker[nodeCol];
 		threshold += q;
-		selectedIndex++;
-	} while (threshold < randnum && selectedIndex < nCol);
+		color++;
+	} while (threshold < randnum && color < nCol);
 
 	//if (colorsChecker[nodeCol])									//if node color is used by neighbors == 1
 	//{
@@ -81,7 +81,7 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 	//	} while (threshold < randnum && selectedIndex < nCol);
 	//}
 	qStar_d[idx] = q;											//save the probability of the color chosen
-	starColoring_d[idx] = selectedIndex - 1;
+	starColoring_d[idx] = color - 1;
 
 #ifdef TABOO
 	taboo_d[idx] = (starColoring_d[idx] == nodeCol) * tabooIteration;
@@ -122,10 +122,10 @@ __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, uint32_t * star
 
 	//save the probability of the old color
 	q_d[idx] =
-		((colorsChecker[nodeStarCol]) *
-		((!colorsChecker[nodeCol]) * ((1 - epsilon * Zn) / Zp) + ((colorsChecker[nodeCol])) * epsilon))
-		+ ((!colorsChecker[nodeStarCol]) *
-		((nodeStarCol == nodeCol) * (1 - ((nCol - 1) * epsilon)) + (nodeStarCol != nodeCol) * epsilon));
+		(colorsChecker[nodeStarCol]) *
+		((!colorsChecker[nodeCol]) * ((1 - epsilon * Zn) / Zp) + ((colorsChecker[nodeCol])) * epsilon)
+		+ (!colorsChecker[nodeStarCol]) *
+		((nodeStarCol == nodeCol) * (1 - ((nCol - 1) * epsilon)) + (nodeStarCol != nodeCol) * epsilon);
 
 	// ORIGINAL
 	//if (colorsChecker[nodeStarCol])								//if node color is used by neighbors

@@ -21,7 +21,7 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-#define PRINTS
+//#define PRINTS
 #define WRITE
 
 //#define TABOO
@@ -70,6 +70,10 @@ protected:
 
 	int				conflictCounter;
 	int				conflictCounterStar;
+
+	float			stdDev;
+	float			stdDevStar;
+	void			calcStdDev(float &std, uint32_t	* col_d);
 
 	//int *ret;
 
@@ -178,8 +182,11 @@ namespace ColoringMCMC_k {
 #if defined(COLOR_DECREASE_LINE) || defined(COLOR_DECREASE_EXP)
 	__global__ void selectStarColoringDecrease(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistributionLine_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
-#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP)
 	__global__ void selectStarColoringBalance(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistributionLine_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
+#endif // COLOR_BALANCE_LINE || COLOR_BALANCE_EXP
+#if defined(COLOR_BALANCE_DYNAMIC_DISTR)
+	__global__ void selectStarColoringBalanceDynamic(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistributionLine_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsFreeColors_d);
 #endif // COLOR_BALANCE_LINE || COLOR_BALANCE_EXP
 #if defined(COLOR_BALANCE_DYNAMIC_DISTR)
 	__global__ void genDynamicDistribution(float * probDistributionDynamic_d, uint32_t nCol, uint32_t nnodes, uint32_t * statsColors_d);

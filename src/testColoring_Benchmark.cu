@@ -61,11 +61,11 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "gene.txt";*/
 
 	argv[a++] = "--simulate";
-	argv[a++] = "0.005";
+	argv[a++] = "0.001";
 	argv[a++] = "-n";
-	argv[a++] = "50000";
+	argv[a++] = "100000";
 	argv[a++] = "--repet";
-	argv[a++] = "1";
+	argv[a++] = "3";
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
 	argv[a++] = "--tabooIteration";
@@ -154,8 +154,7 @@ int main(int argc, char *argv[]) {
 		//params.nCol = 200;
 		//params.nCol = 80;
 		params.epsilon = 1e-8f;
-		//params.lambda = 0.00005f;
-		params.lambda = test->getMaxNodeDeg();
+		params.lambda = 0.05f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		//params.maxRip = params.nCol;

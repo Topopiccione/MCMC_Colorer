@@ -240,6 +240,27 @@ __global__ void ColoringMCMC_k::logarithmer(uint32_t nnodes, float * values) {
 }
 
 template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::calcStdDev(float &std, uint32_t	* col_d) {
+
+	cuSts = cudaMemcpy(coloring_h, col_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
+	for (int i = 0; i < nnodes; i++)
+	{
+		statsColors_h[coloring_h[i]]++;
+	}
+
+	float average = (float)nnodes / param.nCol;
+	float variance = 0;
+
+	for (int i = 0; i < param.nCol; i++) {
+		variance += pow((statsColors_h[i] - average), 2.f);
+	}
+	variance /= param.nCol;
+
+	std = sqrt(variance);
+}
+
+template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::calcProbs() {
 
 	ColoringMCMC_k::logarithmer << < blocksPerGrid, threadsPerBlock >> > (nnodes, qStar_d);

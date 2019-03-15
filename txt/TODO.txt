@@ -16,4 +16,15 @@ OK - test con p = 1.
 OK - per determinare la soglia sotto la quale fare il tail cutting l'idea è quella di valutare la differenza tra i conflitti vecchi e nuovi, DELTA #(conflitti), e vedere quando è inferiore ad un numero che scegliamo basandoci sul numero di nodi con grado > nCol. Provare quindi a contare il numero di nodi con grado > nCol (e quelli con grado <) e controllare nelle situazioni di coda se i nodi in conflitto che fanno fatica a risolversi sono parte dei nodi con grado > nCol.
 OK - per il bilanciamento invece provare ad ogni iterazione a generare una nuova distribuzione da assegnare ai colori formata da: p(j) = (1 / k) - (alfa(j) / N(k - 1)), dove j è un colore, k = nCol, N = nnodes e alfa(j) = #j - (N / K), dove #j è il numero di ripetizioni del colore j nella colorazione. (provare anche ad utilizzare p(j) = (1 - (#j / N)) / (k-1)).
 
----------------> 20/02
+---------------> TESI
+
+05/03 Finire parte su algoritmi paralleli e rileggere tutto per inviare al prof.
+06/03 Sciare?
+08/03 CUDA
+10/03 LUBY
+12/03 MCMC
+13/03 algoritmo MCMC
+14/03 implementazione
+15/03 risultati sperimentali versione vanilla
+18/03 risultati altri sviluppi
+19/03 abstract e introduzione capitoli
