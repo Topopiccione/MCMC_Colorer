@@ -22,7 +22,7 @@
 
 #define STATS
 #define STATS2
-#define PRINTS
+//#define PRINTS
 #define WRITE
 
 //#define TABOO

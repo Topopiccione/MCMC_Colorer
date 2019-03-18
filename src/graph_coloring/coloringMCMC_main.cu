@@ -134,7 +134,8 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #ifdef STATS2
 
 	// set degreeChecker_d vector with 1 or 0 to indicate nodes with degree > nCol
-	int nc = (nnodes * prob + 2 * param.lambda) / 3;
+	//int nc = (nnodes * prob + 2 * param.lambda) / 3;
+	int nc = param.nCol;
 	std::cout << "medDeg = " << param.nCol << " maxDeg = " << param.lambda << " nc = " << nc << std::endl;
 	ColoringMCMC_k::degreeChecker << < blocksPerGrid, threadsPerBlock >> > (nnodes, degreeChecker_d, nc, graphStruct_d->cumulDegs);
 	cudaDeviceSynchronize();
@@ -156,13 +157,13 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	int degreeCounter = 0;
 	for (int i = 0; i < blocksPerGrid_half.x; i++)
 		degreeCounter += statsColors_h[i];
-	std::cout << "degreeCounter " << degreeCounter << std::endl;
+	resultsFile << "degreeCounter " << degreeCounter << std::endl;
 
 	cuSts = cudaMemcpy(statsColors_h, degreePlusPlusChecker_d, blocksPerGrid_half.x * sizeof(node_sz), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	int degreeCounterPlusPlus = 0;
 	for (int i = 0; i < blocksPerGrid_half.x; i++)
 		degreeCounterPlusPlus += statsColors_h[i];
-	std::cout << "degreeCounterPlusPlus " << degreeCounterPlusPlus << std::endl;
+	resultsFile << "degreeCounterPlusPlus " << degreeCounterPlusPlus << std::endl;
 
 	cuSts = cudaMemcpy(statsColors_h, degreePlusPlusCounter_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	int cont = 0;
@@ -173,7 +174,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		if (statsColors_h[i] > 1)
 			cont++;
 	}
-	std::cout << cont << " nodes have more than 1 neighs inside V+" << std::endl;
+	resultsFile << cont << " nodes have more than 1 neighs inside V+" << std::endl;
 #endif // STATS2
 
 #if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
@@ -254,8 +255,8 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 			if (coloring_h[i] && statsColors_h[i] > 1)
 				contB++;
 		}
-		std::cout << "V++ in conf " << contA << std::endl;
-		std::cout << "V++ with > 1 V+ in conf " << contB << std::endl;
+		resultsFile << "V++ in conf " << contA << std::endl;
+		resultsFile << "V++ with > 1 V+ in conf " << contB << std::endl;
 #endif // STATS2
 
 #ifdef STANDARD

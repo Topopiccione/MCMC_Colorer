@@ -177,7 +177,7 @@ __global__ void ColoringMCMC_k::conflictCounter(uint32_t nnodes, uint32_t * conf
 
 	uint32_t conflicts = 0;
 	for (int i = 0; i < nneighs; i++)
-		conflicts += (coloring_d[neighs[index + i]] == nodeCol) && (idx < neighs[index + i]);
+		conflicts += (coloring_d[neighs[index + i]] == nodeCol);
 	//conflicts += (coloring_d[neighs[index + i]] == nodeCol);
 
 	conflictCounter_d[idx] = conflicts;
