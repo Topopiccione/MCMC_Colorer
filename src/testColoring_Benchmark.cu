@@ -63,9 +63,9 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "--simulate";
 	argv[a++] = "0.001";
 	argv[a++] = "-n";
-	argv[a++] = "100000";
+	argv[a++] = "50000";
 	argv[a++] = "--repet";
-	argv[a++] = "3";
+	argv[a++] = "1";
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
 	argv[a++] = "--tabooIteration";

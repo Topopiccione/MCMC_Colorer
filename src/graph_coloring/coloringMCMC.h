@@ -21,7 +21,7 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-//#define PRINTS
+#define PRINTS
 #define WRITE
 
 //#define TABOO
@@ -30,21 +30,21 @@
 /**
 * choose one to indicate how to initialize the colors
 */
-#define STANDARD_INIT
+//#define STANDARD_INIT
 //#define DISTRIBUTION_LINE_INIT
-//#define DISTRIBUTION_EXP_INIT
+#define DISTRIBUTION_EXP_INIT
 
 /**
 * choose one to indicate the desired colorer
 */
-#define STANDARD
+//#define STANDARD
 //#define COLOR_DECREASE_LINE
-//#define COLOR_DECREASE_EXP				
+#define COLOR_DECREASE_EXP				
 //#define COLOR_BALANCE_LINE
 //#define COLOR_BALANCE_EXP
 //#define COLOR_BALANCE_DYNAMIC_DISTR
 
-#define HASTINGS
+//#define HASTINGS
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC : public Colorer<nodeW, edgeW> {
