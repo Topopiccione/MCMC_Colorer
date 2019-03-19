@@ -67,6 +67,7 @@ protected:
 	std::vector<bool>							Cstarviols;
 
 	std::vector<size_t>							colorIdx;
+	std::vector<uint32_t>						taboo;
 
 	// RNG
 	std::default_random_engine					gen;
@@ -83,6 +84,8 @@ protected:
 	float										lambda;
 	float										epsilon;
 	float										ratioFreezed;
+	uint32_t									tabooIteration;
+	uint32_t									z;		// Sequential threshold (tailcutting)
 
 	float										expLambda;
 	float										divider;

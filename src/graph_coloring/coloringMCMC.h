@@ -21,7 +21,7 @@
 #include "GPUutils/GPURandomizer.h"
 
 #define STATS
-#define PRINTS
+//#define PRINTS
 #define WRITE
 
 #define TABOO
@@ -39,7 +39,7 @@
 */
 #define STANDARD
 //#define COLOR_DECREASE_LINE
-//#define COLOR_DECREASE_EXP				
+//#define COLOR_DECREASE_EXP
 //#define COLOR_BALANCE_LINE
 //#define COLOR_BALANCE_EXP
 //#define COLOR_BALANCE_DYNAMIC_DISTR
