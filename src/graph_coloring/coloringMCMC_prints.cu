@@ -273,7 +273,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 			balancingIndex += pow(statsColors_h[i] - average, 2.f);
 		}
 	}
-	balancingIndex /= nnodes * prob;
+	balancingIndex /= (nnodes * prob);
 	balancingIndex = sqrtf(balancingIndex);
 
 	for (int i = 0; i < numberOfCol; i++) {

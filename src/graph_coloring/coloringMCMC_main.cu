@@ -157,6 +157,8 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 	__customPrintRun1_init();
 
+	int z = (50 > nnodes / 2000) ? 50 : (nnodes / 2000);
+
 	start = std::clock();
 
 	do {
@@ -173,7 +175,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		if (conflictCounter == 0)
 			break;
 #else
-		if (conflictCounter < 200)
+		if (conflictCounter < z)
 			break;
 #endif // TAIL_CUTTING
 
