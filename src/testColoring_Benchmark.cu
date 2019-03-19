@@ -163,14 +163,14 @@ int main(int argc, char *argv[]) {
 		params.tabooIteration = commandLine.tabooIteration;
 		//params.tabooIteration = 2;
 
-//		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
-//		g_debugger = new dbg(test, &mcmc_cpu);
-//		start = std::clock();
-//		mcmc_cpu.run();
-//		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-//		//mcmc_cpu.show_histogram();
-//		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
-//		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
+		g_debugger = new dbg(test, &mcmc_cpu);
+		start = std::clock();
+		mcmc_cpu.run();
+		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+		//mcmc_cpu.show_histogram();
+		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
 //
 //#ifdef WRITE
 //		std::ofstream cpuFile;

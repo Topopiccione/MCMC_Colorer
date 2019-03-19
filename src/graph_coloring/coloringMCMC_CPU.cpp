@@ -8,7 +8,7 @@ template<typename nodeW, typename edgeW>
 ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, ColoringMCMCParams params, uint32_t seed) :
 	Colorer<nodeW, edgeW>(g), str(g->getStruct()), nNodes(g->getStruct()->nNodes), nCol(params.nCol),
 	numColorRatio(params.numColorRatio), lambda(params.lambda), epsilon(params.epsilon),
-	ratioFreezed(params.ratioFreezed), iter(0), maxiter(params.maxRip), maxIterReached(false), seed(seed) {
+	ratioFreezed(params.ratioFreezed), tabooIteration(params.tabooIteration), iter(0), maxiter(params.maxRip), maxIterReached(false), seed(seed) {
 
 	LOG(TRACE) << TXT_BIGRN << "** MCMC CPU colorer **" << TXT_NORML << std::endl;
 
@@ -46,6 +46,9 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 
 	colorIdx = std::vector<size_t>(nCol);
 
+	taboo = std::vector<uint32_t>(nNodes, 0);
+	LOG(TRACE) << TXT_COLMC << "taboo: allocated " << taboo.size() << " x " << sizeof(float) << TXT_NORML;
+
 	// Starting the RNGs
 	gen = std::default_random_engine(seed);
 	unifInitColors = std::uniform_int_distribution<uint32_t>(0, nCol - 1);
@@ -81,6 +84,10 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	// for (idx = 0; idx < nNodes; idx++)
 	// 	extract_new_color(idx, p, nodeProbab, q, C);
 	//////////////
+
+
+	// Setting the tail cutting threshold. 0 for disabling
+	z = (50 > nNodes / 2000) ? 50 : (nNodes / 2000);
 }
 
 template<typename nodeW, typename edgeW>
@@ -118,7 +125,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 	std::for_each(std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++; });
 
 	// Stay in the loop until there are no more violations
-	while (Cviol != 0) {
+	//while (Cviol != 0) {
+	while (Cviol > z) {
 		LOG(TRACE) << TXT_BIRED << "iteration " << iter << TXT_NORML;
 		// Extract in advance all the experiment probabilities
 		std::for_each(std::begin(nodeProbab), std::end(nodeProbab), [&](float &val) {val = unifDistr(gen); });
@@ -252,6 +260,47 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 			maxIterReached = true;
 			break;
 		}
+	}
+
+	if (z > 0) {
+		std::fill( std::begin(histBins), std::end(histBins), 0 );
+		size_t ii = 0;
+		std::for_each( std::begin(colorIdx), std::end(colorIdx), [&](size_t &val) {val = ii++;} );
+		std::for_each( std::begin(C), std::end(C), [&](uint32_t val) { histBins[val]++;} );
+		std::sort( std::begin(colorIdx), std::end(colorIdx), [&](int i,int j) {return histBins[i] < histBins[j]; } );
+	}
+
+	///// Tail cutting
+	while(Cviol > 0) {
+		LOG(TRACE) << TXT_BICYA << "Starting tail cutting procedure" << TXT_NORML;
+
+		for (size_t i = 0; i < nNodes; i++) {
+			if (Cviols[i]) {
+				std::fill(std::begin(freeColors), std::end(freeColors), 1);
+
+				// Get node current color
+				const uint32_t nodeColor = C[i];
+				// Get node deg and neighs
+				const size_t nodeDeg = str->cumulDegs[i + 1] - str->cumulDegs[i];
+				const size_t neighIdx = str->cumulDegs[i];
+				const node * neighPtr = str->neighs + neighIdx;
+
+				// Scan the neighborhood, and set 0 to all conflicting colors
+				for (size_t i = 0; i < nodeDeg; i++) {
+					node neigh = neighPtr[i];
+					freeColors[C[neigh]] = 0;
+				}
+
+				for (size_t j = 0; j < nCol; j++) {
+					if (freeColors[colorIdx[j]]) {
+						C[i] = colorIdx[j];
+						break;
+					}
+				}
+			}
+		}
+		Cviol = violation_count(C, Cviols);
+		LOG(TRACE) << TXT_BICYA << "Pruning conflicts -- Cviol = " << Cviol << TXT_NORML;
 	}
 
 	// Print stats
@@ -436,6 +485,14 @@ void ColoringMCMC_CPU<nodeW, edgeW>::fill_p(const size_t currentNode, const size
 template<typename nodeW, typename edgeW>
 void ColoringMCMC_CPU<nodeW, edgeW>::extract_new_color(const size_t currentNode, const std::vector<float> & pVect,
 	const std::vector<float> & experimentVect, std::vector<float> & qVect, std::vector<uint32_t> & newColoring) {
+	///////////// TABOO
+	if (taboo[currentNode] > 0) {
+		taboo[currentNode]--;
+		newColoring[currentNode] = C[currentNode];
+		qVect[currentNode] = (1.0f - (nCol - 1) * epsilon);			//save the probability of the color chosen
+		return;
+	}
+	/////////////
 
 	float experimentThrsh = experimentVect[currentNode];
 	float cdf = 0;
@@ -457,6 +514,10 @@ void ColoringMCMC_CPU<nodeW, edgeW>::extract_new_color(const size_t currentNode,
 
 	qVect[currentNode] = pVect[idx];
 	newColoring[currentNode] = idx;
+
+	///////////// TABOO
+	taboo[currentNode] = (newColoring[currentNode] == C[currentNode]) * tabooIteration;
+	/////////////
 }
 
 
