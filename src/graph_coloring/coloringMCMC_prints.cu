@@ -254,7 +254,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 
 	int numberOfCol = param.nCol;
 
-	float average = 0, variance = 0, standardDeviation, balancingIndex;
+	float average = 0, variance = 0, standardDeviation, balancingIndex = 0;
 
 	average = (float)nnodes / numberOfCol;
 
