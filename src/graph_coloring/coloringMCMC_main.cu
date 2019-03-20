@@ -37,7 +37,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	conflictCounter_h = (uint32_t *)malloc(nnodes * sizeof(uint32_t));
 	cuSts = cudaMalloc((void**)&conflictCounter_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&colorsChecker_d, nnodes * param.nCol * sizeof(bool));	cudaCheck(cuSts, __FILE__, __LINE__);
-#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
+#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
 	cuSts = cudaMalloc((void**)&probDistributionLine_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
@@ -73,7 +73,7 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 #endif // TABOO
 
 	cuSts = cudaFree(colorsChecker_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
-#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
+#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
 	cuSts = cudaFree(probDistributionLine_d); 		cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
 #if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
@@ -121,7 +121,7 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 	float denomL = 0;
 	for (int i = 0; i < param.nCol; i++)
 	{
-		denomL += exp(-param.lambda * i);
+		denomL += (param.nCol - i * param.lambda);
 	}
 	ColoringMCMC_k::initDistributionLine << < blocksPerGrid_nCol, threadsPerBlock >> > (param.nCol, denomL, param.lambda, probDistributionLine_d);
 	cudaDeviceSynchronize();

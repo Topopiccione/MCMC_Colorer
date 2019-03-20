@@ -29,6 +29,10 @@
 #endif
 #endif // WRITE
 
+//#define MCMC_CPU
+//#define LUBY
+#define MCMC_GPU
+
 
 //argomenti tipo : --data net.txt --label lab.txt --gene gene.txt
 
@@ -65,7 +69,7 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "-n";
 	argv[a++] = "50000";
 	argv[a++] = "--repet";
-	argv[a++] = "1";
+	argv[a++] = "4";
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
 	argv[a++] = "--tabooIteration";
@@ -130,6 +134,7 @@ int main(int argc, char *argv[]) {
 		std::clock_t start;
 		double duration;
 
+#ifdef LUBY
 		//// GPU Luby coloring
 		ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
 		start = std::clock();
@@ -146,6 +151,7 @@ int main(int argc, char *argv[]) {
 		colLuby.saveStats(i, duration, lubyFile);
 		lubyFile.close();
 #endif // WRITE
+#endif // LUBY
 
 		ColoringMCMCParams params;
 		params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
@@ -154,7 +160,7 @@ int main(int argc, char *argv[]) {
 		//params.nCol = 200;
 		//params.nCol = 80;
 		params.epsilon = 1e-8f;
-		params.lambda = 0.05f;
+		params.lambda = 1.0f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		//params.maxRip = params.nCol;
@@ -163,6 +169,7 @@ int main(int argc, char *argv[]) {
 		params.tabooIteration = commandLine.tabooIteration;
 		//params.tabooIteration = 2;
 
+#ifdef MCMC_CPU
 		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
 		g_debugger = new dbg(test, &mcmc_cpu);
 		start = std::clock();
@@ -171,20 +178,21 @@ int main(int argc, char *argv[]) {
 		//mcmc_cpu.show_histogram();
 		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
-//
-//#ifdef WRITE
-//		std::ofstream cpuFile;
-//		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
-//		mcmc_cpu.saveStats(i, duration, cpuFile);
-//		cpuFile.close();
-//#endif // WRITE
 
+#ifdef WRITE
+		std::ofstream cpuFile;
+		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
+		mcmc_cpu.saveStats(i, duration, cpuFile);
+		cpuFile.close();
+#endif // WRITE
+#endif // MCMC_CPU
+
+#ifdef MCMC_GPU
 		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
 
 #ifdef WRITE
 		colMCMC.setDirectoryPath(directory);
 #endif
-
 
 		start = std::clock();
 		colMCMC.run(i);
@@ -193,6 +201,7 @@ int main(int argc, char *argv[]) {
 		//LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
 		std::cout << "MCMC Elapsed time: " << duration << std::endl;
 		std::cout << std::endl;
+#endif // MCMC_GPU
 
 		if (g_debugger != nullptr)
 			delete g_debugger;

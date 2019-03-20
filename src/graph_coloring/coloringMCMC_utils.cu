@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "coloringMCMC.h"
 
-#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE)
+#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
 __global__ void ColoringMCMC_k::initDistributionLine(float nCol, float denom, float lambda, float * probDistributionLine_d) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
 
