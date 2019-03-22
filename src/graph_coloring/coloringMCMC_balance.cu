@@ -32,8 +32,8 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	uint32_t Zn = 0, Zp = nCol;									//number of free colors (p) and occupied colors (n)
 	for (int i = 0; i < nCol; i++)
 	{
-		Zn += colorsChecker[i] != 0;
-		reminder += (colorsChecker[i] != 0) * (probDistribution_d[orderedIndex_d[i]] - epsilon);
+		Zn += colorsChecker[i];
+		reminder += colorsChecker[i] * (probDistribution_d[orderedIndex_d[i]] - epsilon);
 	}
 	Zp -= Zn;
 
@@ -51,7 +51,8 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 	//}
 	denomReminder = Zp;
 
-	int i = 0, j = 0;
+	int i = 0;
+	//int j = 0;
 	float q;
 	float threshold = 0;
 	float randnum = curand_uniform(&states[idx]);				//random number
@@ -62,7 +63,7 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 			float r = reminder / denomReminder;
 			q = (probDistribution_d[orderedIndex_d[i]] + r) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
 			threshold += q;
-			j += !colorsChecker[i];
+			//j += !colorsChecker[i];
 			i++;
 		} while (threshold < randnum && i < nCol);
 	}
@@ -101,7 +102,7 @@ __global__ void ColoringMCMC_k::selectStarColoringBalanceDynamic(uint32_t nnodes
 		taboo_d[idx]--;
 		qStar_d[idx] = (1.0f - (nCol - 1) * epsilon);			//save the probability of the color chosen
 		return;
-	}
+}
 #endif // TABOO
 
 	uint32_t index = cumulDegs[idx];							//index of the node in neighs
@@ -119,11 +120,11 @@ __global__ void ColoringMCMC_k::selectStarColoringBalanceDynamic(uint32_t nnodes
 	uint32_t Zn = 0, Zp = nCol;									//number of free colors (p) and occupied colors (n)
 	for (int i = 0; i < nCol; i++)
 	{
-		Zn += colorsChecker[i] != 0;
-		reminder += (colorsChecker[i] != 0) * (probDistribution_d[orderedIndex_d[i]] - epsilon);
-		denomReminder += (colorsChecker[i] != 0) * statsColors_d[i];
+		Zn += colorsChecker[i];
+		reminder += colorsChecker[i] * (probDistribution_d[orderedIndex_d[i]] - epsilon);
 	}
 	Zp -= Zn;
+	denomReminder = Zp;
 
 	if (!Zp)													//manage exception of no free colors
 	{
@@ -132,27 +133,17 @@ __global__ void ColoringMCMC_k::selectStarColoringBalanceDynamic(uint32_t nnodes
 		return;
 	}
 
-	int i = 0, j = 0;
+	int i = 0;
 	float q;
 	float threshold = 0;
 	float randnum = curand_uniform(&states[idx]);				//random number
 
-	if (idx == 0) {
-		float tot = 0;
-		for (int i = 0; i < nCol; i++)
-		{
-			tot += reminder * (1 - ((float)statsColors_d[i] / denomReminder)) / (float)(nCol - 1) * (!colorsChecker[i]);
-		}
-		printf("TOOOOOT = %f, reminder = %f\n", tot, reminder);
-	}
-
 	if (colorsChecker[nodeCol])									//if node color is used by neighbors
 	{
 		do {
-			float r = reminder * (1 - ((float)statsColors_d[i] / denomReminder)) / (float)(nCol - 1);
+			float r = reminder / denomReminder;
 			q = (probDistribution_d[orderedIndex_d[i]] + r) * (!colorsChecker[i]) + (epsilon) * (colorsChecker[i]);
 			threshold += q;
-			j += !colorsChecker[i];
 			i++;
 		} while (threshold < randnum && i < nCol);
 	}
@@ -162,7 +153,7 @@ __global__ void ColoringMCMC_k::selectStarColoringBalanceDynamic(uint32_t nnodes
 			q = (1.0f - (nCol - 1) * epsilon) * (nodeCol == i) + (epsilon) * (nodeCol != i);
 			threshold += q;
 			i++;
-		} while (threshold < randnum && i < nCol);
+	} while (threshold < randnum && i < nCol);
 	}
 	qStar_d[idx] = q;											//save the probability of the color chosen
 	starColoring_d[idx] = i - 1;

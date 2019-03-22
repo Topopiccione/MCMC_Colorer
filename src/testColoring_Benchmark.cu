@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 	argv[a++] = "-n";
 	argv[a++] = "50000";
 	argv[a++] = "--repet";
-	argv[a++] = "4";
+	argv[a++] = "1";
 	argv[a++] = "--numColRatio";
 	argv[a++] = "1.0";
 	argv[a++] = "--tabooIteration";
