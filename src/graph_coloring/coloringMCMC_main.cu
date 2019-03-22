@@ -218,10 +218,11 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 				//param.startingNCol++;
 				param.startingNCol += 1;
 				i = nnodes;
+				//ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, starColoring_d, param.startingNCol, randStates);
 			}
 
 		}
-		std::cout << "startingNCol = " << param.startingNCol << std::endl;
+		//std::cout << "startingNCol = " << param.startingNCol << std::endl;
 #endif // DYNAMIC_N_COLORS
 #endif // STANDARD
 
@@ -385,6 +386,14 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		//}
 
 		//getStatsNumColors("running_");
+
+#if defined(DYNAMIC_N_COLORS)
+	if(param.startingNCol < param.nCol && rip == param.maxRip){
+		rip = 0;
+		param.startingNCol += 1;
+		//ColoringMCMC_k::initColoring << < blocksPerGrid, threadsPerBlock >> > (nnodes, coloring_d, param.startingNCol, randStates);
+	}
+#endif //DYNAMIC_N_COLORS
 
 	} while (rip < param.maxRip);
 

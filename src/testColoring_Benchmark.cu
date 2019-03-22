@@ -154,14 +154,14 @@ int main(int argc, char *argv[]) {
 		params.numColorRatio = numColorRatio;
 		//params.nCol = 200;
 		//params.nCol = 80;
-		params.startingNCol = 50; //used only with DYNAMIC_N_COLORS
-		//params.startingNCol = 20;
+		//params.startingNCol = (N * prob) * 20 / 100; //used only with DYNAMIC_N_COLORS
+		params.startingNCol = 82;
 		params.epsilon = 1e-8f;
 		params.lambda = 0.00005f;
 		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		//params.maxRip = params.nCol;
-		params.maxRip = 2000;
+		params.maxRip = 1000;
 		//params.maxRip = 5000;
 		params.tabooIteration = commandLine.tabooIteration;
 		//params.tabooIteration = 2;

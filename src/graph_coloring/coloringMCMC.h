@@ -24,11 +24,11 @@
 //#define PRINTS
 #define WRITE
 
-#define FIXED_N_COLORS
-//#define DYNAMIC_N_COLORS		
+//#define FIXED_N_COLORS
+#define DYNAMIC_N_COLORS		
 
-#define TABOO
-#define TAIL_CUTTING
+//#define TABOO
+//#define TAIL_CUTTING
 
 /**
 * choose one to indicate how to initialize the colors
