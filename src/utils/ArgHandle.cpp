@@ -109,8 +109,8 @@ void ArgHandle::processCommandLine() {
 		case 'b':
 			try {
 				double temp = std::stod( optarg );
-				if ((temp < 1.0f) | (temp > 2.0f)) {
-					std::cout << "\033[31;1mColor ratio must be 1.0 < numColRatio < 2.0.\033[0m" << std::endl;
+				if ((temp < 1.0f) | (temp > 8.0f)) {
+					std::cout << "\033[31;1mColor ratio must be 1.0 < numColRatio < 8.0.\033[0m" << std::endl;
 					exit( -1 );
 				}
 				else {
@@ -118,7 +118,7 @@ void ArgHandle::processCommandLine() {
 				}
 			}
 			catch (...) {
-				std::cout << "\033[31;1mArgument missing: specify color ratio 1 <= numColRatio <= 2.\033[0m" << std::endl;
+				std::cout << "\033[31;1mArgument missing: specify color ratio 1 <= numColRatio <= 8.\033[0m" << std::endl;
 				exit( -1 );
 			}
 			break;

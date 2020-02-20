@@ -21,6 +21,8 @@ Graph<nodeW, edgeW>::Graph(fileImporter * imp, bool GPUEnb) : GPUEnabled{ GPUEnb
 		setupImporterNew();
 	else
 		setupImporterGPU();
+	// Eh, fix per impostare la probabilita' nel caso in cui il grafo venga letto da file
+	prob = str->nEdges / (float) (str->nNodes * str->nNodes);
 }
 
 template<typename nodeW, typename edgeW>

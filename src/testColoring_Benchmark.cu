@@ -106,6 +106,9 @@ int main(int argc, char *argv[]) {
 	else {
 		fImport = new fileImporter(graphFileName, labelsFileName);
 		test = new Graph<float, float>(fImport, !GPUEnabled);
+		// Eh, fix per impostare la probabilita' nel caso in cui il grafo venga letto da file
+		prob = test->getStruct()->nEdges / (float) (test->getStruct()->nNodes * test->getStruct()->nNodes);
+		N = test->getStruct()->nNodes;
 	}
 	//LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
 	//LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
@@ -154,9 +157,9 @@ int main(int argc, char *argv[]) {
 #endif // LUBY
 
 		ColoringMCMCParams params;
-		params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
-		//params.nCol = test->getMaxNodeDeg();
+		//params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
 		params.numColorRatio = numColorRatio;
+		params.nCol = test->getMaxNodeDeg() * numColorRatio;
 		//params.nCol = 200;
 		//params.nCol = 80;
 		params.epsilon = 1e-8f;
@@ -175,7 +178,7 @@ int main(int argc, char *argv[]) {
 		start = std::clock();
 		mcmc_cpu.run();
 		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		//mcmc_cpu.show_histogram();
+		mcmc_cpu.show_histogram();
 		//LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
 		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
 

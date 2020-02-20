@@ -3,9 +3,9 @@ PROJECT(MCMC_Colorer)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
 option(test "Build all tests." OFF)								# Attiva GoogleTest
-option(sm61 "Activate nvcc compiling for 6.1 capability" ON)	# dalab
+option(sm61 "Activate nvcc compiling for 6.1 capability" OFF)	# dalab
 option(sm60 "Activate nvcc compiling for 6.0 capability" OFF)
-option(sm52 "Activate nvcc compiling for 5.2 capability" OFF)
+option(sm52 "Activate nvcc compiling for 5.2 capability" ON)
 option(sm50 "Activate nvcc compiling for 5.0 capability" OFF)	# Default sul mio pc
 option(sm35 "Activate nvcc compiling for 3.5 capability" OFF)
 option(debug "Compile in debug mode" OFF)
