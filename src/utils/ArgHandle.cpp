@@ -13,7 +13,7 @@
 ArgHandle::ArgHandle( int argc, char **argv ) :
 		dataFilename( "" ), foldFilename( "" ), labelFilename( "" ), outFilename( "" ), geneOutFilename( "" ),
 		statesOutFilename( "" ), foldsOutFilename( "" ), timeOutFilename( "" ),
-		m( 0 ), n( 0 ), prob( 0.0 ), numColRatio( 1.0 ),
+		m( 0 ), n( 0 ), prob( 0.0 ), numColRatio( 1.0 ), nCol(0),
 		nFolds( 0 ), seed( 0 ), verboseLevel(0),
 		nThreads( 0 ), repetitions( 1 ), tabooIteration(2),
 		generateRandomFold( false ), simulate( false ), argc( argc ), argv( argv ) {
@@ -23,7 +23,7 @@ ArgHandle::~ArgHandle() {}
 
 void ArgHandle::processCommandLine() {
 
-	char const *short_options = "d:l:f:m:n:s:N:o:b:g:u:j:S:q:r:t:v:h:T";
+	char const *short_options = "d:l:f:m:n:s:N:o:C:b:g:u:j:S:q:r:t:v:h:T";
 	const struct option long_options[] = {
 
 		{ "data",			required_argument, 0, 'd' },
@@ -34,6 +34,7 @@ void ArgHandle::processCommandLine() {
 		{ "simulate",		required_argument, 0, 's' },
 		{ "nFolds",			required_argument, 0, 'N' },
 		{ "out",			required_argument, 0, 'o' },
+		{ "nCol",			required_argument, 0, 'C' },
 		{ "numColRatio",	required_argument, 0, 'b' },
 		{ "geneOut",		required_argument, 0, 'g' },
 		{ "foldsOut",		required_argument, 0, 'u' },
@@ -106,11 +107,28 @@ void ArgHandle::processCommandLine() {
 			timeOutFilename = std::string( optarg );
 			break;
 
+		case 'C':
+			try {
+				int temp = std::stoi( optarg );
+				if (temp < 1) {
+					std::cout << "\033[31;1mnCol must be a positive integer.\033[0m" << std::endl;
+					exit( -1 );
+				}
+				else {
+					nCol = temp;
+				}
+			}
+			catch (...) {
+				std::cout << "\033[31;1mnCol must be a positive integer.\033[0m" << std::endl;
+				exit( -1 );
+			}
+			break;
+
 		case 'b':
 			try {
 				double temp = std::stod( optarg );
-				if ((temp < 1.0f) | (temp > 8.0f)) {
-					std::cout << "\033[31;1mColor ratio must be 1.0 < numColRatio < 8.0.\033[0m" << std::endl;
+				if ((temp < 1.0f) | (temp > 16.0f)) {
+					std::cout << "\033[31;1mColor ratio must be 1.0 < numColRatio < 16.0.\033[0m" << std::endl;
 					exit( -1 );
 				}
 				else {
@@ -118,7 +136,7 @@ void ArgHandle::processCommandLine() {
 				}
 			}
 			catch (...) {
-				std::cout << "\033[31;1mArgument missing: specify color ratio 1 <= numColRatio <= 8.\033[0m" << std::endl;
+				std::cout << "\033[31;1mArgument missing: specify color ratio 1 <= numColRatio <= 16.\033[0m" << std::endl;
 				exit( -1 );
 			}
 			break;

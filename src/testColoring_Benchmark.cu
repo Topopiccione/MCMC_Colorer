@@ -29,8 +29,8 @@
 #endif
 #endif // WRITE
 
-//#define MCMC_CPU
-//#define LUBY
+// #define MCMC_CPU
+// #define LUBY
 #define MCMC_GPU
 
 
@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
 		prob = (float)commandLine.prob;
 	}
 	uint32_t			seed = commandLine.seed;
+	uint32_t			nColFromC = commandLine.nCol;
 	std::string			graphFileName = commandLine.dataFilename;
 	std::string			labelsFileName = commandLine.labelFilename;
 	float				numColorRatio = 1.0f / (float)commandLine.numColRatio;
@@ -159,7 +160,7 @@ int main(int argc, char *argv[]) {
 		ColoringMCMCParams params;
 		//params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
 		params.numColorRatio = numColorRatio;
-		params.nCol = test->getMaxNodeDeg() * numColorRatio;
+		params.nCol = (nColFromC != 0) ? nColFromC : test->getMaxNodeDeg() * numColorRatio;
 		//params.nCol = 200;
 		//params.nCol = 80;
 		params.epsilon = 1e-8f;
