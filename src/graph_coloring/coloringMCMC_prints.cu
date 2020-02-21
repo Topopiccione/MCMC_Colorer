@@ -289,6 +289,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 #ifdef PRINTS
 	//for (int i = 0; i < numberOfCol; i++)
 		//std::cout << "Color " << i << " used " << statsColors_h[i] << " times" << std::endl;
+#ifdef PRINTHISTOGRAM
 	for (int i = 0; i < numberOfCol; i++)
 	{
 		std::cout << "Color " << i << " ";
@@ -300,6 +301,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	}
 	std::cout << "Every * is " << divider << " nodes" << std::endl;
 	std::cout << std::endl;
+#endif // PRINTHISTOGRAM
 
 	std::cout << "Number of used colors is " << counter << " on " << numberOfCol << " available" << std::endl;
 	std::cout << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
@@ -321,6 +323,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	for (int i = 0; i < nnodes; i++)
 		colorsFile << i << " " << coloring_h[i] << std::endl;
 
+#ifdef PRINTHISTOGRAM
 	for (int i = 0; i < numberOfCol; i++)
 	{
 		logFile << "Color " << i << " ";
@@ -332,6 +335,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 	}
 	logFile << "Every * is " << divider << " nodes" << std::endl;
 	logFile << std::endl;
+#endif //PRINTHISTOGRAM
 
 	logFile << "Number of used colors is " << counter << " on " << numberOfCol << " available" << std::endl;
 	logFile << "Most used colors is " << max_i << " used " << max_c << " times" << std::endl;
