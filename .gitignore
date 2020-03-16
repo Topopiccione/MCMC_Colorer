@@ -1,4 +1,5 @@
 build/*
+buildDebug
 easyloggingpp/easyloggingpp/*.cc
 easyloggingpp/easyloggingpp/*.h
 test_01
