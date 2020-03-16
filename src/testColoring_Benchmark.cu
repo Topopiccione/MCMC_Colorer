@@ -29,9 +29,9 @@
 #endif
 #endif // WRITE
 
-//#define MCMC_CPU
+#define MCMC_CPU
 //#define LUBY
-#define MCMC_GPU
+// #define MCMC_GPU
 
 
 //argomenti tipo : --data net.txt --label lab.txt --gene gene.txt
