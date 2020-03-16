@@ -7,7 +7,7 @@
 
 #include "graph/graph.h"
 #include "coloring.h"
-#include "easyloggingpp/easyloggingpp/easylogging++.h"
+#include "easyloggingpp/easylogging++.h"
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC_CPU : public Colorer<nodeW, edgeW> {

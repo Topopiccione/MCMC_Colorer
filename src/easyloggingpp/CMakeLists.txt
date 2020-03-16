@@ -25,8 +25,8 @@ ExternalProject_Add(easyloggingpp
 
 ExternalProject_Add_Step(
     easyloggingpp copySource
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/easyloggingpp-prefix/src/easyloggingpp/src/easylogging++.cc ${CMAKE_CURRENT_SOURCE_DIR}/easyloggingpp/.
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/easyloggingpp-prefix/src/easyloggingpp/src/easylogging++.h ${CMAKE_CURRENT_SOURCE_DIR}/easyloggingpp/.
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/easyloggingpp-prefix/src/easyloggingpp/src/easylogging++.cc ${CMAKE_CURRENT_SOURCE_DIR}/.
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/easyloggingpp-prefix/src/easyloggingpp/src/easylogging++.h ${CMAKE_CURRENT_SOURCE_DIR}/.
     DEPENDEES install
 )
 

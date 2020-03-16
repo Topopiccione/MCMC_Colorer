@@ -1,4 +1,7 @@
 #pragma once
+#include <string>
+#include <fstream>
+#include <iostream>
 
 // ANSI console command for text coloring
 #ifdef __unix
@@ -22,3 +25,5 @@
 #endif
 
 extern bool g_traceLogEn;
+
+void checkLoggerConfFile();
