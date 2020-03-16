@@ -62,6 +62,4 @@ if __name__ == '__main__':
 		newtt = ".".join(tt)
 		ll[-1] = newtt
 		outfilename = os.sep.join(ll)
-	# print(infilename)
-	# print(outfilename)
 	convertGraphFile(infilename, outfilename)
