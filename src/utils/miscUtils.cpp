@@ -1,3 +1,5 @@
+// MCMC Colorer - Misc utilities
+// Alessandro Petrini, 2019-20
 #include "miscUtils.h"
 
 void checkLoggerConfFile() {
@@ -23,4 +25,27 @@ void checkLoggerConfFile() {
 	} else {
 		confFile.close();
 	}
+}
+
+std::vector<std::string> split_str(const std::string s, const std::string delimiters) {
+	std::vector<std::string> toBeRet;
+	size_t current;
+	size_t next = -1;
+	do {
+		current = next + 1;
+		next = s.find_first_of( delimiters, current );
+		if (s.substr( current, next - current ) != "")
+ 			toBeRet.push_back( s.substr( current, next - current ) );
+	} while (next != std::string::npos);
+	return toBeRet;
+}
+
+std::string join_str(const std::vector<std::string> & v, const std::string delim) {
+	std::string outString;
+	for (std::vector<std::string>::const_iterator p = v.begin(); p != v.end(); ++p) {
+		outString += *p;
+		if (p != v.end() - 1)
+			outString += delim;
+	}
+	return outString;
 }
