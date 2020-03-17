@@ -27,7 +27,7 @@ void ArgHandle::processCommandLine() {
 	printLogo();
 
 	// char const *short_options = "d:l:f:m:n:s:N:o:C:b:g:u:j:S:q:r:t:v:h:T";
-	char const *short_options = "g:o:s:n:c:k:r:t:R:S:v:h";
+	char const *short_options = "g:o:s:n:1:2:3:k:r:t:R:S:v:h:M";
 	const struct option long_options[] = {
 
 		{ "graph",			required_argument, 0, 'g' },
@@ -49,6 +49,7 @@ void ArgHandle::processCommandLine() {
 
 		{ "verbose-level",	required_argument, 0, 'v' },
 		{ "help",			no_argument,	   0, 'h' },
+		{ "cite-me",		no_argument,	   0, 'M' },
 
 		{ 0, 0, 0, 0 }
 	};
@@ -213,6 +214,11 @@ void ArgHandle::processCommandLine() {
 				exit( 0 );
 				break;
 
+			case 'M':
+				citeMe();
+				exit(0);
+				break;
+
 		default:
 			break;
 		}
@@ -292,41 +298,49 @@ void ArgHandle::processCommandLine() {
 
 
 void ArgHandle::displayHelp() {
-	std::cout << " **** CosNET-GPU ****" << std::endl;
-	std::cout << "( --- qui bisogna scrivere qualcosa tipo i nomi degli autori e una descrizione dell'applicazione --- )" << std::endl;
-
 	std::cout << "Usage: " << std::endl;
 	std::cout << "    " << argv[0] << " [options]" << std::endl;
 	std::cout << std::endl;
 
 	std::cout << "Options:" << std::endl;
 	std::cout << "    " << "--help               Print this help." << std::endl;
-	std::cout << "    " << "--out file.txt       Output file. Is a space-separated value text file." << std::endl;
-	std::cout << "    " << "--statesOut file.txt Optional output file containing the states of each node at the end of execution" <<std::endl;
-	std::cout << "    " << "                     of the Hopfield dynamics." << std::endl;
-	std::cout << "    " << "--data file.txt      Data matrix input file. Must be a space-separated value text file." << std::endl;
-	std::cout << "    " << "                     Data is read row wise, where each row is a feature and each column" << std::endl;
-	std::cout << "    " << "                     represents a sample." << std::endl;
-	std::cout << "    " << "--simulate P         Enable simulation of a random data / label / fold set. Positive examples are" << std::endl;
-	std::cout << "    " << "                     generated with probability P (0 < P < 1). -m and -n parameters are required." << std::endl;
-	std::cout << "    " << "-m M                 Number of features to be generated. Enabled only if --simulate option is specified." << std::endl;
-	std::cout << "    " << "-n N                 Number of samples to be generated. Enabled only if --simulate option is specified." << std::endl;
-	std::cout << "    " << "--nThrd              Number of threads" << std::endl;
-	std::cout << "    " << "--seed N             Seed for random number generator." << std::endl;
-	std::cout << "    " << "--verbose-level N    Level of verbosity: 0 = silent" << std::endl;
-	std::cout << "    " << "                                         1 = only progress" << std::endl;
-	std::cout << "    " << "                                         2 = rf and progress" << std::endl;
-	std::cout << "    " << "                                         3 = complete" << std::endl;
+	std::cout << "  Dataset" << std::endl;
+	std::cout << "    " << "--graph file.txt     Input graph specified as a list of edges (mandatory if not in simulation mode)." << std::endl;
+	std::cout << "    " << "--outDir             Output directory." << std::endl;
+	std::cout << "    " << "--simulate P         Enable simulation of a random Erdos graph. Edges are" << std::endl;
+	std::cout << "    " << "                     generated with probability P (0 < P < 1). -n parameter is mandatory." << std::endl;
+	std::cout << "    " << "-n N                 Number of nodes to be generated. Enabled only if --simulate option is specified." << std::endl;
+	std::cout << "  Coloring algorithm" << std::endl;
+	std::cout << "    " << "--mcmccpu            Enables MCMC CPU colorer." << std::endl;
+	std::cout << "    " << "--mcmcgpu            Enables MCMC GPU colorer." << std::endl;
+	std::cout << "    " << "--lubygpu            Enables Luby GPU colorer." << std::endl;
+	std::cout << "  Coloring options (only for MCMC CPU and MCMC GPU)" << std::endl;
+	std::cout << "    " << "--nCol N             Number of colors (mandatory)" << std::endl;
+	std::cout << "    " << "--numColRatio N.N    Optional divider for number of colors (default = 1.0, 1.0 <= numColRatio <= 16.0)" << std::endl;
+	std::cout << "    " << "--tabooIterations N  Optional number of iteration for the taboo strategy" << std::endl;
+	std::cout << "  General options" << std::endl;
+	std::cout << "    " << "--repet N            Number of repetitions for each coloring (optional, default = 1)." << std::endl;
+	std::cout << "    " << "--seed N             Seed for random number generator(optional, default = random)." << std::endl << std::endl;
+	std::cout << "Verbosity level is set in 'logger.conf' file: switch TRACE ENABLE to true for more prints to console." << std::endl;
 	std::cout << std::endl << std::endl;
 }
 
 void ArgHandle::citeMe() {
-
+	std::cout << std::endl << std::endl;
+	std::cout << "This work can be cited by adding the following items to your bibliografy:" << std::endl << std::endl << std::endl;
+	std::cout << "@inproceedings{colorerGbR2019," << std::endl;
+	std::cout << "	author    = {Conte, Donatello and Grossi, Giuliano and Lanzarotti, Raffaella and Lin, Jianyi and Petrini, Alessandro}," << std::endl;
+	std::cout << "	title     = {A parallel MCMC algorithm for the Balanced Graph Coloring problem}," << std::endl;
+	std::cout << "	booktitle = {IAPR International workshop on Graph-Based Representation in Pattern Recognition, Tours, France}," << std::endl;
+	std::cout << "	year      = {2019}," << std::endl;
+	std::cout << "	month     = {Jul}," << std::endl;
+	std::cout << "	day       = {19-21}" << std::endl;
+	std::cout << "}" << std::endl << std::endl;
 }
 
 void ArgHandle::printLogo() {
 	std::cout <<               "_________________________________________________________________________________________________________" << std::endl << std::endl;
-	std::cout << "\033[38;5;215m ███▄ ▄███▓ ▄████▄   ███▄ ▄███▓ ▄████▄      ▄████▄   ▒█████   ██▓     ▒█████   ██▀███  ▓█████  ██▀███   \e[0m" << std::endl;
+	std::cout << "\033[38;5;215m  ███▄ ▄███▓ ▄████▄   ███▄ ▄███▓ ▄████▄      ▄████▄   ▒█████   ██▓     ▒█████   ██▀███  ▓█████  ██▀███  \e[0m" << std::endl;
 	std::cout << "\033[38;5;215m ▓██▒▀█▀ ██▒▒██▀ ▀█  ▓██▒▀█▀ ██▒▒██▀ ▀█     ▒██▀ ▀█  ▒██▒  ██▒▓██▒    ▒██▒  ██▒▓██ ▒ ██▒▓█   ▀ ▓██ ▒ ██▒\e[0m" << std::endl;
 	std::cout << "\033[38;5;216m ▓██    ▓██░▒▓█    ▄ ▓██    ▓██░▒▓█    ▄    ▒▓█    ▄ ▒██░  ██▒▒██░    ▒██░  ██▒▓██ ░▄█ ▒▒███   ▓██ ░▄█ ▒\e[0m" << std::endl;
 	std::cout << "\033[38;5;216m ▒██    ▒██ ▒▓▓▄ ▄██▒▒██    ▒██ ▒▓▓▄ ▄██▒   ▒▓▓▄ ▄██▒▒██   ██░▒██░    ▒██   ██░▒██▀▀█▄  ▒▓█  ▄ ▒██▀▀█▄  \e[0m" << std::endl;
@@ -336,11 +350,12 @@ void ArgHandle::printLogo() {
 	std::cout << "\033[38;5;218m ░      ░   ░        ░      ░   ░           ░        ░ ░ ░ ▒    ░ ░   ░ ░ ░ ▒    ░░   ░    ░     ░░   ░ \e[0m" << std::endl;
 	std::cout << "\033[38;5;218m        ░   ░ ░             ░   ░ ░         ░ ░          ░ ░      ░  ░    ░ ░     ░        ░  ░   ░     \e[0m" << std::endl;
 	std::cout << "\033[38;5;218m            ░                   ░           ░                                                           \e[0m" << std::endl;
-	std::cout <<               "________________________________________________________________________________________________________" << std::endl << std::endl;
+	std::cout <<               "_________________________________________________________________________________________________________" << std::endl << std::endl;
 	std::cout <<               "                  PhuseLab / AnacletoLab - Universita' degli studi di Milano - 2019-20                  " << std::endl;
 	std::cout <<               "                                   N. Aspes - G. Grossi - A. Petrini                                    " << std::endl;
-	std::cout <<               "                                http://github.com/PhuseLab/MCMC_Colorer                                 " << std::endl;
-	std::cout <<               "                          Use '--cite-me' commandline option for citation info                          " << std::endl;
-	std::cout <<               "________________________________________________________________________________________________________" << std::endl << std::endl;
+	std::cout <<               "                                http://github.com/PhuseLab/MCMC_Colorer                                 " << std::endl << std::endl;
+	std::cout <<               "                         Use '--cite-me' command line option for citation info                          " << std::endl << std::endl;
+	std::cout <<               "                        '--help' for the complete  list of command line options                         " << std::endl;
+	std::cout <<               "_________________________________________________________________________________________________________" << std::endl << std::endl;
 
 }
