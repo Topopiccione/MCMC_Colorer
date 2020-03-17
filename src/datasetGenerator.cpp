@@ -14,42 +14,27 @@
 #define DUPLICATE_CHECK
 #define BIDIR_CHECK
 
-#ifdef _WIN32
-#define INLINE_ARGS
-#endif
-
 std::vector<std::string> generateRandomName(const int n);
 
 int main(int argc, const char ** argv) {
 
-#ifdef INLINE_ARGS
-	argv[1] = "150000";
-	argv[2] = "lab150k001.txt";
-	argv[3] = "net150k001.txt";
-	argv[4] = "0.01";
-#else
-	//printf(argc + "");
-	//return;
-	if (argc < 5) {
-		std::cout << "usage: ./datasetGenerator numberOfNodes nameOfPositiveLabelFile nameOfNetFile edgeProbability" << std::endl;
+	if (argc < 4) {
+		std::cout << "usage: ./datasetGenerator numberOfNodes edgeProbability outputFilename" << std::endl;
 		return -1;
 	}
-#endif // INLINE_ARGS
 
 	// argc
 	// 1: nNodes
-	// 2: nome label
-	// 3: nome rete
-	// 4: densita'
-	uint32_t		nNodes = atoi(argv[1]);
-	uint32_t		nClasses = 15;
-	std::string		labelFileName(argv[2]);
-	std::string		netFileName(argv[3]);
-	float			probLabels = 0.01f;
-	float			probDensity = atof(argv[4]);
+	// 2: edge probabilit
+	// 3: output filename
 
-	std::cout << "nNodes: " << nNodes << " - probDensity: " << probDensity << " - label: "
-		<< labelFileName << " - net: " << netFileName << std::endl;
+	uint32_t		nNodes = atoi(argv[1]);
+	float			probDensity = atof(argv[2]);
+	std::string		netFileName(argv[3]);
+
+	std::cout << "*** Erdos graph generator ***" << std::endl;
+	std::cout << "number of nodes: " << nNodes << " - edge probability: " << probDensity <<
+			" - output filename: " << netFileName << std::endl;
 
 	auto seed = 10000;
 
@@ -58,39 +43,15 @@ int main(int argc, const char ** argv) {
 	std::uniform_real_distribution<> randR(0.0, 1.0);
 	std::normal_distribution<> randNorm(0, 0.1);
 
-	std::ofstream labelFile(labelFileName.c_str(), std::ios::out);
 	std::ofstream netFile(netFileName.c_str(), std::ios::out);
 
-	if (!labelFile.is_open()) {
-		std::cerr << "errore aperture file etichette" << std::endl;
-		exit(-1);
-	}
-
 	if (!netFile.is_open()) {
-		std::cerr << "errore aperture file rete" << std::endl;
+		std::cerr << "error opening output file" << std::endl;
 		exit(-1);
 	}
 
 	// Richiama generateRandomNames per generare il vettore dei nomi dei nodi
 	std::vector<std::string> nodeNames = generateRandomName(nNodes);
-
-	std::string classBaseName("GO::00");
-	// Ciclo for da 0 a nClasses per generare le etichettature
-	// Ogni iterazione genera una nuova string formata da classBaseName + numIterazione
-	// esempio: "GO::001", poi "GO::002", ecc...
-	// Nel file devono essere salvati solo i nomi dei nodi positivi
-	for (uint32_t i = 0; i < nClasses; i++) {
-		std::string currentClassName(classBaseName + std::to_string(i));
-		for (uint32_t j = 0; j < nNodes; j++) {
-			// estrazione di un numero random
-			// se estrazione ha successo
-			if (randR(eng) < probLabels) {
-				labelFile << nodeNames[j] << "\t" << currentClassName << std::endl;
-			}
-		}
-	}
-
-	labelFile.close();
 
 	// Ciclo per generazione della rete
 	// Usare stessa strategia di generazione del generatore di grafi di Erdos
