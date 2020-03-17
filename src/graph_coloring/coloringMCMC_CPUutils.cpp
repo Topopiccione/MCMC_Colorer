@@ -101,6 +101,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::
 	outFile << "StD: " << std << std::endl;
 }
 
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::saveColor(std::ofstream & outfile) {
+	size_t idx = 0;
+	std::for_each(std::begin(C), std::end(C), [&](uint32_t val) {outfile << idx++ << " " << val << std::endl;});
+}
+
 /////////////////////
 template class Graph<float, float>;
 template class ColoringMCMC_CPU<float, float>;

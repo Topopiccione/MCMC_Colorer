@@ -45,9 +45,9 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 
 #ifdef WRITE
 
-	logFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-logFile-" + std::to_string(iteration) + ".txt");
-	resultsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-resultsFile-" + std::to_string(iteration) + ".txt");
-	colorsFile.open(directory + "/" + std::to_string(nnodes) + "-" + std::to_string(prob) + "-colorsFile-" + std::to_string(iteration) + ".txt");
+	logFile.open(directory + ".log");
+	resultsFile.open(directory + "-results.txt");
+	colorsFile.open(directory + "-colors.txt");
 
 	size_t total_mem, free_mem;
 	cudaMemGetInfo(&free_mem, &total_mem);
@@ -239,7 +239,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsFreeColors() {
 }
 
 template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
+void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(std::string prefix) {
 
 	cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
@@ -320,8 +320,10 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(char * prefix) {
 
 #ifdef WRITE
 
-	for (int i = 0; i < nnodes; i++)
-		colorsFile << i << " " << coloring_h[i] << std::endl;
+	if (prefix == "end_") {
+		for (int i = 0; i < nnodes; i++)
+			colorsFile << i << " " << coloring_h[i] << std::endl;
+	}
 
 #ifdef PRINTHISTOGRAM
 	for (int i = 0; i < numberOfCol; i++)

@@ -23,7 +23,7 @@
 #define STATS
 #define PRINTS
 // #define PRINTHISTOGRAM
-// #define WRITE
+#define WRITE
 
 #define TABOO
 #define TAIL_CUTTING
@@ -133,7 +133,7 @@ protected:
 
 	void			calcConflicts(int &conflictCounter, uint32_t * coloring_d);
 	void			getStatsFreeColors();
-	void			getStatsNumColors(char * prefix);
+	void			getStatsNumColors(std::string prefix);
 	void			calcProbs();
 
 	void			__customPrintConstructor0_start();
