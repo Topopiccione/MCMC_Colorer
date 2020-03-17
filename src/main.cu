@@ -16,10 +16,6 @@
 #include "GPUutils/GPURandomizer.h"
 #include "easyloggingpp/easylogging++.h"
 
-#define MCMC_CPU
-#define LUBY
-#define MCMC_GPU
-
 bool		g_traceLogEn;	// Declared in utils/miscUtils.h
 dbg		*	g_debugger;
 
@@ -43,30 +39,26 @@ int main(int argc, char *argv[]) {
 	// Commandline arguments
 	ArgHandle commandLine(argc, argv);
 	commandLine.processCommandLine();
-	uint32_t N;
-	float prob;
+	uint32_t				N;
+	float					prob;
 
-	if (commandLine.simulate) {
-		N = commandLine.n;
-		prob = (float)commandLine.prob;
-	}
-	uint32_t			seed = commandLine.seed;
-	uint32_t			nColFromC = commandLine.nCol;
-	std::string			graphFileName = commandLine.dataFilename;
-	std::string			labelsFileName = commandLine.labelFilename;
-	float				numColorRatio = 1.0f / (float)commandLine.numColRatio;
-	std::cout << "NUMCOLORRATIO +++++++++++++++++++ " << (float)commandLine.numColRatio << std::endl;
-	int					repet = commandLine.repetitions;
-	std::cout << "REPET +++++++++++++++++++ " << repet << std::endl;
+	uint32_t				seed			= commandLine.seed;
+	uint32_t				nColFromC		= commandLine.nCol;
+	std::string				graphFileName	= commandLine.graphFilename;
+	std::string				outDir			= commandLine.outDir;
+	float					numColorRatio	= 1.0f / (float) commandLine.numColRatio;
+	uint32_t				repet			= commandLine.repetitions;
 
 	bool GPUEnabled = 1;
 	Graph<float, float> *	test;
 	fileImporter 		*	fImport;
 
-	if (commandLine.simulate)
+	if (commandLine.simulate) {
+		N = commandLine.n;
+		prob = (float)commandLine.prob;
 		test = new Graph<float, float>(N, prob, seed);
-	else {
-		fImport = new fileImporter(graphFileName, labelsFileName);
+	} else {
+		fImport = new fileImporter(graphFileName, "");
 		test = new Graph<float, float>(fImport, !GPUEnabled);
 		// Eh, fix per impostare la probabilita' nel caso in cui il grafo venga letto da file
 		prob = test->getStruct()->nEdges / (float) (test->getStruct()->nNodes * test->getStruct()->nNodes);
@@ -79,10 +71,10 @@ int main(int argc, char *argv[]) {
 	std::cout << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
 		<< test->getMeanNodeDeg() << std::endl;
 
-#ifdef WRITE
-	std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-" + std::to_string(numColorRatio) + "-results";
-	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif // WRITE
+// #ifdef WRITE
+// 	std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-" + std::to_string(numColorRatio) + "-results";
+// 	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+// #endif // WRITE
 
 	Graph<float, float> graph_d(test);
 
@@ -95,69 +87,71 @@ int main(int argc, char *argv[]) {
 		std::clock_t start;
 		double duration;
 
-#ifdef LUBY
 		//// GPU Luby coloring
-		ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
-		start = std::clock();
-		colLuby.run_fast();
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
-		LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
-		std::cout << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << std::endl;
-		std::cout << "LubyGPU elapsed time: " << duration << std::endl;
+		if (commandLine.lubygpu) {
+			ColoringLuby<float, float> colLuby(&graph_d, GPURandGen.randStates);
 
-#ifdef WRITE
-		std::ofstream lubyFile;
-		lubyFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-LUBY-" + std::to_string(i) + ".txt");
-		colLuby.saveStats(i, duration, lubyFile);
-		lubyFile.close();
-#endif // WRITE
-#endif // LUBY
+			start = std::clock();
+			colLuby.run_fast();
+			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
+			LOG(TRACE) << TXT_BIYLW << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << TXT_NORML;
+			LOG(TRACE) << TXT_BIYLW << "LubyGPU elapsed time: " << duration << TXT_NORML;
+			std::cout << "LubyGPU - number of colors: " << colLuby.getColoringGPU()->nCol << std::endl;
+			std::cout << "LubyGPU elapsed time: " << duration << std::endl;
+			// Saving log
+			std::ofstream lubyFileLog, lubyFileColors;
+			lubyFileLog.open(outDir + "/" + commandLine.graphName + "-LUBY-" + std::to_string(i) + ".log");
+			colLuby.saveStats(i, duration, lubyFileLog);
+			lubyFileLog.close();
+			lubyFileColors.open(outDir + "/" + commandLine.graphName + "-LUBY-" + std::to_string(i) + "_colors.txt");
+			colLuby.saveColor(lubyFileColors);
+			lubyFileColors.close();
+		}
+
+		// TODO: Some of these should be made user-definable from command line
 		ColoringMCMCParams params;
-		//params.nCol = numColorRatio * ((N * prob > 0) ? N * prob : 1);
 		params.numColorRatio = numColorRatio;
 		params.nCol = (nColFromC != 0) ? nColFromC : test->getMaxNodeDeg() * numColorRatio;
 		params.epsilon = 1e-8f;
 		params.lambda = 1.0f;
-		//params.lambda = test->getStruct()->nNodes * log( params.epsilon );
 		params.ratioFreezed = 1e-2;
 		params.maxRip = 250;
 		params.tabooIteration = commandLine.tabooIteration;
 
-#ifdef MCMC_CPU
-		ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
-		g_debugger = new dbg(test, &mcmc_cpu);
-		start = std::clock();
-		mcmc_cpu.run();
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-		// mcmc_cpu.show_histogram();
-		LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
-		std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+		if (commandLine.mcmccpu) {
+			ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);
+			g_debugger = new dbg(test, &mcmc_cpu);
 
-#ifdef WRITE
-		std::ofstream cpuFile;
-		cpuFile.open(directory + "/" + std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-MCMC_CPU-" + std::to_string(i) + ".txt");
-		mcmc_cpu.saveStats(i, duration, cpuFile);
-		cpuFile.close();
-#endif // WRITE
-#endif // MCMC_CPU
+			start = std::clock();
+			mcmc_cpu.run();
+			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-#ifdef MCMC_GPU
-		ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+			// TODO: command line option for showing color histogram
+			// mcmc_cpu.show_histogram();
+			LOG(TRACE) << TXT_BIYLW << "MCMC_CPU elapsed time: " << duration << TXT_NORML;
+			std::cout << "MCMC_CPU elapsed time: " << duration << std::endl;
+			// Saving log
+			std::ofstream cpuFileLog, cpuFileColors;
+			cpuFileLog.open(outDir + "/" + commandLine.graphName + "-MCMC_CPU-" + std::to_string(i) + ".log");
+			mcmc_cpu.saveStats(i, duration, cpuFileLog);
+			cpuFileLog.close();
+			cpuFileColors.open(outDir + "/" + commandLine.graphName + "-MCMC_CPU-" + std::to_string(i) + "-colors.txt");
+			mcmc_cpu.saveColor(cpuFileColors);
+			cpuFileColors.close();
+		}
 
-#ifdef WRITE
-		colMCMC.setDirectoryPath(directory);
-#endif
+		if (commandLine.mcmcgpu) {
+			ColoringMCMC<float, float> colMCMC(&graph_d, GPURandGen.randStates, params);
+			colMCMC.setDirectoryPath(outDir + "/" + commandLine.graphName + "-MCMC_GPU-" + std::to_string(i));
 
-		start = std::clock();
-		colMCMC.run(i);
-		duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+			start = std::clock();
+			colMCMC.run(i);
+			duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
-		LOG(TRACE) << TXT_BIYLW << "Elapsed time: " << duration << TXT_NORML;
-		std::cout << "MCMC Elapsed time: " << duration << std::endl;
-		std::cout << std::endl;
-#endif // MCMC_GPU
+			LOG(TRACE) << TXT_BIYLW << "MCMC GPU elapsed time: " << duration << TXT_NORML;
+			std::cout << "MCMC GPU elapsed time: " << duration << std::endl << std::endl;
+		}
 
 		if (g_debugger != nullptr)
 			delete g_debugger;
