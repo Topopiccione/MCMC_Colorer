@@ -54,13 +54,11 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::__customPrintRun1_init() {
-#if defined(STATS)
 	LOG(TRACE) << "COLORAZIONE INIZIALE";
 	logFile << "COLORAZIONE INIZIALE" << std::endl;
 	getStatsNumColors("start_");
 	LOG(TRACE) << std::endl << "end colorazione iniziale -------------------------------------------------------------------" << std::endl << std::endl;
 	logFile << std::endl << "end colorazione iniziale -------------------------------------------------------------------" << std::endl << std::endl;
-#endif // STATS
 }
 
 template<typename nodeW, typename edgeW>
@@ -81,9 +79,7 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun3_newConflicts() {
 	LOG(TRACE) << "nuovi conflitti rilevati: " << conflictCounterStar;
 	logFile << "nuovi conflitti rilevati: " << conflictCounterStar << std::endl;
 
-#if defined(STATS)
 	getStatsFreeColors();
-#endif // STATS
 }
 
 template<typename nodeW, typename edgeW>
@@ -103,7 +99,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun6_change() {
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::__customPrintRun7_end() {
-#if defined(STATS)
 	std::string maxIteration = rip < param.maxRip ? "no" : "yes";
 	LOG(TRACE) << "COLORAZIONE FINALE";
 	LOG(TRACE) << "Time " << duration;
@@ -117,7 +112,6 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun7_end() {
 
 	LOG(TRACE) << std::endl << "end colorazione finale -------------------------------------------------------------------";
 	logFile << std::endl << "end colorazione finale -------------------------------------------------------------------" << std::endl << std::endl;
-#endif // STATS
 
 	logFile.close();
 	colorsFile.close();

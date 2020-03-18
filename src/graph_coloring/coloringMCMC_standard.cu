@@ -34,9 +34,7 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 
 	Zp -= Zn;
 
-#ifdef STATS
 	statsFreeColors_d[idx] = Zp;
-#endif // STATS
 
 	if (!Zp) {													//manage exception of no free colors
 		starColoring_d[idx] = nodeCol;

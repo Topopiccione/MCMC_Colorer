@@ -17,10 +17,7 @@
 #include "GPUutils/GPURandomizer.h"
 #include "easyloggingpp/easylogging++.h"
 
-#define STATS
-#define PRINTS
 // #define PRINTHISTOGRAM
-#define WRITE
 
 #define TABOO
 #define TAIL_CUTTING
