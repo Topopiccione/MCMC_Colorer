@@ -298,30 +298,30 @@ void ArgHandle::processCommandLine() {
 
 
 void ArgHandle::displayHelp() {
-	std::cout << "Usage: " << std::endl;
+	std::cout << TXT_BIGRN << "Usage: " << TXT_NORML << std::endl;
 	std::cout << "    " << argv[0] << " [options]" << std::endl;
 	std::cout << std::endl;
 
-	std::cout << "Options:" << std::endl;
+	std::cout << TXT_BIGRN << "Options:" << TXT_NORML << std::endl;
 	std::cout << "    " << "--help               Print this help." << std::endl;
-	std::cout << "  Dataset" << std::endl;
+	std::cout << TXT_BIYLW << "  Dataset" << TXT_NORML << std::endl;
 	std::cout << "    " << "--graph file.txt     Input graph specified as a list of edges (mandatory if not in simulation mode)." << std::endl;
 	std::cout << "    " << "--outDir             Output directory." << std::endl;
-	std::cout << "    " << "--simulate P         Enable simulation of a random Erdos graph. Edges are" << std::endl;
-	std::cout << "    " << "                     generated with probability P (0 < P < 1). -n parameter is mandatory." << std::endl;
+	std::cout << "    " << "--simulate P         Enable simulation of a random Erdos graph. Edges are generated with probability" << std::endl;
+	std::cout << "    " << "                     P (0 < P < 1). -n parameter is mandatory." << std::endl;
 	std::cout << "    " << "-n N                 Number of nodes to be generated. Enabled only if --simulate option is specified." << std::endl;
-	std::cout << "  Coloring algorithm" << std::endl;
+	std::cout << TXT_BIYLW << "  Coloring algorithm" << TXT_NORML << std::endl;
 	std::cout << "    " << "--mcmccpu            Enables MCMC CPU colorer." << std::endl;
 	std::cout << "    " << "--mcmcgpu            Enables MCMC GPU colorer." << std::endl;
 	std::cout << "    " << "--lubygpu            Enables Luby GPU colorer." << std::endl;
-	std::cout << "  Coloring options (only for MCMC CPU and MCMC GPU)" << std::endl;
+	std::cout << TXT_BIYLW << "  Coloring options (only for MCMC CPU and MCMC GPU)" << TXT_NORML << std::endl;
 	std::cout << "    " << "--nCol N             Number of colors (mandatory)" << std::endl;
 	std::cout << "    " << "--numColRatio N.N    Optional divider for number of colors (default = 1.0, 1.0 <= numColRatio <= 16.0)" << std::endl;
 	std::cout << "    " << "--tabooIterations N  Optional number of iteration for the taboo strategy" << std::endl;
-	std::cout << "  General options" << std::endl;
+	std::cout << TXT_BIYLW << "  General options" << TXT_NORML << std::endl;
 	std::cout << "    " << "--repet N            Number of repetitions for each coloring (optional, default = 1)." << std::endl;
 	std::cout << "    " << "--seed N             Seed for random number generator(optional, default = random)." << std::endl << std::endl;
-	std::cout << "Verbosity level is set in 'logger.conf' file: switch TRACE ENABLE to true for more prints to console." << std::endl;
+	std::cout << "Verbosity level is set in 'logger.conf' file: switch TRACE ENABLE to true for additional prints to the console." << std::endl;
 	std::cout << std::endl << std::endl;
 }
 
