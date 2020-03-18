@@ -89,7 +89,6 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(qStar_d);						cudaCheck(cuSts, __FILE__, __LINE__);
 
 	free(coloring_h);
-
 	free(conflictCounter_h);
 	free(q_h);
 	free(qStar_h);
@@ -145,14 +144,13 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 #endif // DISTRIBUTION_EXP_INIT
 	cudaDeviceSynchronize();
 
-	__customPrintRun1_init();
+	//__customPrintRun1_init(); 		// Prints initial coloring. WHO CARES.
 
+	// Conflicts threashold for tail cutting
 	int z = (50 > nnodes / 2000) ? 50 : (nnodes / 2000);
 
 	start = std::clock();
-
 	do {
-
 		rip++;
 
 		calcConflicts(conflictCounter, coloring_d);
@@ -168,7 +166,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		if (conflictCounter < z)
 			break;
 #endif // TAIL_CUTTING
-
 
 		__customPrintRun2_conflicts(false);
 

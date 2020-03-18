@@ -26,7 +26,6 @@ void ColoringMCMC<nodeW, edgeW>::__printMemAlloc() {
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
-
 	LOG(TRACE) << std::endl << "ColoringMCMC GPU";
 	LOG(TRACE) << "numCol: " << param.nCol;
 	LOG(TRACE) << "epsilon: " << param.epsilon;
@@ -41,15 +40,12 @@ void ColoringMCMC<nodeW, edgeW>::__customPrintRun0_start(int iteration) {
 	size_t total_mem, free_mem;
 	cudaMemGetInfo(&free_mem, &total_mem);
 	logFile << "total memory: " << total_mem << " free memory:" << free_mem << std::endl;
-
-
 	logFile << "numCol: " << param.nCol << std::endl;
 	logFile << "epsilon: " << param.epsilon << std::endl;
 	logFile << "lambda: " << param.lambda << std::endl;
 	logFile << "ratioFreezed: " << param.ratioFreezed << std::endl;
 	logFile << "maxRip: " << param.maxRip << std::endl << std::endl;
 	logFile << "numColorRatio: " << param.numColorRatio << std::endl;
-
 }
 
 template<typename nodeW, typename edgeW>
@@ -179,10 +175,8 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(std::string prefix) {
 
 	standardDeviation = sqrt(variance);
 
-	int divider = (max_c / (param.nCol / 3) > 0) ? max_c / (param.nCol / 3) : 1;
-
-
 #ifdef PRINTHISTOGRAM
+	int divider = (max_c / (param.nCol / 3) > 0) ? max_c / (param.nCol / 3) : 1;
 	for (int i = 0; i < numberOfCol; i++)
 	{
 		std::cout << "Color " << i << " ";
