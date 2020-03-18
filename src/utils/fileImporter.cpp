@@ -23,12 +23,14 @@ fileImporter::fileImporter(std::string graphFileName, std::string labelFileName)
 	// (e intanto controllo che i file siano stati aperti)
 	if (graphFile)
 		std::getline(graphFile, inStr);
-	else
-		std::cout << "errore apertura file net" << std::endl;
-	if (labelFile)
-		std::getline(labelFile, inStr);
-	else
-		std::cout << "errore apertura file etichette" << std::endl;
+	else {
+		std::cout << TXT_BIRED << "Error opening graph file" << TXT_NORML << std::endl;
+		exit(-1);
+	}
+	// if (labelFile)
+	// 	std::getline(labelFile, inStr);
+	// else
+	// 	std::cout << "errore apertura file etichette" << std::endl;
 
 	while (graphFile) {
 		std::getline(graphFile, inStr);
