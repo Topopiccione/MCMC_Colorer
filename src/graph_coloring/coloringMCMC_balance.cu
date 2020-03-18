@@ -85,10 +85,6 @@ __global__ void ColoringMCMC_k::selectStarColoringBalance(uint32_t nnodes, uint3
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
 
 
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-#include "coloringMCMC.h"
-
 #if defined(COLOR_BALANCE_DYNAMIC_DISTR)
 __global__ void ColoringMCMC_k::selectStarColoringBalanceDynamic(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, float * probDistribution_d, uint32_t * orderedIndex_d, curandState * states, float lambda, float epsilon, uint32_t * statsColors_d) {
 
@@ -163,5 +159,3 @@ __global__ void ColoringMCMC_k::selectStarColoringBalanceDynamic(uint32_t nnodes
 #endif // TABOO
 }
 #endif // COLOR_DECREASE_LINE || COLOR_DECREASE_EXP
-
-
