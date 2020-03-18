@@ -20,7 +20,7 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	blocksPerGrid_nCol = dim3((param.nCol + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 	blocksPerGrid_half = dim3(((nnodes / 2) + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
 
-	__customPrintConstructor0_start();
+	// __printMemAlloc();
 
 	cuSts = cudaMalloc((void**)&coloring_d, nnodes * sizeof(uint32_t));		cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaMalloc((void**)&starColoring_d, nnodes * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
@@ -60,7 +60,6 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	statsFreeColors_d = conflictCounter_d;
 #endif
 
-	__customPrintConstructor1_end();
 }
 
 template<typename nodeW, typename edgeW>
@@ -240,8 +239,6 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		calcConflicts(conflictCounterStar, starColoring_d);
 
 		__customPrintRun3_newConflicts();
-
-		__customPrintRun4();
 
 #ifdef HASTINGS
 		/*calcStdDev(stdDevStar, starColoring_d);
