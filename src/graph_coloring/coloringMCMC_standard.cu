@@ -6,11 +6,8 @@
 * For every node, look at neighbors and select a new color.
 * This will be write in starColoring_d and the probability of the chosen color will be write in qStar_d
 */
-#ifdef STANDARD
 __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * starColoring_d, float * qStar_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, uint32_t * taboo_d, uint32_t tabooIteration, curandState * states, float epsilon, uint32_t * statsFreeColors_d) {
-
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nnodes)
 		return;
 
@@ -25,7 +22,6 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 
 	uint32_t index = cumulDegs[idx];							//index of the node in neighs
 	uint32_t nneighs = cumulDegs[idx + 1] - index;				//number of neighbors
-
 	uint32_t nodeCol = coloring_d[idx];							//node color
 
 	bool * colorsChecker = &(colorsChecker_d[idx * nCol]);		//array used to set to 1 or 0 the colors occupied from the neighbors
@@ -34,17 +30,15 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 
 	uint32_t Zp = nCol, Zn = 0;									//number of free colors (p) and occupied colors (n)
 	for (int i = 0; i < nCol; i++)
-	{
 		Zn += colorsChecker[i];
-	}
+
 	Zp -= Zn;
 
 #ifdef STATS
 	statsFreeColors_d[idx] = Zp;
 #endif // STATS
 
-	if (!Zp)													//manage exception of no free colors
-	{
+	if (!Zp) {													//manage exception of no free colors
 		starColoring_d[idx] = nodeCol;
 		qStar_d[idx] = 1;
 		return;
@@ -88,7 +82,6 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 	taboo_d[idx] = (starColoring_d[idx] == nodeCol) * tabooIteration;
 #endif // TABOO
 }
-#endif // STANDARD
 
 /**
 * For every node, look at neighbors.
@@ -96,7 +89,6 @@ __global__ void ColoringMCMC_k::selectStarColoring(uint32_t nnodes, uint32_t * s
 */
 __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, uint32_t * starColoring_d, float * q_d, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, float epsilon) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nnodes)
 		return;
 
@@ -115,8 +107,7 @@ __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, uint32_t * star
 		Zn += colorsChecker[i];
 	Zp = nCol - Zn;
 
-	if (!Zp)													//manage exception of no free colors
-	{
+	if (!Zp) {													//manage exception of no free colors
 		q_d[idx] = 1;
 		return;
 	}
@@ -144,4 +135,3 @@ __global__ void ColoringMCMC_k::lookOldColoring(uint32_t nnodes, uint32_t * star
 	//		q_d[idx] = epsilon;									//save the probability of the old color
 	//}
 }
-
