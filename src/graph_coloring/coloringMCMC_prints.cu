@@ -136,9 +136,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(std::string prefix) {
 	cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
 	for (int i = 0; i < nnodes; i++)
-	{
 		statsColors_h[coloring_h[i]]++;
-	}
 	int counter = 0;
 	int max_i = 0, min_i = nnodes;
 	int max_c = 0, min_c = nnodes;
@@ -182,9 +180,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(std::string prefix) {
 		std::cout << "Color " << i << " ";
 		std::string linea;
 		for (int j = 0; j < statsColors_h[i] / divider; j++)
-		{
 			linea += "*";
-		}
 		LOG(TRACE) << linea;
 	}
 	LOG(TRACE) <<"Every * is " << divider << " nodes";
@@ -211,9 +207,7 @@ void ColoringMCMC<nodeW, edgeW>::getStatsNumColors(std::string prefix) {
 	{
 		logFile << "Color " << i << " ";
 		for (int j = 0; j < statsColors_h[i] / divider; j++)
-		{
 			logFile << "*";
-		}
 		logFile << std::endl;
 	}
 	logFile << "Every * is " << divider << " nodes" << std::endl;
