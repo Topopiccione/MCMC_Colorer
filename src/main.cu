@@ -64,17 +64,12 @@ int main(int argc, char *argv[]) {
 		prob = test->getStruct()->nEdges / (float) (test->getStruct()->nNodes * test->getStruct()->nNodes);
 		N = test->getStruct()->nNodes;
 	}
-	LOG(TRACE) << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges;
-	LOG(TRACE) << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+	LOG(TRACE) << "Nodes: " << test->getStruct()->nNodes << " - Edges: " << test->getStruct()->nEdges;
+	LOG(TRACE) << "Min Degree: " << test->getMinNodeDeg() << " - Max Degree: " << test->getMaxNodeDeg() << " - Mean Degree: "
 		<< test->getMeanNodeDeg();
-	std::cout << "Nodi: " << test->getStruct()->nNodes << " - Archi: " << test->getStruct()->nEdges << std::endl;
-	std::cout << "minDeg: " << test->getMinNodeDeg() << " - maxDeg: " << test->getMaxNodeDeg() << " - meanDeg: "
+	std::cout << "Nodes: " << test->getStruct()->nNodes << " - Edges: " << test->getStruct()->nEdges << std::endl;
+	std::cout << "Min Degree: " << test->getMinNodeDeg() << " - Max Degree: " << test->getMaxNodeDeg() << " - Mean Degree: "
 		<< test->getMeanNodeDeg() << std::endl;
-
-// #ifdef WRITE
-// 	std::string directory = std::to_string(test->getStruct()->nNodes) + "-" + std::to_string(test->prob) + "-" + std::to_string(numColorRatio) + "-results";
-// 	mkdir(directory.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-// #endif // WRITE
 
 	Graph<float, float> graph_d(test);
 
@@ -82,7 +77,7 @@ int main(int argc, char *argv[]) {
 
 	for (int i = 0; i < repet; i++)
 	{
-		std::cout << "Ripetizione: " << i << std::endl;
+		std::cout << "Repetition: " << i << std::endl;
 
 		std::clock_t start;
 		double duration;
@@ -104,7 +99,7 @@ int main(int argc, char *argv[]) {
 			lubyFileLog.open(outDir + "/" + commandLine.graphName + "-LUBY-" + std::to_string(i) + ".log");
 			colLuby.saveStats(i, duration, lubyFileLog);
 			lubyFileLog.close();
-			lubyFileColors.open(outDir + "/" + commandLine.graphName + "-LUBY-" + std::to_string(i) + "_colors.txt");
+			lubyFileColors.open(outDir + "/" + commandLine.graphName + "-LUBY-" + std::to_string(i) + "-colors.txt");
 			colLuby.saveColor(lubyFileColors);
 			lubyFileColors.close();
 		}
