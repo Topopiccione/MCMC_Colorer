@@ -106,13 +106,14 @@ int main(int argc, char *argv[]) {
 
 		// TODO: Some of these should be made user-definable from command line
 		ColoringMCMCParams params;
-		params.numColorRatio = numColorRatio;
-		params.nCol = (nColFromC != 0) ? nColFromC : test->getMaxNodeDeg() * numColorRatio;
-		params.epsilon = 1e-8f;
-		params.lambda = 1.0f;
-		params.ratioFreezed = 1e-2;
-		params.maxRip = 250;
-		params.tabooIteration = commandLine.tabooIteration;
+		params.numColorRatio	= numColorRatio;
+		params.nCol				= (nColFromC != 0) ? nColFromC : test->getMaxNodeDeg() * numColorRatio;
+		params.epsilon			= 1e-8f;
+		params.lambda			= 1.0f;
+		params.ratioFreezed		= 1e-2;
+		params.maxRip			= 250;
+		params.tabooIteration	= commandLine.tabooIteration;
+		params.tailcut			= commandLine.tailcut;
 
 		if (commandLine.mcmccpu) {
 			ColoringMCMC_CPU<float, float> mcmc_cpu(test, params, seed + i);

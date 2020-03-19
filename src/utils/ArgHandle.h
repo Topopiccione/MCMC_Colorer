@@ -35,6 +35,7 @@ public:
 	bool			mcmccpu;
 	bool			mcmcgpu;
 	bool			lubygpu;
+	bool			tailcut;
 
 	std::string		graphName;
 

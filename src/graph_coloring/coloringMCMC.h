@@ -20,7 +20,6 @@
 // #define PRINTHISTOGRAM
 
 #define TABOO
-#define TAIL_CUTTING
 
 /**
 * choose one to indicate how to initialize the colors
@@ -100,6 +99,8 @@ protected:
 
 	uint32_t	*	orderedIndex_h;
 	uint32_t	*	orderedIndex_d;
+
+	int				z;					// Sequential threshold (tailcutting)
 
 	// STATS
 	uint32_t	*	coloring_h;			// each element denotes a color

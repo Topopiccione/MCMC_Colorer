@@ -14,7 +14,7 @@ ArgHandle::ArgHandle( int argc, char **argv ) :
 		graphFilename(""), outDir(""),
 		simulate(false), prob(0.0), n(0),
 		mcmccpu(false), mcmcgpu(false), lubygpu(false),
-		nCol(0), numColRatio(0.0), tabooIteration(0),
+		nCol(0), numColRatio(0.0), tabooIteration(0), tailcut(false),
 		repetitions(1), seed(0),
 		verboseLevel(0),
 		argc(argc), argv(argv) {
@@ -26,8 +26,7 @@ void ArgHandle::processCommandLine() {
 
 	printLogo();
 
-	// char const *short_options = "d:l:f:m:n:s:N:o:C:b:g:u:j:S:q:r:t:v:h:T";
-	char const *short_options = "g:o:s:n:1:2:3:k:r:t:R:S:v:h:M";
+	char const *short_options = "g:o:s:n:1:2:3:k:r:t:l:R:S:v:h:M";
 	const struct option long_options[] = {
 
 		{ "graph",			required_argument, 0, 'g' },
@@ -43,6 +42,7 @@ void ArgHandle::processCommandLine() {
 		{ "nCol",			required_argument, 0, 'k' },
 		{ "numColRatio",	required_argument, 0, 'r' },
 		{ "tabooIteration", required_argument, 0, 't' },
+		{ "tailcut",		no_argument,	   0, 'l' },
 
 		{ "repet",			required_argument, 0, 'R' },
 		{ "seed",			required_argument, 0, 'S' },
@@ -168,6 +168,10 @@ void ArgHandle::processCommandLine() {
 					std::cout << TXT_BIRED << "tabooIteration must be a positive integer." << TXT_NORML << std::endl;
 					exit(-1);
 				}
+				break;
+
+			case 'l':
+				tailcut = true;
 				break;
 
 			case 'R':
@@ -318,6 +322,7 @@ void ArgHandle::displayHelp() {
 	std::cout << "    " << "--nCol N             Number of colors (mandatory)" << std::endl;
 	std::cout << "    " << "--numColRatio N.N    Optional divider for number of colors (default = 1.0, 1.0 <= numColRatio <= 16.0)" << std::endl;
 	std::cout << "    " << "--tabooIterations N  Optional number of iteration for the taboo strategy" << std::endl;
+	std::cout << "    " << "--tailcut            Enables tail cutting strategy (default = disabled)" << std::endl;
 	std::cout << TXT_BIYLW << "  General options" << TXT_NORML << std::endl;
 	std::cout << "    " << "--repet N            Number of repetitions for each coloring (optional, default = 1)." << std::endl;
 	std::cout << "    " << "--seed N             Seed for random number generator(optional, default = random)." << std::endl << std::endl;

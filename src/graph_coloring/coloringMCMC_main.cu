@@ -47,10 +47,10 @@ ColoringMCMC<nodeW, edgeW>::ColoringMCMC(Graph<nodeW, edgeW> * inGraph_d, curand
 	cuSts = cudaMalloc((void**)&probDistributionDynamic_d, param.nCol * sizeof(float));	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // COLOR_BALANCE_DYNAMIC_DISTR
 
-#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR) || defined(TAIL_CUTTING)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR)
 	orderedIndex_h = (uint32_t *)malloc(param.nCol * sizeof(uint32_t));
 	cuSts = cudaMalloc((void**)&orderedIndex_d, param.nCol * sizeof(uint32_t));	cudaCheck(cuSts, __FILE__, __LINE__);
-#endif // COLOR_BALANCE_EXP || TAIL_CUTTING
+#endif // COLOR_BALANCE_EXP
 
 	coloring_h = (uint32_t *)malloc(nnodes * sizeof(uint32_t));
 	statsColors_h = conflictCounter_h;
@@ -79,10 +79,10 @@ ColoringMCMC<nodeW, edgeW>::~ColoringMCMC() {
 	cuSts = cudaFree(probDistributionDynamic_d); 	cudaCheck(cuSts, __FILE__, __LINE__);
 #endif // COLOR_BALANCE_DYNAMIC_DISTR
 
-#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR) || defined(TAIL_CUTTING)
+#if defined(COLOR_BALANCE_LINE) || defined(COLOR_BALANCE_EXP) || defined(COLOR_BALANCE_DYNAMIC_DISTR)
 	free(orderedIndex_h);
 	cuSts = cudaFree(orderedIndex_d); 				cudaCheck(cuSts, __FILE__, __LINE__);
-#endif // COLOR_BALANCE_EXP || TAIL_CUTTING
+#endif // COLOR_BALANCE_EXP
 
 	cuSts = cudaFree(conflictCounter_d); 			cudaCheck(cuSts, __FILE__, __LINE__);
 	cuSts = cudaFree(q_d); 							cudaCheck(cuSts, __FILE__, __LINE__);
@@ -146,8 +146,15 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 	//__customPrintRun1_init(); 		// Prints initial coloring. WHO CARES.
 
-	// Conflicts threashold for tail cutting
-	int z = (50 > nnodes / 2000) ? 50 : (nnodes / 2000);
+	// Setting the tail cutting threshold.
+	if (param.tailcut) {
+		z = (50 > nnodes / 2000) ? 50 : (nnodes / 2000);
+		LOG(TRACE) << TXT_BIYLW << "Tailcut set to " << z << " nodes" << TXT_NORML;
+	}
+	else {
+		z = 0;
+		LOG(TRACE) << TXT_BIYLW << "Tailcut disabled (--tailcut)" << TXT_NORML;
+	}
 
 	start = std::clock();
 	do {
@@ -159,13 +166,8 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 		calcStdDev(stdDev, coloring_d);
 #endif // HASTINGS
 
-#if !defined(TAIL_CUTTING)
-		if (conflictCounter == 0)
+		if (conflictCounter <= z)
 			break;
-#else
-		if (conflictCounter < z)
-			break;
-#endif // TAIL_CUTTING
 
 		__customPrintRun2_conflicts(false);
 
@@ -266,26 +268,26 @@ void ColoringMCMC<nodeW, edgeW>::run(int iteration) {
 
 	} while (rip < param.maxRip);
 
-#if defined(TAIL_CUTTING)
-	cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
-	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
-	for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
-	for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
-	std::sort(&orderedIndex_h[0], &orderedIndex_h[param.nCol], [&](int i, int j) {return statsColors_h[i] < statsColors_h[j]; });
-	cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
+	if(param.tailcut) {
+		cuSts = cudaMemcpy(coloring_h, coloring_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
+		memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
+		for (int i = 0; i < nnodes; i++) statsColors_h[coloring_h[i]]++;
+		for (uint32_t i = 0; i < param.nCol; i++) orderedIndex_h[i] = i;
+		std::sort(&orderedIndex_h[0], &orderedIndex_h[param.nCol], [&](int i, int j) {return statsColors_h[i] < statsColors_h[j]; });
+		cuSts = cudaMemcpy(orderedIndex_d, orderedIndex_h, param.nCol * sizeof(uint32_t), cudaMemcpyHostToDevice); cudaCheck(cuSts, __FILE__, __LINE__);
 
-	while (conflictCounter > 0) {
-		__customPrintRun2_conflicts(true);
-		// set conflictCounter_d vector with 1 or 0 to indicate conflicts
-		ColoringMCMC_k::conflictCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, conflictCounter_d, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
-		// set colorsChecker_d vector values to 0
-		cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
-		// resolve conflicts
-		ColoringMCMC_k::tailCutting << < 1, 1 >> > (nnodes, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, conflictCounter, conflictCounter_d, orderedIndex_d);
-		calcConflicts(conflictCounter, coloring_d);
-		__customPrintRun3_newConflicts();
+		while (conflictCounter > 0) {
+			__customPrintRun2_conflicts(true);
+			// set conflictCounter_d vector with 1 or 0 to indicate conflicts
+			ColoringMCMC_k::conflictCounter << < blocksPerGrid, threadsPerBlock >> > (nnodes, conflictCounter_d, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs);
+			// set colorsChecker_d vector values to 0
+			cudaMemset(colorsChecker_d, 0, nnodes * param.nCol * sizeof(bool));
+			// resolve conflicts
+			ColoringMCMC_k::tailCutting << < 1, 1 >> > (nnodes, param.nCol, coloring_d, graphStruct_d->cumulDegs, graphStruct_d->neighs, colorsChecker_d, conflictCounter, conflictCounter_d, orderedIndex_d);
+			calcConflicts(conflictCounter, coloring_d);
+			__customPrintRun3_newConflicts();
+		}
 	}
-#endif // TAIL_CUTTING
 
 	duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
 
