@@ -84,22 +84,22 @@ MCMC_Colorer is a command line executable. At present time, no graphical user in
 
 #### Command line options
 The following table summarizes all the available command line options:
-| Category |  Option   | Mandatory | Default |      Description      |
-|----------|-----------|-------------------|----|-|
-|Dataset options| `--graph filename.txt` |     Yes / No     | - | Graph input file |
-|| `--outDir name` |     No     | See descr. | Name of the output directory where coloring and logs will be saved. By default, is the name of the input file followed by "\_out"; in simulation mode, is "\<prob\>\_\<n\>_\<numColRatio\>\_out"  |
-|| `--simulate p` |     Yes / No     | - | Launch the program on a randomly generated Erdos graph. Edges are generated with probability 0 \< p \< 1. In this modality, the `-n N`  option is mandatory |
-|| `-n N` |     Yes / No     | - | Number of nodes of the randomly generated Erdos graph. Ignored when non in simulation mode |
-|Coloring algorithm selection| `--mcmccpu` |     (1)     | - | Enables the MCMC CPU algorithm |
-| | `--mcmcgpu` |     (1)     | - | Enables the MCMC GPU algorithm |
-| | `--lubygpu` |     (1)    | - | Enables the Luby GPU algorithm |
-|MCMC coloring options| `--nCol` |     No     | maxDeg / numColRatio | Choose the number of colors. By default is set to the maximum node degree divided by the `--numColRatio` value |
-|| `--numColRatio` |     No     | 1.0 | Optional divider for the numer of colors `--nCol` |
-|| `--tabooIterations` |     No     | 0 | Optional number of iteration for the taboo strategy |
-|| `--tailcut` |     No     | No | Switch to greedy mode when few conflicts remain |
-|General options| `--help` |     No     | - | Shows the help screen |
-|| `--repet N` |     No     | 1 | Number of times each colorer algorithm is invoked for run  |
-|| `--seed N` |     No     | Random | Integer seed for pseudo-random number generator  |
+| Category | Option | Mandatory | Default | Description |
+|-|-|-|-|-|
+|Dataset options| `--graph filename.txt` | Yes / No | - | Graph input file |
+|| `--outDir name` | No | See descr. | Name of the output directory where coloring and logs will be saved. By default, is the name of the input file followed by "\_out"; in simulation mode, is "\<prob\>\_\<n\>_\<numColRatio\>\_out"  |
+|| `--simulate p` | Yes / No | - | Launch the program on a randomly generated Erdos graph. Edges are generated with probability 0 \< p \< 1. In this modality, the `-n N`  option is mandatory |
+|| `-n N` | Yes / No | - | Number of nodes of the randomly generated Erdos graph. Ignored when non in simulation mode |
+|Coloring algorithm selection| `--mcmccpu` | (1) | - | Enables the MCMC CPU algorithm |
+| | `--mcmcgpu` | (1) | - | Enables the MCMC GPU algorithm |
+| | `--lubygpu` | (1) | - | Enables the Luby GPU algorithm |
+|MCMC coloring options| `--nCol` | No | maxDeg / numColRatio | Choose the number of colors. By default is set to the maximum node degree divided by the `--numColRatio` value |
+|| `--numColRatio` | No | 1.0 | Optional divider for the numer of colors `--nCol` |
+|| `--tabooIterations` | No | 0 | Optional number of iteration for the taboo strategy |
+|| `--tailcut` | No | No | Switch to greedy mode when few conflicts remain |
+|General options| `--help` | No | - | Shows the help screen |
+|| `--repet N` | No | 1 | Number of times each colorer algorithm is invoked for run  |
+|| `--seed N` | No | Random | Integer seed for pseudo-random number generator  |
 
 (1): more than one algorithm can be selected per run. If no selection is made, MCMC CPU is chosen by default.
 
