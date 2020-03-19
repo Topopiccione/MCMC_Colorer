@@ -1,3 +1,4 @@
+
 # MCMC colorer
 ![banner]
 ### A parallel algorithm for balanced graph coloring
@@ -63,6 +64,21 @@ Once the package has been downloaded, move to the main directory, create a build
 	make -j 4
 
 This will generate two executables: "MCMC_Colorer" and "datasetGen".
+
+We additionally provide a few options to the makefile generation, namely a Compute Capability-specific code generation and compiling in debug mode.
+| Option | Default | Description |
+|-|-|-|
+| -Dsm35 | OFF | Activates code generation for 3.5 Compute Capability NVidia GPUs |
+| -Dsm50 | ON  | Activates code generation for 5.0 Compute Capability NVidia GPUs |
+| -Dsm52 | OFF | Activates code generation for 5.2 Compute Capability NVidia GPUs |
+| -Dsm60 | OFF | Activates code generation for 6.0 Compute Capability NVidia GPUs |
+| -Dsm61 | OFF | Activates code generation for 6.1 Compute Capability NVidia GPUs |
+| -Ddebug | OFF | Compile in debug mode |
+
+All the options must be specified as cmake options, i.e. for compiling in debug mode for GPUs with Compute Capabilities 5.2 adn 6.1, disabling compiling for 5.0, the `cmake ../src` in the previous code snippet would become
+```
+cmake -Dsm50=OFF -Dsm52=ON -Dsm61=ON -Ddebug=ON ../src
+```
 
 For a quick test, launch the following command from the build directory:
 ```
