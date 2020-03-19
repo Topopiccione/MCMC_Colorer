@@ -251,9 +251,8 @@ void ArgHandle::processCommandLine() {
 	}
 
 	if ((mcmccpu || mcmcgpu) && (nCol == 0)) {
-		std::cout << TXT_BIRED << "In mcmc mode, specify the number of colors (--nCol)." << TXT_NORML << std::endl;
-		std::cout << TXT_BIRED << "If unsure, choose a number of colors larger than what Luby uses..." << TXT_NORML << std::endl;
-		exit(-1);
+		std::cout << TXT_BIYLW << "No number of colors specified (--nCol): enabling default value: maxDeg / numColRatio." << TXT_NORML << std::endl;
+		//exit(-1);
 	}
 
 	if (numColRatio == 0.0) {
