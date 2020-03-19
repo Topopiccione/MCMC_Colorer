@@ -5,7 +5,7 @@
 Based on the article:  
 D. Conte, G. Grossi, R. Lanzarotti, J. Lin, A. Petrini  
 A parallel MCMC algorithm for the Balanced Graph Coloring problem  
-IAPR International workshop on Graph-Based Representation in Pattern Recognition, 19-21 July 2019, Tours, France. 
+IAPR International workshop on Graph-Based Representation in Pattern Recognition, 19-21 July 2019, Tours, France.
 
 Software implementation by: N. Aspes - G. Grossi - A. Petrini  
 PhuseLab / AnacletoLab - Universita' degli studi di Milano - 2019-20
@@ -137,6 +137,30 @@ Optionally, the random graph generator can be invoked from the main executable i
 
 ---
 #### Examples
+```
+./MCMC_Colorer --lubygpu --simulate 0.1 -n 1000
+```
+Generates a random Erdos graph with 1000 nodes and 10% of probability of edges between each pair of nodes. Then the graph is colored with the Luby GPU algorithm.
+
+```
+./MCMC_Colorer --lubygpu --mcmccpu --mcmcgpu --simulate 0.1 -n 1000
+```
+As before, but the graph is colored with all the three algorithms
+
+```
+./MCMC_Colorer --mcmcgpu --mcmccpu --graph facebook.csv --repet 5
+```
+Import the graph from the file "facebook.csv" and colors it with both MCMC CPU and MCMC GPU algorithm. Each coloring is repeated 5 times. The number of colors is automatically set to the maximum node degree
+
+```
+./MCMC_Colorer --mcmcgpu --mcmccpu --graph facebook.csv --repet 5 --numColRatio 3.0
+```
+As the previous example, but the number of colors is automatically set to the maximum node degree / 3.0
+
+```
+./MCMC_Colorer --mcmcgpu --graph facebook.csv --nCol 500 --tailcut --out tempOutputDir
+```
+Import the graph from the file "facebook.csv" and colors it with MCMC GPU algorithm. The number of colors is set to 500. Tailcut greedy heuristic is enabled, hence the algorithm switches to a greedy strategy when very few conflicts remain. Results are saved in the "tempOutputDir" directory
 
 ---
 ### License
