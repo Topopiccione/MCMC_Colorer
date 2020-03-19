@@ -1,80 +1,160 @@
-MCMC Colorer
-============
+# MCMC colorer
+![banner]
+### A parallel algorithm for balanced graph coloring
 
-The package contains the code for the CPU and GPU version of MCMC Colorer.
-Code included in the package is currently under development. We are going to upload the project on a GitHub or GitLab repository, for keeping you up-to-date with the integration and bug fixing.
+Based on the article:
+D. Conte, G. Grossi,R. Lanzarotti, J. Lin, A. Petrini
+A parallel MCMC algorithm for the Balanced Graph Coloring problem
+IAPR International workshop on Graph-Based Representation in Pattern Recognition, Tours, France. 19-21 July 2019
 
-Compiling
----------
-Code has been tested under Linux and Windows 8/10 operating systems, and project files for Visual Studio 2017 (for Windows) and a CMakeLists file are included in the package for ease of compilations.
-The project requires a recent Cuda Development Toolkit, which is freely available on NVidia website. Cuda SDK 9 and 10 are reported to be compatible with the project.
+Software implementation by: N. Aspes - G. Grossi - A. Petrini
+PhuseLab / AnacletoLab - Universita' degli studi di Milano - 2019-20
 
-Under Linux, compiling requires the cmake utility that, depending on the distribution, can be installed using the proper package management system. As and example, under Ubuntu and derivatives:
-	apt-get install cmake
-Also, getopt is required and can be installed in the same way.
-	apt-get install getopt
-For compiling the project, make a folder on the root of the enclosed project, call the cmake utility against the source folder and invoke the make command:
+### Table of Contents
+<pre>
+<a href="#overview">Overview</a>
+<a href="#Requirements">Requirements</a>
+<a href="#Downloading-and-compiling">Downloading and compiling</a>
+<a href="#Running-MCMCcolorer">Running MCMC colorer</a>
+	<a href="#Command line options">Command line options</a>
+	<a href="#Data-format">Data Format</a>
+	<a href="#Random-dataset-generation">Random dataset generation</a>
+	<a href="#Examples">Examples</a>
+<a href="#Licensa">License</a>
+</pre>
+
+---
+### Overview
+This repository contains a software implementation of the MCMC coloring algorithm presented in the paper:
+D. Conte, G. Grossi,R. Lanzarotti, J. Lin, A. Petrini
+A parallel MCMC algorithm for the Balanced Graph Coloring problem
+IAPR International workshop on Graph-Based Representation in Pattern Recognition, Tours, France. 19-21 July 2019
+
+This software includes a fully-parallel GPU implementation of the algorithm, as well as a CPU sequential version, provided for computational time comparison. Also we included a novel Luby-inspired greedy  coloring strategy, also implemented for GPU.
+
+
+---
+### Requirements
+This software requires a Linux operating system (it has been developed and tested on Ubuntu 16.04). Both MCMC and Luby GPU implementations are targeted towards NVidia Graphic Processing Units. The software is written using the CUDA C library.
+
+Hardware requirements are not strict, as any relatively modern x86-64 processor can run he software. As the dataset is loaded on the host RAM in its entirety, having a decent amount of memory could come handy... However, graphs are stored in a so-called "compressed format", therefore even 2-4 GB of RAM would suffice for coloring moderately big graphs.
+
+GPU requirements are also non-strict as this software requires a GPU having Compute Capability >= 3.5 and any recent CUDA SDK (>= 8.0) are supported. We tested this implementation on GPUs belonging to Kepler, Maxwell, Tesla and Pascal family.
+
+Software wise, a recent C++ compiler is needed. GNU GCC (>= 5.4.0) is know to work, and we also tested the software with Intel C++ Compiler 2017 onward. A few additional packages are required, namely cmake (>= 2.8) and getopt: they both can be installed on Ubuntu Linux using the apt package manager:
+```
+sudo apt-get install cmake getopt
+```
+Other package managers (yum on CentOS / RedHat, for instance) provide a similar way to satisfy the library requirements.
+
+---
+### Downloading and compiling
+
+Download the latest version from this page or clone the git repository altogether:
+
+	git clone https://github.com/phuselab/MCMC_Colorer.git
+
+Once the package has been downloaded, move to the main directory, create a build dir, invoke cmake and build the software (`-j n` make option enables multi-thread compilation over n threads):
+
+	cd MCMC_Colorer
 	mkdir build
 	cd build
 	cmake ../src
-	make
-Binaries will be compiled into the "build" directory.
+	make -j 4
 
-Under Windows, a recent version of the Cuda Development Toolkit is also required. The MCMC Colorer package includes a Visual Studio 2017 project file that, in turn, includes three solutions: one for the dataset generator and two for the MCMC Colorer. The two colorer solutions differ for the Cuda toolkit installed in the target machine: we provided support for CUDA 9.2 and the upcoming Cuda 10.0. If required, we can provide more versions, depending on your requests.
-Under Windows, compilation is straight forward (just press F7 and hope for the best)
+This will generate two executables: "MCMC_Colorer" and "datasetGen".
 
-Usage
------
-If compilation is successful, two binary executable will be created:
-datasetGen: a simple Erdos graph generator
-MCMC_Colorer: the colorer itself
+For a quick test, launch the following command from the build directory:
+```
+./MCMC_Colorer --lubygpu --simulate 0.1 -n 1000
+```
+Results are saved in the 1000_0.100000_1.000000_out folder.
 
-datasetGen generates a random Erdos graph and saves it in a format which is compatible with the colorer. It requires four parameters:
-./datasetGen <number_of_nodes> <data_file> <label_file> <edge_probabilty>
-- number of nodes: ...
-- label file: output filename for the labels (unused in this project, but still required in the executable)
-- data file: output filename for the graph
-- edge probability: probability of creating an edge between nodes i and j, with 0 < i < number_of_nodes, and 0 < j < number_of_nodes. Being a probability, it is required to be a float number, 0 < p < 1
+Also
+```
+./MCMC_Colorer --help
+```
+shows the help screen with the list of command line options.
+![help_screen]
 
-example: ./datasetGen 32 lab.txt net.txt 0.2
+---
 
-Data file is a list of unidirected edge, with a single-line header, i.e.
-<total number of nodes>	<total number of edges>
+### Running MCMC colorer
+MCMC_Colorer is a command line executable. At present time, no graphical user interface is provided. Its behavior is regulated by a set of command line options which are presented as follows.
+
+#### Command line options
+The following table summarizes all the available command line options:
+| Category |  Option   | Mandatory | Default |      Description      |
+|----------|-----------|-------------------|----|-|
+|Dataset options| `--graph filename.txt` |     Yes / No     | - | Graph input file |
+|| `--outDir name` |     No     | See descr. | Name of the output directory where coloring and logs will be saved. By default, is the name of the input file followed by "\_out"; in simulation mode, is "\<prob\>\_\<n\>_\<numColRatio\>\_out"  |
+|| `--simulate p` |     Yes / No     | - | Launch the program on a randomly generated Erdos graph. Edges are generated with probability 0 \< p \< 1. In this modality, the `-n N`  option is mandatory |
+|| `-n N` |     Yes / No     | - | Number of nodes of the randomly generated Erdos graph. Ignored when non in simulation mode |
+|Coloring algorithm selection| `--mcmccpu` |     (1)     | - | Enables the MCMC CPU algorithm |
+| | `--mcmcgpu` |     (1)     | - | Enables the MCMC GPU algorithm |
+| | `--lubygpu` |     (1)    | - | Enables the Luby GPU algorithm |
+|MCMC coloring options| `--nCol` |     No     | maxDeg / numColRatio | Choose the number of colors. By default is set to the maximum node degree divided by the `--numColRatio` value |
+|| `--numColRatio` |     No     | 1.0 | Optional divider for the numer of colors `--nCol` |
+|| `--tabooIterations` |     No     | 0 | Optional number of iteration for the taboo strategy |
+|| `--tailcut` |     No     | No | Switch to greedy mode when few conflicts remain |
+|General options| `--help` |     No     | - | Shows the help screen |
+|| `--repet N` |     No     | 1 | Number of times each colorer algorithm is invoked for run  |
+|| `--seed N` |     No     | Random | Integer seed for pseudo-random number generator  |
+
+(1): more than one algorithm can be selected per run. If no selection is made, MCMC CPU is chosen by default.
+
+
+---
+#### Data format
+Graph input file is a list of unidirected edge, with a single-line header, i.e.
+```
+single_line_header_can_be_whatever_you_want_who_cares
 node1		node2		edgeWeight
 node3		node12		edgeWeight
 node4		node2		edgeWeight
 node4		node5		edgeWeight
 node6		node1		edgeWeight
 node6		node8		edgeWeight
-.
-.
-.
+...
+```
+Data can be space / tab / comma separated valus. The single line header can be whatever line. The total number of nodes and edges are re-counted at import time, hence there is no need of specifying those in the header.
+The field "edgeWeight" is unused in the coloring, but the file importer supports its presence, as it is very common to find in public domain datasets.
+We remark that edges in the list are supposed to be **unidirected**, hence for instance an edge from node 1 to node 6 implies that also node 6 is connected to node 1. **There is no need to specify the back edges in the input file, as the importer takes care of that. Also, duplicate / back edges may compromise the quality of solution or even the convergence of the algorithm.**
 
-MCMC_Colorer is the main executable, and includes code for different colorers:
-- Luby, GPU version, implemented for a single CPU thread and a NVidia GPU (kept for reference)
-- MCMC, CPU version, implemented for a single thread
-- MCMC, GPU version, implemented for a single CPU thread and a NVidia GPU
-It can be invoked by:
-./MCMC_Colorer --label <label_file> --data <data_file> --gene <gene_file>
-- <label_file> a label file generated by the datesetGet utility (unused in this project, but still required in the executable)
-- <data_file> a data file generated by the datasetGen utility
-- <gene_file> (unused in this project, but still required in the executable) can be a random name
+Each coloring provides two output files in the output directory: the coloring itself, i.e. a list of new-line-separated tuples  node / color and a log file providing basic statistics for nerds of the solution.
 
-example: ./MCMC_Colorer --data net.txt --label lab.txt --gene gene.txt
+---
+#### Random dataset generation
+A random Erdos graph generator in included in this package as a way of testing the software without depending on external datasets. The random dataset generator is provided as a standalone application that generates a graph as a text file, and is also built-in the main MCMC Colorer executable.
 
-Once the data file has been validated and loaded, the three colorers are invoked in turn, each one printing various statistics about the ongoing processes.
-Currently, the generated coloring is not saved on file and gets discarded once compilation ends.
+The standalone application is called datasetGen and is invoked as following:
+```
+./datasetGen  number_of_nodes edge_probability output_filename
+```
+The output graph is saved in a format that is fully compatible with the main colorer executable.
 
-To run your project with command line arguments within Visual Studio:
-    Right-click the default project (the one to be run) in Visual Studio and select "Properties".
-    Click on the "Debug" tab on the left.
-    Enter your command line arguments in the textbox labeled "Command line arguments".
-    Save the updated properties and run the project.
+Optionally, the random graph generator can be invoked from the main executable itself with the `--simulate` command line option, with the difference that the generated graph is not saved.
+
+---
+#### Examples
+
+---
+### License
+
+This package is distributed under the Apache 2.0 license. Please see the https://github.com/phuselab/MCMC_Colorer/LICENSE file for the complete version of the license.
+
+Also, MCMC colorer uses several libraries whose source code is not included in the package, but it is automatically downloaded at compile time. These libraries are:
+
+**Easylogging++**\
+Zuhd Web Services\
+(https://github.com/amrayn/easyloggingpp) \
+Distributed under the MIT license\
+Copy of the license is available at the project homepage
 
 
-Another way to set parameters is to use "define INLINE_ARGS". in this way you can set the parameters directly in the main of the current project.
 
-Code details
-------------
-<work in progress>
 
+
+[banner]: https://raw.githubusercontent.com/Topopiccione/MCMC_Colorer/master/repo_pics/banner.png
+
+[help_screen]: https://raw.githubusercontent.com/Topopiccione/MCMC_Colorer/master/repo_pics/help_screen.png
