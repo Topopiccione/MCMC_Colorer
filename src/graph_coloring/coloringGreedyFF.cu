@@ -11,9 +11,9 @@
 
 
 template<typename nodeW, typename edgeW>
-ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodew, edgew>* graph_d) :
+ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
     Colorer<nodeW, edgeW>(graph_d), graphStruct_device(graph_d->getStruct()),
-    numNodes(graph_d->getStruct()->nNodes), numColors(0), coloredNodesCount(0) {
+    numNodes(graph_d->getStruct()->nNodes), numColors(0) {
     
     //coloring_host = std::unique_ptr<int[]>(new int[numNodes]);
     coloring_host = thrust::host_vector<uint32_t>(numNodes);
@@ -32,22 +32,22 @@ ColoringGreedyFF<nodeW, edgeW>::~ColoringGreedyFF(){
     //We only need to deallocate what we allocated in the constructor
 //  cudaStatus = cudaFree(coloring_device);     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
-    if(coloring != nullptr)                 //NOTE: this may be unnecessary
-        free(coloring);
+    if(this->coloring != nullptr)                 //NOTE: this may be unnecessary
+        free(this->coloring);
 }
 
 template<typename nodeW, typename edgeW>
-void ColoringGreedyFF<nodew, edgeW>::run(){
+void ColoringGreedyFF<nodeW, edgeW>::run(){
 
 //  cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));           cudaCheck(cudaStatus, __FILE__, __LINE__); 
     
-    uint32_t maxColors = graph->getMaxNodeDeg() + 1;                    //We are assuming getMaxNodeDeg() returns a valid result here
+    uint32_t maxColors = graphStruct_device->getMaxNodeDeg() + 1;                    //We are assuming getMaxNodeDeg() returns a valid result here
     thrust::device_vector<uint32_t> temp_coloring(coloring_device);
     thrust::device_vector<uint32_t>::iterator firstUncolored = coloring_device.begin();
     while(firstUncolored != coloring_device.end()){
         
         //Tentative coloring on the whole graph, in parallel
-        tentative_coloring<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, maxColors);
+        ColoringGreedyFF_k::tentative_coloring<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, maxColors);
         cudaDeviceSynchronize();
 
         //Update the coloring now that we are sure there is no conflict
@@ -55,7 +55,7 @@ void ColoringGreedyFF<nodew, edgeW>::run(){
         cudaDeviceSynchronize();
 
         //Checking for conflicts and letting lower nodes win over the others, in parallel
-        conflict_detection<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, maxColors);
+        ColoringGreedyFF_k::conflict_detection<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, maxColors);
         cudaDeviceSynchronize();
 
         //Update the coloring before next loop
@@ -67,13 +67,13 @@ void ColoringGreedyFF<nodew, edgeW>::run(){
 
     coloring_host = coloring_device;
     cudaDeviceSynchronize();
-    std::set color_set(coloring_host.begin(), coloring_host.end());
+    std::set<uint32_t> color_set(coloring_host.begin(), coloring_host.end());
     numColors = color_set.size();
     convert_to_standard_notation();
 }
 
 template<typename nodeW, typename edgeW>
-__global__ void ColoringGreedyFF<nodeW, edgeW>::tentative_coloring(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors){
+__global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors){
     uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 
     //If idx doesn't correspond to a node, it is excluded from this computation
@@ -104,7 +104,7 @@ __global__ void ColoringGreedyFF<nodeW, edgeW>::tentative_coloring(const uint32_
 }
 
 template<typename nodeW, typename edgeW>
-__global__ void ColoringGreedyFF<nodeW, edgeW>::conflict_detection(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors){
+__global__ void ColoringGreedyFF_k::conflict_detection(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors){
     uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 
     //If idx doesn't correspond to a node, it is excluded from this computation
@@ -154,8 +154,8 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
     //... you accumulate them in place
     thrust::inclusive_scan(cumulColorClassesSize, cumulColorClassesSize + (numColors + 1), cumulColorClassesSize); 
 
-    coloring = new Coloring();
-    coloring->nCol = numColors;
-    coloring->colClass = thrust::raw_pointer_cast(coloring_host.data());
-    coloring->cumulSize = cumulColorClassesSize;
+    this->coloring = new Coloring();
+    this->coloring->nCol = numColors;
+    this->coloring->colClass = thrust::raw_pointer_cast(coloring_host.data());
+    this->coloring->cumulSize = cumulColorClassesSize;
 }

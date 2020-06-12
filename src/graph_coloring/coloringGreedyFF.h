@@ -14,7 +14,8 @@ class ColoringGreedyFF : public Colorer<nodeW, edgeW>{
 
     //Run function to start the Greedy First Fit coloring
     void run();
-
+    
+    
     protected:
     uint32_t numNodes;              //number of nodes in the graph
     uint32_t numColors;             //number of colors used in the graph
@@ -29,10 +30,12 @@ class ColoringGreedyFF : public Colorer<nodeW, edgeW>{
     dim3        threadsPerBlock;    //number of threads in a block, as a 3D array
     dim3        blocksPerGrid;      //number of blocks in the grid, as a 3D array
 
+    void convert_to_standard_notation();
+};
+
+namespace ColoringGreedyFF_k{
     template<typename nodeW, typename edgeW>
     __global__ void tentative_coloring(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors);
     template<typename nodeW, typename edgeW>
     __global__ void conflict_detection(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors);
-    template<typename nodeW, typename edgeW>
-    void convert_to_standard_notation();
-}
+};
