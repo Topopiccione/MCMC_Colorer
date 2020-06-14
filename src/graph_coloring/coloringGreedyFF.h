@@ -1,8 +1,6 @@
 #pragma once
 #include <graph/graph.h>
-#include <thrust/host_vector.h>
-#include <thrust/device_vector.h>
-//other includes 
+#include <memory>
 
 template<typename nodeW, typename edgeW>
 class ColoringGreedyFF : public Colorer<nodeW, edgeW>{
@@ -23,8 +21,9 @@ class ColoringGreedyFF : public Colorer<nodeW, edgeW>{
 
     const GraphStruct<nodeW, edgeW> * const graphStruct_device;
 
-    thrust::host_vector<uint32_t>   coloring_host;        //array of colors (unsigned integers) to be indexed with nodes
-    thrust::device_vector<uint32_t> coloring_device;      //as coloring_host, but used by device
+    std::unique_ptr<int[]> coloring_host;     //array of colors (unsigned integers) to be indexed with nodes
+    
+    uint32_t* coloring_device;                    //as coloring_host, but used by device
     
     cudaError_t cudaStatus;         //used to check CUDA calls are ok and don't return errors
     dim3        threadsPerBlock;    //number of threads in a block, as a 3D array
@@ -35,7 +34,8 @@ class ColoringGreedyFF : public Colorer<nodeW, edgeW>{
 
 namespace ColoringGreedyFF_k{
     template<typename nodeW, typename edgeW>
-    __global__ void tentative_coloring(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors);
+    __global__ void tentative_coloring(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring, const node_sz * const cumulDegs, const node * const neighs, uint32_t* forbidden_colors, const uint32_t maxColors);
     template<typename nodeW, typename edgeW>
-    __global__ void conflict_detection(const uint32_t numNodes, thrust::device_vector<uint32_t> input_coloring, thrust::device_vector<uint32_t> output_coloring, const node_sz * const cumulDegs, const node * const neighs, const uint32_t maxColors);
+    __global__ void conflict_detection(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring, const node_sz * const cumulDegs, const node * const neighs);
+    __global__ void update_coloring_GPU(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring);
 };
