@@ -21,7 +21,7 @@ ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
     
     // We need to have an array representing the colors of each node
     //both on host...
-    coloring_host = std::unique_ptr<int[]>(new int[numNodes]);
+    coloring_host = std::unique_ptr<uint32_t[]>(new uint32_t[numNodes]);
     
     //...and on device
     cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -43,7 +43,7 @@ ColoringGreedyFF<nodeW, edgeW>::~ColoringGreedyFF(){
 template<typename nodeW, typename edgeW>
 void ColoringGreedyFF<nodeW, edgeW>::run(){
     //We are assuming getMaxNodeDeg() returns a valid result here
-    uint32_t maxColors = graphStruct_device->getMaxNodeDeg() + 1;   
+    uint32_t maxColors = this->graph->getMaxNodeDeg() + 1;   
 
     cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));           
     cudaCheck(cudaStatus, __FILE__, __LINE__); 
@@ -61,7 +61,7 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
     while(firstUncolored != (coloring_device_begin + numNodes)){
         
         //Tentative coloring on the whole graph, in parallel
-        ColoringGreedyFF_k::tentative_coloring<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, forbiddenColors, maxColors);
+        ColoringGreedyFF_k::tentative_coloring<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, forbiddenColors, maxColors);
         cudaDeviceSynchronize();
 
         //Update the coloring now that we are sure there is no conflict
@@ -69,7 +69,7 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
         cudaDeviceSynchronize();
 
         //Checking for conflicts and letting lower nodes win over the others, in parallel
-        ColoringGreedyFF_k::conflict_detection<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs);
+        ColoringGreedyFF_k::conflict_detection<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs);
         cudaDeviceSynchronize();
 
         //Update the coloring before next loop
@@ -110,7 +110,7 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
     uint32_t neighbor;
 
     for(uint32_t j = 0; j < numNeighs; ++j){
-        neighbor = neighs[j];
+        neighbor = neighs[neighsOffset + j];
         idx_forbidden_colors[input_coloring[neighbor]] = idx;
     }
     
@@ -151,7 +151,7 @@ __global__ void ColoringGreedyFF_k::conflict_detection(const uint32_t numNodes, 
             break;
         }
     }
-}
+} 
 
 //  Note that input_coloring and output_coloring must be pointers to GPU memory
 __global__ void ColoringGreedyFF_k::update_coloring_GPU(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring){
@@ -189,6 +189,16 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
 
     this->coloring = new Coloring();
     this->coloring->nCol = numColors;
-    this->coloring->colClass = coloring_host;
+    this->coloring->colClass = coloring_host.get();
     this->coloring->cumulSize = cumulColorClassesSize;
 }
+
+template<typename nodeW, typename edgeW>
+Coloring* ColoringGreedyFF<nodeW, edgeW>::getColoring(){
+    return this->coloring;
+}
+
+
+//// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
+//// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
+template class ColoringGreedyFF<float, float>;

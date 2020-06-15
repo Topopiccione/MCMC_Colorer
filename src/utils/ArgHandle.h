@@ -36,6 +36,8 @@ public:
 	bool			mcmcgpu;
 	bool			lubygpu;
 	bool			tailcut;
+	
+	bool			greedyff;		//use this to enable GreedyFF coloring
 
 	std::string		graphName;
 

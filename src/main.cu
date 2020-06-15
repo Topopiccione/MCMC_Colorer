@@ -12,6 +12,9 @@
 #include "graph_coloring/coloring.h"
 #include "graph_coloring/coloringMCMC_CPU.h"
 #include "graph_coloring/coloringLuby.h"
+
+#include "graph_coloring/coloringGreedyFF.h"
+
 #include "graph_coloring/coloringMCMC.h"
 #include "GPUutils/GPURandomizer.h"
 #include "easyloggingpp/easylogging++.h"
@@ -102,6 +105,19 @@ int main(int argc, char *argv[]) {
 			lubyFileColors.open(outDir + "/" + commandLine.graphName + "-LUBY-" + std::to_string(i) + "-colors.txt");
 			colLuby.saveColor(lubyFileColors);
 			lubyFileColors.close();
+		}
+
+		if (commandLine.greedyff) {
+			ColoringGreedyFF<float, float> greedy(&graph_d);
+
+			start = std::clock();
+			greedy.run();
+			duration = (std::clock() - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+			LOG(TRACE) << TXT_BIYLW << "Parallel Greedy First Fit - number of colors: " << greedy.getColoring()->nCol << TXT_NORML;
+			LOG(TRACE) << TXT_BIYLW << "Parallel Greedy First Fit - elapsed time: " << duration << TXT_NORML;
+			std::cout << "Parallel Greedy First Fit - number of colors: " << greedy.getColoring()->nCol << std::endl;
+			std::cout << "Parallel Greedy First Fit - elapsed time: " << duration << std::endl;
 		}
 
 		// TODO: Some of these should be made user-definable from command line
