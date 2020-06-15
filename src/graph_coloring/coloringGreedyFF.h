@@ -43,4 +43,6 @@ namespace ColoringGreedyFF_k{
 
     //  Note that input_coloring and output_coloring must be pointers to GPU memory
     __global__ void update_coloring_GPU(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring);
+
+    __global__ void check_uncolored_nodes(const uint32_t numNodes, const uint32_t* coloring, bool* uncolored_nodes);
 };

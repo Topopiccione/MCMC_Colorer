@@ -4,15 +4,8 @@
 
 #include "GPUutils/GPUutils.h"          //is required in order to use cudaCheck
 
-
 #include <set>                          //is used for counting the number of colors
 #include <algorithm>                    //count is used for conversion to standard notation
-
-#include <thrust/execution_policy.h>   
-#include <thrust/device_ptr.h> 
-#include <thrust/find.h>                //is used for finding the first occurence
-#include <thrust/scan.h>
-
 
 template<typename nodeW, typename edgeW>
 ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
@@ -56,10 +49,12 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
     cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    thrust::device_ptr<uint32_t> firstUncolored         = thrust::device_ptr<uint32_t>(coloring_device);
-    thrust::device_ptr<uint32_t> coloring_device_begin  = thrust::device_ptr<uint32_t>(coloring_device);
-    while(firstUncolored != (coloring_device_begin + numNodes)){
-        
+    bool* uncolored_nodes_device;
+    cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));
+    cudaCheck(cudaStatus, __FILE__, __LINE__)
+
+    bool uncolored_nodes = true;
+    while(uncolored_nodes){
         //Tentative coloring on the whole graph, in parallel
         ColoringGreedyFF_k::tentative_coloring<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, temp_coloring, graphStruct_device->cumulDegs, graphStruct_device->neighs, forbiddenColors, maxColors);
         cudaDeviceSynchronize();
@@ -75,9 +70,13 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
         //Update the coloring before next loop
         ColoringGreedyFF_k::update_coloring_GPU<<<blocksPerGrid, threadsPerBlock>>>(numNodes, temp_coloring, coloring_device);
         cudaDeviceSynchronize();
-
-
-        firstUncolored = thrust::find(thrust::device, firstUncolored, coloring_device_begin + numNodes, 0);
+        
+        cudaStatus = cudaMemset(uncolored_nodes_device, 0, sizeof(bool));
+        cudaCheck(cudaStatus, __FILE__, __LINE__);
+        ColoringGreedyFF_k::check_uncolored_nodes<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, uncolored_nodes_device);
+        cudaDeviceSynchronize();
+        cudaStatus = cudaMemcpy(&uncolored_nodes, uncolored_nodes_device, sizeof(bool), cudaMemcpyDeviceToHost);
+        cudaCheck(cudaStatus, __FILE__, __LINE__);
     }
 
     cudaStatus = cudaFree(temp_coloring);                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -99,6 +98,14 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
     if(idx >= numNodes){     
         return;
     }
+
+    // Line "idx_forbidden_colors[i] != idx", later in the code, didn't allow idx = 0 
+    //to get a color different from 0; this resulted in endless looping as a bug.
+    //Since this algorithm is a First Fit, node 0 can be put to 1 asap since it would win anyway.
+    if(idx == 0){                   
+        output_coloring[idx] = 1;
+    }
+
     //If the idx-th node has already been colored, it is excluded from this computation
     if(input_coloring[idx] != 0){
         return;
@@ -113,7 +120,7 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
         neighbor = neighs[neighsOffset + j];
         idx_forbidden_colors[input_coloring[neighbor]] = idx;
     }
-    
+
     for(uint32_t i = 1; i < maxColors; ++i){
         if(idx_forbidden_colors[i] != idx){
             output_coloring[idx] = i;
@@ -164,6 +171,18 @@ __global__ void ColoringGreedyFF_k::update_coloring_GPU(const uint32_t numNodes,
     output_coloring[idx] = input_coloring[idx];
 }
 
+__global__ void ColoringGreedyFF_k::check_uncolored_nodes(const uint32_t numNodes, const uint32_t* coloring, bool* uncolored_nodes){
+    uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if(idx >= numNodes){
+        return;
+    }
+
+    if(coloring[idx] == 0){
+        *uncolored_nodes = true;
+    }
+}
+
 //   This method is implemented without testing coloring correctness
 //  by translating what was already done in coloringLuby.cu and without
 //  filling a Coloring on device
@@ -197,7 +216,6 @@ template<typename nodeW, typename edgeW>
 Coloring* ColoringGreedyFF<nodeW, edgeW>::getColoring(){
     return this->coloring;
 }
-
 
 //// Questo serve per mantenere le dechiarazioni e definizioni in classi separate
 //// E' necessario aggiungere ogni nuova dichiarazione per ogni nuova classe tipizzata usata nel main
