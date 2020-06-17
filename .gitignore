@@ -3,6 +3,7 @@ buildDebug
 test_01
 src/zlib/*.h
 private
+tested/
 
 #Visual Studio
 .vs/

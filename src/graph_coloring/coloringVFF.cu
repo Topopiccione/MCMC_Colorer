@@ -6,9 +6,10 @@
 #include <thrust/logical.h>
 #include <thrust/functional.h>
 #include <thrust/scan.h>
+#include <thrust/count.h>
 #include <thrust/execution_policy.h>
 
-#define BIN_SIZE(cumulBinSize, binIndex) (cumulBinSize[binIndex] - cumulBinSize[binIndex])
+#define BIN_SIZE(cumulBinSize, binIndex) (cumulBinSize[binIndex] - cumulBinSize[binIndex-1])
 
 //Constructor - initialization as in ColoringGreedyFF
 template<typename nodeW, typename edgeW>
@@ -106,46 +107,90 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     bool* unbalanced_nodes;
     cudaStatus = cudaMalloc((void**)&unbalanced_nodes, sizeof(bool) * numNodes);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes);
+    cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     uint32_t* temp_coloring;
     cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));       
     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMemcpy(temp_coloring, coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToDevice);
+    cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     uint32_t* forbiddenColors;
-    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * numColors * sizeof(uint32_t));
+    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * (numColors+1) * sizeof(uint32_t)); // numColors+1 since we need to consider the 0 
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     uint32_t* binCumulSizes_device;
     cudaStatus = cudaMalloc((void**)&binCumulSizes_device, sizeof(uint32_t) * (numColors + 1));
     cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaMemcpy(this->coloring->cumulSize, binCumulSizes_device, sizeof(uint32_t) * (numColors + 1), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(binCumulSizes_device, this->coloring->cumulSize, sizeof(uint32_t) * (numColors + 1), cudaMemcpyHostToDevice);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     //We use a non-blocking CUDA Stream in order to make bin updating  
     //and conflict checking parallel
     cudaStream_t non_default_stream;
     cudaStreamCreateWithFlags(&non_default_stream, cudaStreamNonBlocking);
+
     BalancingVFF_k::detect_unbalanced_nodes<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, binCumulSizes_device, gamma_threshold, unbalanced_nodes);
     
     //until there is even one of the nodes flagged as unbalanced
-    while(thrust::any_of(thrust::device, unbalanced_nodes, unbalanced_nodes + numNodes, thrust::identity<bool>())){
-        BalancingVFF_k::tentative_rebalancing<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, numColors, coloring_device, binCumulSizes_device, graphStruct_device->neighs, graphStruct_device->cumulDegs, gamma_threshold, temp_coloring, unbalanced_nodes, forbiddenColors);
-        cudaDeviceSynchronize();
-        cudaStatus = cudaMemset(binCumulSizes_device, 0, sizeof(uint32_t) * (numColors + 1));
+    bool unbalanced;
+    bool* unbalanced_d;
+    cudaStatus = cudaMalloc((void**)&unbalanced_d, sizeof(bool));
+    cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMemset(unbalanced_d, 0, sizeof(bool));
+    cudaCheck(cudaStatus, __FILE__, __LINE__);
+    BalancingVFF_k::is_unbalanced<<<blocksPerGrid, threadsPerBlock>>>(numNodes, unbalanced_nodes, unbalanced_d);
+    cudaDeviceSynchronize();
+    cudaStatus = cudaMemcpy(&unbalanced, unbalanced_d, sizeof(bool), cudaMemcpyDeviceToHost);
+    cudaCheck(cudaStatus, __FILE__, __LINE__);
+
+    #ifdef DEBUGGING
+    std::cout << "The graph is: " << unbalanced;
+    std::cout << "\nNodes that are unbalanced > " << thrust::count_if(thrust::device, unbalanced_nodes, unbalanced_nodes + numNodes, thrust::identity<bool>()) << "\n";
+    std::cout << "\nSizes of the bins are:\n";
+    for(int i = 1; i <= numColors; ++i){
+        std::cout << *(this->coloring->cumulSize + i) - *(this->coloring->cumulSize + i - 1) << "\t";
+    }
+    std::cout << "\nGamma is " << gamma_threshold << "\n\n";
+    #endif
+
+    while(unbalanced){
+        cudaStatus = cudaMemset(forbiddenColors, 0, numNodes * (numColors + 1) * sizeof(uint32_t));
         cudaCheck(cudaStatus, __FILE__, __LINE__);
         cudaDeviceSynchronize();
-        BalancingVFF_k::update_bins<<<blocksPerGrid, threadsPerBlock, 0, non_default_stream>>>(numNodes, numColors, temp_coloring, binCumulSizes_device);
-        BalancingVFF_k::solve_conflicts<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, temp_coloring, graphStruct_device->neighs, graphStruct_device->cumulDegs, unbalanced_nodes);
-        cudaStreamSynchronize(non_default_stream);
-        thrust::inclusive_scan(thrust::device, binCumulSizes_device, binCumulSizes_device+(numColors+1), binCumulSizes_device);
+        BalancingVFF_k::tentative_rebalancing<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, numColors, coloring_device, binCumulSizes_device, graphStruct_device->neighs, graphStruct_device->cumulDegs, gamma_threshold, temp_coloring, unbalanced_nodes, forbiddenColors);
         cudaDeviceSynchronize();
+
+        BalancingVFF_k::update_bins<<<blocksPerGrid, threadsPerBlock, 0, non_default_stream>>>(numNodes, numColors, temp_coloring, binCumulSizes_device);
+        cudaCheck(cudaPeekAtLastError(), __FILE__, __LINE__);
+        BalancingVFF_k::solve_conflicts<nodeW, edgeW><<<blocksPerGrid, threadsPerBlock>>>(numNodes, temp_coloring, graphStruct_device->neighs, graphStruct_device->cumulDegs, unbalanced_nodes);
+        cudaCheck(cudaPeekAtLastError(), __FILE__, __LINE__);
+        cudaStreamSynchronize(non_default_stream);
+
+        //BalancingVFF_k::cumulate_bins<<<1, 1, 0, non_default_stream>>>(numColors, binCumulSizes_device);
+        //cudaCheck(cudaPeekAtLastError(), __FILE__, __LINE__);
+        thrust::inclusive_scan(thrust::device, binCumulSizes_device, binCumulSizes_device + (numColors + 1), binCumulSizes_device);
+        cudaDeviceSynchronize();
+
         ColoringGreedyFF_k::update_coloring_GPU<<<blocksPerGrid, threadsPerBlock>>>(numNodes, temp_coloring, coloring_device);
         cudaDeviceSynchronize();
+
+        cudaStatus = cudaMemset(unbalanced_d, 0, sizeof(bool));
+        cudaCheck(cudaStatus, __FILE__, __LINE__);
+        cudaDeviceSynchronize();
+        BalancingVFF_k::is_unbalanced<<<blocksPerGrid, threadsPerBlock>>>(numNodes, unbalanced_nodes, unbalanced_d);
+        cudaDeviceSynchronize();
+
+        cudaStatus = cudaMemcpy(&unbalanced, unbalanced_d, sizeof(bool), cudaMemcpyDeviceToHost);
+        cudaCheck(cudaStatus, __FILE__, __LINE__);
+        // std::cout << unbalanced << " c" << thrust::count_if(thrust::device, unbalanced_nodes, unbalanced_nodes + numNodes, thrust::identity<bool>()) << "\t";
     }
 
     cudaStatus = cudaFree(unbalanced_nodes);                            cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(temp_coloring);                               cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(forbiddenColors);                            cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(unbalanced_d);                            cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -156,7 +201,17 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     cudaStatus = cudaFree(binCumulSizes_device);                        cudaCheck(cudaStatus, __FILE__, __LINE__);
     this->coloring->colClass = coloring_host.get();
     //Note that this->coloring->nCol shouldn't be updated
+
+    #ifdef DEBUGGING
+    std::cout << "\nNew sizes of the bins are:\n";
+    for(int i = 1; i <= numColors; ++i){
+        std::cout << *(this->coloring->cumulSize + i) - *(this->coloring->cumulSize + i - 1) << "\t";
+    }
+    std::cout << "\n";
+    #endif  
 }
+
+////////////////////////////// BASE CLASSES FUNCTIONS //////////////////////////////
 
 template<typename nodeW, typename edgeW>
 void ColoringVFF<nodeW, edgeW>::convert_to_standard_notation(){
@@ -199,40 +254,58 @@ __global__ void BalancingVFF_k::detect_unbalanced_nodes(const uint32_t numNodes,
     }
 }
 
+__global__ void BalancingVFF_k::is_unbalanced(const uint32_t numNodes, const bool* unbalanced_nodes, bool* result){
+    uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
+    if(idx >= numNodes){
+        return;
+    }
+
+    if(unbalanced_nodes[idx]){
+        *result = true;
+    }
+}
+
+//////////////////////////////   REBALANCING   //////////////////////////////
+
 template<typename nodeW, typename edgeW>
 __global__ void BalancingVFF_k::tentative_rebalancing(const uint32_t numNodes, const uint32_t numColors, const uint32_t* input_coloring, const uint32_t* cumulBinSizes, const node* const neighs, const node_sz* const cumulDegs, const uint32_t gamma, uint32_t* output_coloring, bool* unbalanced_nodes, uint32_t* forbidden_colors){
     uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
     if(idx >= numNodes){
         return;
     }
-    if(!unbalanced_nodes[idx]){
+
+    if(unbalanced_nodes[idx] == false){
         return;
     }
-    uint32_t* idx_forbidden_colors = forbidden_colors + idx * numColors;
+
+    uint32_t* idx_forbidden_colors = forbidden_colors + idx * (numColors+1);
     uint32_t numNeighs = cumulDegs[idx+1] - cumulDegs[idx];
     uint32_t neighsOffset = cumulDegs[idx];
     uint32_t neighbor;
 
+    idx_forbidden_colors[input_coloring[idx]] = idx;
     for(uint32_t j = 0; j < numNeighs; ++j){
         neighbor = neighs[neighsOffset + j];
         idx_forbidden_colors[input_coloring[neighbor]] = idx;
     }
-
+    
     for(uint32_t i = 1; i <= numColors; ++i){
-        if(idx_forbidden_colors[i] != idx && gamma < BIN_SIZE(cumulBinSizes, idx)){
+        if(idx_forbidden_colors[i] != idx && gamma < BIN_SIZE(cumulBinSizes, i)){
             output_coloring[idx] = i;
             return;            
         }
     }
 }
 
+//Note that this kernel works per-color; idx stands for the corresponding color, and goes from 1 to numcolors, both included
 __global__ void BalancingVFF_k::update_bins(const uint32_t numNodes, const uint32_t numColors, const uint32_t* coloring, uint32_t* binSizes){
     uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-    //Note that "color 0" is invalid and colors are numColors (counting from 1)
+    //Also note that "color 0" is invalid and colors are numColors (counting from 1)
     if(idx > numColors || idx == 0){        
         return;
     }
 
+    binSizes[idx] = 0;
     for(uint32_t i = 0; i < numNodes; ++i){
         if(coloring[i] == idx){
             binSizes[idx] = binSizes[idx] + 1;
@@ -263,6 +336,13 @@ __global__ void BalancingVFF_k::solve_conflicts(const uint32_t numNodes, const u
 
     //there are no conflict on node idx and it can be considered balanced
     unbalanced_nodes[idx] = false;
+}
+
+//TODO: a parallel reduction may be implemented here - but it could be overkill
+__global__ void BalancingVFF_k::cumulate_bins(const uint32_t numColors, uint32_t* binCumulSizes){
+    for(uint32_t i = 1; i <= numColors; ++i){
+        binCumulSizes[i] = binCumulSizes[i] + binCumulSizes[i-1];
+    }
 }
 
 template class ColoringVFF<float, float>;

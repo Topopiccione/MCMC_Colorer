@@ -199,6 +199,15 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
     for(uint32_t col = 1; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = std::count(coloring_host.get(), coloring_host.get() + numNodes, col);
     }
+
+    #ifdef TESTCOLORINGCORRECTNESS
+    std::cout << "Color Classes:\n";
+    for(uint32_t col = 0; col < numColors + 1; ++col)
+    {
+        std::cout << cumulColorClassesSize[col] << " ";
+    }
+    std::cout << "\n";
+    #endif
     
     //... you accumulate them in place
     // NOTE: index 0 is skipped, and we can start from 2 because cumulColorClassesSize[0] = 0
@@ -206,6 +215,41 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
     {
         cumulColorClassesSize[col] = cumulColorClassesSize[col] + cumulColorClassesSize[col-1];
     }
+    
+    //DEBUG CORRECTNESS, BRUTE FORCE
+    #ifdef TESTCOLORINGCORRECTNESS
+    std::cout << "Cumulative Sizes of Color Classes:\n";
+    for(uint32_t col = 0; col < numColors + 1; ++col)
+    {
+        std::cout << cumulColorClassesSize[col] << " ";
+    }
+    std::cout << "\n";
+
+	std::cout << "Test colorazione attivato!\n";
+    
+    uint32_t* test_coloring = coloring_host.get();
+    std::unique_ptr<node_sz[]> cumulDegs( new node_sz[graphStruct_device->nNodes + 1]);
+	std::unique_ptr<node[]>  neighs( new node[graphStruct_device->nEdges] );
+	cudaStatus = cudaMemcpy( cumulDegs.get(), graphStruct_device->cumulDegs, (graphStruct_device->nNodes + 1) * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
+	cudaStatus = cudaMemcpy( neighs.get(),    graphStruct_device->neighs,    graphStruct_device->nEdges       * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
+    
+    uint32_t offset;
+    uint32_t size;
+    uint32_t neighbor;
+    for(uint32_t i = 0; i < numNodes; ++i){
+        size    = cumulDegs[i+1] - cumulDegs[i];
+        offset  = cumulDegs[i];
+        
+        for(uint32_t j = 0; j < size; ++j){
+            neighbor = neighs[offset + j];
+            if(test_coloring[i] == test_coloring[neighbor]){
+                std::cout << "NO! Il nodo " << i << " e il nodo " << neighbor << " sono vicini e colorati entrambi come " << test_coloring[i] << "\n";
+                abort();
+            }
+        }
+    }
+    #endif
+    //END DEBUG CORRECTNESS
 
     this->coloring = new Coloring();
     this->coloring->nCol = numColors;

@@ -14,6 +14,7 @@
 #include "graph_coloring/coloringLuby.h"
 
 #include "graph_coloring/coloringGreedyFF.h"
+#include "graph_coloring/coloringVFF.h"
 
 #include "graph_coloring/coloringMCMC.h"
 #include "GPUutils/GPURandomizer.h"
@@ -25,7 +26,7 @@ dbg		*	g_debugger;
 INITIALIZE_EASYLOGGINGPP
 
 int main(int argc, char *argv[]) {
-
+	//cudaDeviceReset();
 	////EasyLogging++
 	START_EASYLOGGINGPP(argc, argv);
 	checkLoggerConfFile();
@@ -118,6 +119,28 @@ int main(int argc, char *argv[]) {
 			LOG(TRACE) << TXT_BIYLW << "Parallel Greedy First Fit - elapsed time: " << duration << TXT_NORML;
 			std::cout << "Parallel Greedy First Fit - number of colors: " << greedy.getColoring()->nCol << std::endl;
 			std::cout << "Parallel Greedy First Fit - elapsed time: " << duration << std::endl;
+
+			// Saving log
+			// std::ofstream gffFileLog, gffFileColors;
+			// gffFileLog.open(outDir + "/" + commandLine.graphName + "-GFF-" + std::to_string(i) + ".log");
+			// greedyff.saveStats(i, duration, lubyFileLog);
+			// gffFileLog.close();
+			// lubyFileColors.open(outDir + "/" + commandLine.graphName + "-GFF-" + std::to_string(i) + "-colors.txt");
+			// colLuby.saveColor(lubyFileColors);
+			// lubyFileColors.close();
+		}
+
+		if (commandLine.rebalanced_greedyff) {
+			ColoringVFF<float, float> balanced(&graph_d);
+
+			start = std::clock();
+			balanced.run();
+			duration = (std::clock() - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+			LOG(TRACE) << TXT_BIYLW << "Vertex-centric First Fit rebalancing - number of colors: " << balanced.getColoring()->nCol << TXT_NORML;
+			LOG(TRACE) << TXT_BIYLW << "Vertex-centric First Fit rebalancing - elapsed time: " << duration << TXT_NORML;
+			std::cout << "Vertex-centric First Fit rebalancing - number of colors: " << balanced.getColoring()->nCol << std::endl;
+			std::cout << "Vertex-centric First Fit rebalancing - elapsed time: " << duration << std::endl;
 		}
 
 		// TODO: Some of these should be made user-definable from command line
