@@ -81,6 +81,7 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
 
     cudaStatus = cudaFree(temp_coloring);                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(forbiddenColors);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(uncolored_nodes_device);                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
