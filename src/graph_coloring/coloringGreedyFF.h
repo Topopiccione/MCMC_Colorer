@@ -14,20 +14,21 @@ class ColoringGreedyFF : public Colorer<nodeW, edgeW>{
     void run();
     
     Coloring* getColoring();
+    void saveStats(size_t iteration, float duration, std::ofstream &file);
+    void saveColor(std::ofstream &file);
     
     protected:
-    uint32_t numNodes;              //number of nodes in the graph
-    uint32_t numColors;             //number of colors used in the graph
-//  uint32_t numColors_device;
+    uint32_t numNodes;              //  number of nodes in the graph
+    uint32_t numColors;             //  number of colors used in the graph
 
     const GraphStruct<nodeW, edgeW> * const graphStruct_device;
 
-    std::unique_ptr<uint32_t[]> coloring_host;     //array of colors (unsigned integers) to be indexed with nodes
-    uint32_t*                   coloring_device;   //as coloring_host, but used by device
+    std::unique_ptr<uint32_t[]> coloring_host;      //  array of colors (unsigned integers) to be indexed with nodes
+    uint32_t*                   coloring_device;    //  as coloring_host, but used by device
     
-    cudaError_t cudaStatus;         //used to check CUDA calls are ok and don't return errors
-    dim3        threadsPerBlock;    //number of threads in a block, as a 3D array
-    dim3        blocksPerGrid;      //number of blocks in the grid, as a 3D array
+    cudaError_t cudaStatus;         //  used to check CUDA calls are ok and don't return errors
+    dim3        threadsPerBlock;    //  number of threads in a block, as a 3D array
+    dim3        blocksPerGrid;      //  number of blocks in the grid, as a 3D array
 
     void convert_to_standard_notation();
 };

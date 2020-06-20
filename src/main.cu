@@ -120,14 +120,16 @@ int main(int argc, char *argv[]) {
 			std::cout << "Parallel Greedy First Fit - number of colors: " << greedy.getColoring()->nCol << std::endl;
 			std::cout << "Parallel Greedy First Fit - elapsed time: " << duration << std::endl;
 
-			// Saving log
-			// std::ofstream gffFileLog, gffFileColors;
-			// gffFileLog.open(outDir + "/" + commandLine.graphName + "-GFF-" + std::to_string(i) + ".log");
-			// greedyff.saveStats(i, duration, lubyFileLog);
-			// gffFileLog.close();
-			// lubyFileColors.open(outDir + "/" + commandLine.graphName + "-GFF-" + std::to_string(i) + "-colors.txt");
-			// colLuby.saveColor(lubyFileColors);
-			// lubyFileColors.close();
+			//	Saving logs
+			std::ofstream gffFileLog;
+			gffFileLog.open(outDir + "/" + commandLine.graphName + "-GFF-" + std::to_string(i) + ".log");
+			greedy.saveStats(i, duration, gffFileLog);
+			gffFileLog.close();
+
+			std::ofstream gffFileColors;
+			gffFileColors.open(outDir + "/" + commandLine.graphName + "-GFF-" + std::to_string(i) + "-colors.txt");
+			greedy.saveColor(gffFileColors);
+			gffFileColors.close();
 		}
 
 		if (commandLine.rebalanced_greedyff) {
