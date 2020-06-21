@@ -15,11 +15,11 @@ ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
     Colorer<nodeW, edgeW>(graph_d), graphStruct_device(graph_d->getStruct()),
     numNodes(graph_d->getStruct()->nNodes), numColors(0) {
     
-    // We need to have an array representing the colors of each node
-    //both on host...
+    //  We need to have an array representing the colors of each node
+    // both on host...
     coloring_host = std::unique_ptr<uint32_t[]>(new uint32_t[numNodes]);
     
-    //...and on device
+    // ...and on device
     cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     //  We setup our grid to be divided in blocks of 128 threads 
@@ -105,8 +105,8 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
     }
 
     //  Line "idx_forbidden_colors[i] != idx", later in the code, didn't allow idx = 0 
-    //to get a color different from 0; this resulted in endless looping as a bug.
-    //Since this algorithm is a First Fit, node 0 can be put to 1 asap since it would win anyway.
+    // to get a color different from 0; this resulted in endless looping as a bug.
+    // Since this algorithm is a First Fit, node 0 can be put to 1 asap since it would win anyway.
     if(idx == 0){                   
         output_coloring[idx] = 1;
     }
@@ -122,9 +122,9 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
     uint32_t neighbor;
 
     //  Note that <idx_forbidden_colors> is an array with size equal to <maxColors>.
-    //Colors index this array; we flag it with idx if a color is forbidden to idx.
+    // Colors index this array; we flag it with idx if a color is forbidden to idx.
     //  Personal note: a first analysis makes me think that this array may be a bool array,
-    //so that some memory could be saved.
+    // so that some memory could be saved.
     for(uint32_t j = 0; j < numNeighs; ++j){
         neighbor = neighs[neighsOffset + j];
         idx_forbidden_colors[input_coloring[neighbor]] = idx;
@@ -139,18 +139,18 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
 }
 
 //  Kernel that checks if <tentative_coloring> produced conflicts;
-//if so, it is invalidated by putting its color to 0 in the <output_coloring>;
-//otherwise, <output_coloring> stays as it was, updated to <input_coloring>
+// if so, it is invalidated by putting its color to 0 in the <output_coloring>;
+// otherwise, <output_coloring> stays as it was, updated to <input_coloring>
 template<typename nodeW, typename edgeW>
 __global__ void ColoringGreedyFF_k::conflict_detection(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring, const node_sz * const cumulDegs, const node * const neighs){
     uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    //If idx doesn't correspond to a node, it is excluded from this computation
+    //  If idx doesn't correspond to a node, it is excluded from this computation
     if(idx >= numNodes){
         return;
     }
 
-    //If the idx-th node has no color, it is excluded from this computation
+    //  If the idx-th node has no color, it is excluded from this computation
     //  NOTE: this should not happen
     if(input_coloring[idx] == 0){
         return;
@@ -184,7 +184,7 @@ __global__ void ColoringGreedyFF_k::update_coloring_GPU(const uint32_t numNodes,
 }
 
 //  Kernel that searches nodes flagge as uncolored; if even one of them is there,
-//the bool pointed by <uncolored_nodes> is set to true.
+// the bool pointed by <uncolored_nodes> is set to true.
 // Used as a way to update the state of the loop of the algorithm.
 __global__ void ColoringGreedyFF_k::check_uncolored_nodes(const uint32_t numNodes, const uint32_t* coloring, bool* uncolored_nodes){
     uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -199,41 +199,38 @@ __global__ void ColoringGreedyFF_k::check_uncolored_nodes(const uint32_t numNode
 }
 
 //  This method is implemented by translating what was already done in coloringLuby.cu
-//and without filling a Coloring on device
+// and without filling a Coloring on device
 template<typename nodeW, typename edgeW>
 void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
 
     //  Since we already use 0 as an "uncolored" identifier, there's no need to do
-    //what coloringLuby.cu does on lines colClass (lines 93-to-103, see NB on line 95) 
+    // what coloringLuby.cu does on lines colClass (lines 93-to-103, see NB on line 95) 
     uint32_t *cumulColorClassesSize = new uint32_t[numColors + 1];
     memset(cumulColorClassesSize, 0, (numColors+1)*sizeof(uint32_t));
 
-    //Count how many nodes are colored with <col> and store them in the array, before...
+    //  Count how many nodes are colored with <col> and store them in the array, before...
     for(uint32_t col = 1; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = std::count(coloring_host.get(), coloring_host.get() + numNodes, col);
     }
 
     #ifdef TESTCOLORINGCORRECTNESS
     std::cout << "Color Classes:\n";
-    for(uint32_t col = 0; col < numColors + 1; ++col)
-    {
+    for(uint32_t col = 0; col < numColors + 1; ++col){
         std::cout << cumulColorClassesSize[col] << " ";
     }
     std::cout << "\n";
     #endif
     
-    //... you accumulate them in place
+    // ... you accumulate them in place
     // NOTE: index 0 is skipped, and we can start from 2 because cumulColorClassesSize[0] = 0
-    for(uint32_t col = 2; col < numColors + 1; ++col)
-    {
+    for(uint32_t col = 2; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = cumulColorClassesSize[col] + cumulColorClassesSize[col-1];
     }
     
     //DEBUG CORRECTNESS, BRUTE FORCE
     #ifdef TESTCOLORINGCORRECTNESS
     std::cout << "Cumulative Sizes of Color Classes:\n";
-    for(uint32_t col = 0; col < numColors + 1; ++col)
-    {
+    for(uint32_t col = 0; col < numColors + 1; ++col){
         std::cout << cumulColorClassesSize[col] << " ";
     }
     std::cout << "\n";
@@ -303,7 +300,9 @@ void ColoringGreedyFF<nodeW, edgeW>::saveStats(size_t iteration, float duration,
     }
     float mean = std::accumulate(std::begin(histogram), std::end(histogram), 0) / static_cast<float>(numColors);
 
-    //  Personal note: C++14 doesn't have transform_reduce, I fear 
+    //  Personal note: C++14 doesn't have transform_reduce, I fear,
+    // so the following cannot be compiled:
+    // 
     // auto distance_to_mean = [&](uint32_t value){
     //     return (value - mean) * (value - mean);
     // };

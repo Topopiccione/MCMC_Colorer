@@ -139,10 +139,21 @@ int main(int argc, char *argv[]) {
 			balanced.run();
 			duration = (std::clock() - start) / static_cast<double>(CLOCKS_PER_SEC);
 
-			LOG(TRACE) << TXT_BIYLW << "Vertex-centric First Fit rebalancing - number of colors: " << balanced.getColoring()->nCol << TXT_NORML;
-			LOG(TRACE) << TXT_BIYLW << "Vertex-centric First Fit rebalancing - elapsed time: " << duration << TXT_NORML;
-			std::cout << "Vertex-centric First Fit rebalancing - number of colors: " << balanced.getColoring()->nCol << std::endl;
-			std::cout << "Vertex-centric First Fit rebalancing - elapsed time: " << duration << std::endl;
+			LOG(TRACE) << TXT_BIYLW << "Vertex-centric First Fit rebalancing after Greedy FF coloring - number of colors: " << balanced.getColoring()->nCol << TXT_NORML;
+			LOG(TRACE) << TXT_BIYLW << "Vertex-centric First Fit rebalancing after Greedy FF coloring - elapsed time: " << duration << TXT_NORML;
+			std::cout << "Vertex-centric First Fit rebalancing after Greedy FF coloring - number of colors: " << balanced.getColoring()->nCol << std::endl;
+			std::cout << "Vertex-centric First Fit rebalancing after Greedy FF coloring - elapsed time: " << duration << std::endl;
+
+			//Saving logs
+			std::ofstream rebalancedFileLog;
+			rebalancedFileLog.open(outDir + "/" + commandLine.graphName + "-VFF-" + std::to_string(i) + ".log");
+			balanced.saveStats(i, duration, rebalancedFileLog);
+			rebalancedFileLog.close();
+
+			std::ofstream rebalancedFileColor;
+			rebalancedFileColor.open(outDir + "/" + commandLine.graphName + "-VFF-" + std::to_string(i) + "-colors.txt");
+			balanced.saveColor(rebalancedFileColor);
+			rebalancedFileColor.close();
 		}
 
 		// TODO: Some of these should be made user-definable from command line
