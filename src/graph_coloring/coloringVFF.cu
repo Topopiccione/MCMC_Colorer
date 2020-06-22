@@ -21,12 +21,31 @@
 template<typename nodeW, typename edgeW>
 ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) : 
     Colorer<nodeW, edgeW>(graph_d), graphStruct_device(graph_d->getStruct()),
-    numNodes(graph_d->getStruct()->nNodes), numColors(0) 
-{
+    numNodes(graph_d->getStruct()->nNodes), numColors(0) {
 
+    //  We need to have an array representing the colors of each node
+    // both on host...
     coloring_host = std::unique_ptr<uint32_t[]>(new uint32_t[numNodes]);
+    
+    // ...and on device
+    cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));                     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    //  We are assuming getMaxNodeDeg() returns a valid result here
+    maxColors = this->graph->getMaxNodeDeg() + 1;   
+
+    //  Data structures initialization
+    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                           cudaCheck(cudaStatus, __FILE__, __LINE__); 
+    cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));                       cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));         cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));                             cudaCheck(cudaStatus, __FILE__, __LINE__);
+
+    //  Array of bools corresponding to each node; used in balancing
+    // If a node is flagged, it is in the set of nodes of the unbalanced bins
+    cudaStatus = cudaMalloc((void**)&unbalanced_nodes, sizeof(bool) * numNodes * UNBALANCED_HISTORY);   cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMalloc((void**)&unbalanced_d, sizeof(bool));                                       cudaCheck(cudaStatus, __FILE__, __LINE__);
+
+    //  Note that binCumulSizes_device is initialized later since it needs 
+    // results from coloring to be allocated; it gets freed in the destructor.
 
     threadsPerBlock = dim3(128, 1, 1);
     blocksPerGrid = dim3((numNodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
@@ -36,6 +55,14 @@ ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) :
 template<typename nodeW, typename edgeW>
 ColoringVFF<nodeW, edgeW>::~ColoringVFF(){
     cudaStatus = cudaFree(coloring_device);     cudaCheck(cudaStatus, __FILE__, __LINE__);
+
+    cudaStatus = cudaFree(temp_coloring);                                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(forbiddenColors);                                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(uncolored_nodes_device);                                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
+
+    cudaStatus = cudaFree(unbalanced_nodes);                                                            cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(binCumulSizes_device);                                                        cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(unbalanced_d);                                                                cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     if(this->coloring != nullptr)
         free(this->coloring);
@@ -54,24 +81,6 @@ void ColoringVFF<nodeW, edgeW>::run(){
 //  Using run() implementation from ColoringGreedyFF for coloring
 template <typename nodeW, typename edgeW>
 void ColoringVFF<nodeW, edgeW>::run_coloring(){
-    //  We are assuming getMaxNodeDeg() returns a valid result here
-    uint32_t maxColors = this->graph->getMaxNodeDeg() + 1;   
-
-    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));           
-    cudaCheck(cudaStatus, __FILE__, __LINE__); 
-
-    uint32_t* temp_coloring;
-    cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));       
-    cudaCheck(cudaStatus, __FILE__, __LINE__);
-
-    uint32_t* forbiddenColors;
-    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));
-    cudaCheck(cudaStatus, __FILE__, __LINE__);
-
-    bool* uncolored_nodes_device;
-    cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));
-    cudaCheck(cudaStatus, __FILE__, __LINE__)
-
     bool uncolored_nodes = true;
     while(uncolored_nodes){
         //  Tentative coloring on the whole graph, in parallel
@@ -99,10 +108,6 @@ void ColoringVFF<nodeW, edgeW>::run_coloring(){
         cudaStatus = cudaMemcpy(&uncolored_nodes, uncolored_nodes_device, sizeof(bool), cudaMemcpyDeviceToHost);    cudaCheck(cudaStatus, __FILE__, __LINE__);
     }
 
-    cudaStatus = cudaFree(temp_coloring);                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(forbiddenColors);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(uncolored_nodes_device);                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
-
     cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
@@ -118,36 +123,25 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     //  Calculate gamma
     const uint32_t gamma_threshold = numNodes / numColors;
 
-    //  Allocation of resources for the algorithm
-    //  Array of bools corresponding to each node; if a node is flagged, it is 
-    // in the set of nodes of the unbalanced bins
-    bool* unbalanced_nodes;
-    cudaStatus = cudaMalloc((void**)&unbalanced_nodes, sizeof(bool) * numNodes * UNBALANCED_HISTORY);
-    cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes * UNBALANCED_HISTORY);          //Note: it is initialized to false
+    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes * UNBALANCED_HISTORY);          // Note: it is initialized to false
     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     //  Coloring array, temporary; used for parallelization and avoiding data races
-    uint32_t* temp_coloring;
-    cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));       
-    cudaCheck(cudaStatus, __FILE__, __LINE__);
+    // Note memory was allocated in constructor, so it has to be reset now
     cudaStatus = cudaMemcpy(temp_coloring, coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToDevice);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    //  Matrix of colors per array (from 0 to numColors); a pointer to the first element
-    // is passed to <tentative_rebalancing> kernel, and each thread will dereference only
-    // a part of it (numColors + 1 elements per node).
-    //  Personal note on performance: the paper that inspired this uses an array that is 
-    // private to each node, and it considers it as an unsigned int array; I implemented it
-    // as the paper did, but better performances and a lower memory impact could be achieved
-    // with a matrix of boolean values.
-    uint32_t* forbiddenColors;
-    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * (numColors+1) * sizeof(uint32_t)); // numColors+1 since we need to consider the 0 
+     
+    //  Matrix of colors per array (from 0 to numColors); a pointer to the first element                //  Personal note on performance: the paper that inspired this uses an array that is
+    // is passed to <tentative_rebalancing> kernel, and each thread will dereference only               // private to each node, and it considers it as an unsigned int array; I implemented it
+    // a part of it (numColors + 1 elements per node).                                                  // as the paper did, but better performances and a lower memory impact could be achieved
+                                                                                                        // with a matrix of boolean values.
+    
+    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * (numColors+1) * sizeof(uint32_t));     // numColors+1 since we need to consider the 0 
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     //  Array of cumulative sizes of the color classes/bins
     // Note that it is initialized to the value obtained from the coloring in the previous step
-    uint32_t* binCumulSizes_device;
     cudaStatus = cudaMalloc((void**)&binCumulSizes_device, sizeof(uint32_t) * (numColors + 1));
     cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMemcpy(binCumulSizes_device, this->coloring->cumulSize, sizeof(uint32_t) * (numColors + 1), cudaMemcpyHostToDevice);
@@ -163,10 +157,9 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     
     //  Define and initialize a bool that will allow to loop until rebalancing is completed
     bool unbalanced;
-    bool* unbalanced_d;
-    cudaStatus = cudaMalloc((void**)&unbalanced_d, sizeof(bool));                               cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMemset(unbalanced_d, 0, sizeof(bool));                                     cudaCheck(cudaStatus, __FILE__, __LINE__);
-    
+
+    //  Rebalancing starts here, properly.
     //  Computing <unbalanced_nodes> in order to check if there is even one node that is still considered unbalanced
     BalancingVFF_k::is_unbalanced<<<blocksPerGrid, threadsPerBlock>>>(numNodes, unbalanced_nodes, unbalanced_d);
     cudaDeviceSynchronize();
@@ -227,19 +220,12 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
         cudaStatus = cudaMemcpy(&unbalanced, unbalanced_d, sizeof(bool), cudaMemcpyDeviceToHost);       cudaCheck(cudaStatus, __FILE__, __LINE__);
     }
 
-    //  Free what was allocated
-    cudaStatus = cudaFree(unbalanced_nodes);                                                            cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(temp_coloring);                                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(forbiddenColors);                                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(unbalanced_d);                                                                cudaCheck(cudaStatus, __FILE__, __LINE__);
-
     cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     //  Update coloring data
     cudaStatus = cudaMemcpy(this->coloring->cumulSize, binCumulSizes_device, sizeof(uint32_t) * (numColors + 1), cudaMemcpyDeviceToHost);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(binCumulSizes_device);                                                        cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     this->coloring->colClass = coloring_host.get();         
     //  Note that this->coloring->nCol shouldn't be updated 

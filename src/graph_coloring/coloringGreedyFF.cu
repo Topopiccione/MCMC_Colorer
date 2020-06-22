@@ -22,6 +22,15 @@ ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
     // ...and on device
     cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
+    //  We are assuming getMaxNodeDeg() returns a valid result here
+    maxColors = this->graph->getMaxNodeDeg() + 1;   
+
+    //  Data structures initialization
+    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                       cudaCheck(cudaStatus, __FILE__, __LINE__); 
+    cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));                   cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));                         cudaCheck(cudaStatus, __FILE__, __LINE__);
+
     //  We setup our grid to be divided in blocks of 128 threads 
     threadsPerBlock = dim3(128, 1, 1);
     blocksPerGrid = dim3((numNodes + threadsPerBlock.x - 1)/threadsPerBlock.x, 1, 1);
@@ -31,29 +40,18 @@ ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
 template<typename nodeW, typename edgeW>
 ColoringGreedyFF<nodeW, edgeW>::~ColoringGreedyFF(){
     //  We only need to deallocate what we allocated in the constructor
-    cudaStatus = cudaFree(coloring_device);     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(coloring_device);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
     
+    cudaStatus = cudaFree(temp_coloring);                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(forbiddenColors);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(uncolored_nodes_device);                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
+
     if(this->coloring != nullptr)                 //Note: this may be unnecessary
         free(this->coloring);
 }
 
 template<typename nodeW, typename edgeW>
 void ColoringGreedyFF<nodeW, edgeW>::run(){
-    //  We are assuming getMaxNodeDeg() returns a valid result here
-    uint32_t maxColors = this->graph->getMaxNodeDeg() + 1;   
-
-    //  Data structures initialization
-    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                       cudaCheck(cudaStatus, __FILE__, __LINE__); 
-
-    uint32_t* temp_coloring;
-    cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));                   cudaCheck(cudaStatus, __FILE__, __LINE__);
-
-    uint32_t* forbiddenColors;
-    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
-
-    bool* uncolored_nodes_device;
-    cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));                         cudaCheck(cudaStatus, __FILE__, __LINE__)
-
     bool uncolored_nodes = true;
     while(uncolored_nodes){
         //  Tentative coloring on the whole graph, in parallel
@@ -80,10 +78,6 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
         //  Note: we need to bring the value on host memory for the while loop
         cudaStatus = cudaMemcpy(&uncolored_nodes, uncolored_nodes_device, sizeof(bool), cudaMemcpyDeviceToHost);    cudaCheck(cudaStatus, __FILE__, __LINE__);
     }
-
-    cudaStatus = cudaFree(temp_coloring);                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(forbiddenColors);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(uncolored_nodes_device);                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
