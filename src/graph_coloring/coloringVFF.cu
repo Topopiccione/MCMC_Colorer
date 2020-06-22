@@ -5,6 +5,7 @@
 #include "GPUutils/GPUutils.h"          //is required in order to use cudaCheck          
 #include <thrust/count.h>               //is used to count colors in the coloring
 #include <thrust/scan.h>                //is used for inclusive scan during the balancing loop
+#include <thrust/copy.h>                //is used for updating the array of unbalanced nodes
 #include <thrust/execution_policy.h>    //specifies where the data are and which policy some thrust functions should use 
 
 //  These may be used for thrust::any_of, in case you'd want to switch 
@@ -13,7 +14,7 @@
 //      #include <thrust/functional.h>
 
 #define BIN_SIZE(cumulBinSize, binIndex) (cumulBinSize[binIndex] - cumulBinSize[binIndex-1])
-
+#define UNBALANCED_HISTORY 4
 #define DEBUGGING
 
 //  Constructor - initialization as in ColoringGreedyFF
@@ -121,9 +122,9 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     //  Array of bools corresponding to each node; if a node is flagged, it is 
     // in the set of nodes of the unbalanced bins
     bool* unbalanced_nodes;
-    cudaStatus = cudaMalloc((void**)&unbalanced_nodes, sizeof(bool) * numNodes);
+    cudaStatus = cudaMalloc((void**)&unbalanced_nodes, sizeof(bool) * numNodes * UNBALANCED_HISTORY);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes);          //Note: it is initialized to false
+    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes * UNBALANCED_HISTORY);          //Note: it is initialized to false
     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     //  Coloring array, temporary; used for parallelization and avoiding data races
@@ -213,6 +214,14 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
         cudaStatus = cudaMemset(unbalanced_d, 0, sizeof(bool));                                         cudaCheck(cudaStatus, __FILE__, __LINE__);
         cudaDeviceSynchronize();
         BalancingVFF_k::is_unbalanced<<<blocksPerGrid, threadsPerBlock>>>(numNodes, unbalanced_nodes, unbalanced_d);
+        cudaDeviceSynchronize();
+
+        for(uint32_t i = (UNBALANCED_HISTORY - 1); i > 0; --i){
+            thrust::copy_n(thrust::device, unbalanced_nodes + (i-1) * numNodes, numNodes, unbalanced_nodes + i * numNodes);
+            cudaDeviceSynchronize();
+        }
+
+        BalancingVFF_k::ensure_not_looping<<<1, 1>>>(numNodes, unbalanced_nodes, UNBALANCED_HISTORY, unbalanced_d);
         cudaDeviceSynchronize();
 
         cudaStatus = cudaMemcpy(&unbalanced, unbalanced_d, sizeof(bool), cudaMemcpyDeviceToHost);       cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -401,6 +410,31 @@ __global__ void BalancingVFF_k::solve_conflicts(const uint32_t numNodes, const u
 //     }
 // }
 
+__global__ void BalancingVFF_k::ensure_not_looping(const uint32_t numNodes, bool* unbalanced_nodes, uint32_t store_dim, bool* output){
+    if(*output == false){
+        return;
+    }
+    
+    if(threadIdx.x > 0 || blockIdx.x > 0){
+        return;
+    }
+
+    for(uint32_t node = 0; node < numNodes; ++node){
+        for(uint32_t offset = 1; offset < store_dim; ++offset){
+            if(unbalanced_nodes[node] != unbalanced_nodes[node + numNodes * offset]){
+                return;
+            }
+        }
+    }
+    
+    #ifdef DEBUGGING
+    printf("WARNING >>> It was looping");
+    #endif
+    *output = false;
+}
+
+
+//////////////////////////////     LOGGING     //////////////////////////////
 template<typename nodeW, typename edgeW>
 void ColoringVFF<nodeW, edgeW>::saveStats(size_t iteration, float duration, std::ofstream &file){
     file << "Greedy FF Colorer followed by Vertex First Fit Rebalancing - GPU implementation - Report\n";
@@ -422,7 +456,7 @@ void ColoringVFF<nodeW, edgeW>::saveStats(size_t iteration, float duration, std:
     uint32_t* cumul = this->coloring->cumulSize;                //  We use the structure that is available at this point of the execution
     for(uint32_t i = 1; i < numColors + 1; ++i){                //  std::adjacent_difference but with printing
         histogram[i-1] = cumul[i] - cumul[i-1];
-        file << i << ": " << histogram[i-1] << "\n";
+        file << i << "\t: " << histogram[i-1] << "\n";
     }
     float mean = std::accumulate(std::begin(histogram), std::end(histogram), 0) / static_cast<float>(numColors);
     float variance = 0;

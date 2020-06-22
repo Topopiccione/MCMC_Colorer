@@ -296,7 +296,7 @@ void ColoringGreedyFF<nodeW, edgeW>::saveStats(size_t iteration, float duration,
     uint32_t* cumul = this->coloring->cumulSize;                //  We use the structure that is available at this point of the execution
     for(uint32_t i = 1; i < numColors + 1; ++i){                //  std::adjacent_difference but with printing
         histogram[i-1] = cumul[i] - cumul[i-1];
-        file << i << ": " << histogram[i-1] << "\n";
+        file << i << "\t: " << histogram[i-1] << "\n";
     }
     float mean = std::accumulate(std::begin(histogram), std::end(histogram), 0) / static_cast<float>(numColors);
 

@@ -55,5 +55,7 @@ namespace BalancingVFF_k{
     __global__ void solve_conflicts(const uint32_t numNodes, const uint32_t* coloring, const node* neighs, const node_sz* cumulDegs, bool* unbalanced_nodes);
 
     //  NOTE 1: This function is currently unused  
-    //  __global__ void cumulate_bins(const uint32_t numColors, uint32_t* binCumulSizes);       //NOTE 2: to be called with one thread
+    //  __global__ void cumulate_bins(const uint32_t numColors, uint32_t* binCumulSizes);                                       //NOTE 2: to be called with one thread
+
+    __global__ void ensure_not_looping(const uint32_t numNodes, bool* unbalanced_nodes, uint32_t store_dim, bool* output);      //NOTE: to be called with one thread
 };
