@@ -46,6 +46,8 @@ class ColoringVFF : public Colorer<nodeW, edgeW>{
     bool*       unbalanced_nodes;
     uint32_t*   binCumulSizes_device;
     bool*       unbalanced_d;
+    bool        not_looping;
+    bool*       not_looping_d;
 
     void run_coloring();
     void run_balancing();

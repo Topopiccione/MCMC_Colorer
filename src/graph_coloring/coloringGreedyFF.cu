@@ -8,6 +8,7 @@
 #include <algorithm>                    //count is used for conversion to standard notation
 #include <numeric>                      //transform_reduce is used for stats
 
+//#define TESTCOLORINGCORRECTNESS
 
 //  Constructor implementation
 template<typename nodeW, typename edgeW>

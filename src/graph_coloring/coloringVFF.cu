@@ -14,8 +14,8 @@
 //      #include <thrust/functional.h>
 
 #define BIN_SIZE(cumulBinSize, binIndex) (cumulBinSize[binIndex] - cumulBinSize[binIndex-1])
-#define UNBALANCED_HISTORY 4
-#define DEBUGGING
+#define UNBALANCED_HISTORY 10
+//#define DEBUGGING
 
 //  Constructor - initialization as in ColoringGreedyFF
 template<typename nodeW, typename edgeW>
@@ -43,6 +43,8 @@ ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) :
     // If a node is flagged, it is in the set of nodes of the unbalanced bins
     cudaStatus = cudaMalloc((void**)&unbalanced_nodes, sizeof(bool) * numNodes * UNBALANCED_HISTORY);   cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&unbalanced_d, sizeof(bool));                                       cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMalloc((void**)&not_looping_d, sizeof(bool));                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
+
 
     //  Note that binCumulSizes_device is initialized later since it needs 
     // results from coloring to be allocated; it gets freed in the destructor.
@@ -63,6 +65,7 @@ ColoringVFF<nodeW, edgeW>::~ColoringVFF(){
     cudaStatus = cudaFree(unbalanced_nodes);                                                            cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(binCumulSizes_device);                                                        cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(unbalanced_d);                                                                cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(not_looping_d);                                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     if(this->coloring != nullptr)
         free(this->coloring);
@@ -76,6 +79,8 @@ void ColoringVFF<nodeW, edgeW>::run(){
     convert_to_standard_notation();
 
     run_balancing();
+
+    convert_to_standard_notation();
 } 
 
 //  Using run() implementation from ColoringGreedyFF for coloring
@@ -119,11 +124,10 @@ void ColoringVFF<nodeW, edgeW>::run_coloring(){
 
 template<typename nodeW, typename edgeW>
 void ColoringVFF<nodeW, edgeW>::run_balancing(){
-
     //  Calculate gamma
     const uint32_t gamma_threshold = numNodes / numColors;
 
-    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes * UNBALANCED_HISTORY);          // Note: it is initialized to false
+    cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes * UNBALANCED_HISTORY);         // Note: it is initialized to false
     cudaCheck(cudaStatus, __FILE__, __LINE__);
     
     //  Coloring array, temporary; used for parallelization and avoiding data races
@@ -157,7 +161,9 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     
     //  Define and initialize a bool that will allow to loop until rebalancing is completed
     bool unbalanced;
+    not_looping = true;
     cudaStatus = cudaMemset(unbalanced_d, 0, sizeof(bool));                                     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaMemset(not_looping_d, 1, sizeof(bool));                                    cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     //  Rebalancing starts here, properly.
     //  Computing <unbalanced_nodes> in order to check if there is even one node that is still considered unbalanced
@@ -178,7 +184,7 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     #endif
     
     //  Until there is even one of the nodes flagged as unbalanced...
-    while(unbalanced){
+    while(unbalanced && not_looping){
         cudaStatus = cudaMemset(forbiddenColors, 0, numNodes * (numColors + 1) * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
         cudaDeviceSynchronize();
 
@@ -214,31 +220,39 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
             cudaDeviceSynchronize();
         }
 
-        BalancingVFF_k::ensure_not_looping<<<1, 1>>>(numNodes, unbalanced_nodes, UNBALANCED_HISTORY, unbalanced_d);
+        BalancingVFF_k::ensure_not_looping<<<1, 1>>>(numNodes, unbalanced_nodes, UNBALANCED_HISTORY, not_looping_d);
         cudaDeviceSynchronize();
 
         cudaStatus = cudaMemcpy(&unbalanced, unbalanced_d, sizeof(bool), cudaMemcpyDeviceToHost);       cudaCheck(cudaStatus, __FILE__, __LINE__);
+        cudaStatus = cudaMemcpy(&not_looping, not_looping_d, sizeof(bool), cudaMemcpyDeviceToHost);     cudaCheck(cudaStatus, __FILE__, __LINE__);
     }
 
-    cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
-    cudaCheck(cudaStatus, __FILE__, __LINE__);
-    
-    //  Update coloring data
-    cudaStatus = cudaMemcpy(this->coloring->cumulSize, binCumulSizes_device, sizeof(uint32_t) * (numColors + 1), cudaMemcpyDeviceToHost);
-    cudaCheck(cudaStatus, __FILE__, __LINE__);
-    
-    this->coloring->colClass = coloring_host.get();         
-    //  Note that this->coloring->nCol shouldn't be updated 
-    // since the number of used colors should stay the same
-
-    #ifdef DEBUGGING
-    std::cout << "\nNew sizes of the bins are:\n";
-    for(int i = 1; i <= numColors; ++i){
-        std::cout << *(this->coloring->cumulSize + i) - *(this->coloring->cumulSize + i - 1) << "\t";
+    if(not_looping == false){
+        std::cout<< "Rebalancing failed. Coloring resetted to Greedy First Fit.\n\n";
     }
-    std::cout << "\n---END DEBUGGING---\n";
-    #endif  
-}
+    else{
+        cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
+        cudaCheck(cudaStatus, __FILE__, __LINE__);
+        
+        //  Update coloring data
+        cudaStatus = cudaMemcpy(this->coloring->cumulSize, binCumulSizes_device, sizeof(uint32_t) * (numColors + 1), cudaMemcpyDeviceToHost);
+        cudaCheck(cudaStatus, __FILE__, __LINE__);
+        
+        this->coloring->colClass = coloring_host.get(); 
+
+        //  Note that this->coloring->nCol shouldn't be updated 
+        // since the number of used colors should stay the same
+    
+        #ifdef DEBUGGING
+        std::cout << "\nNew sizes of the bins are:\n";
+        for(int i = 1; i <= numColors; ++i){
+            std::cout << *(this->coloring->cumulSize + i) - *(this->coloring->cumulSize + i - 1) << "\t";
+        }
+        std::cout << "\n---END DEBUGGING---\n";
+        #endif
+    }
+    }
+
 
 ////////////////////////////// BASE CLASSES FUNCTIONS //////////////////////////////
 
@@ -258,6 +272,38 @@ void ColoringVFF<nodeW, edgeW>::convert_to_standard_notation(){
     for(uint32_t col = 2; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = cumulColorClassesSize[col] + cumulColorClassesSize[col-1];
     }
+
+    #ifdef DEBUGGING
+    std::cout << "Cumulative Sizes of Color Classes:\n";
+    for(uint32_t col = 0; col < numColors + 1; ++col){
+        std::cout << cumulColorClassesSize[col] << " ";
+    }
+    std::cout << "\n";
+
+	std::cout << "Test colorazione attivato!\n";
+    
+    uint32_t* test_coloring = coloring_host.get();
+    std::unique_ptr<node_sz[]> cumulDegs( new node_sz[graphStruct_device->nNodes + 1]);
+	std::unique_ptr<node[]>  neighs( new node[graphStruct_device->nEdges] );
+	cudaStatus = cudaMemcpy( cumulDegs.get(), graphStruct_device->cumulDegs, (graphStruct_device->nNodes + 1) * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
+	cudaStatus = cudaMemcpy( neighs.get(),    graphStruct_device->neighs,    graphStruct_device->nEdges       * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
+    
+    uint32_t offset;
+    uint32_t size;
+    uint32_t neighbor;
+    for(uint32_t i = 0; i < numNodes; ++i){
+        size    = cumulDegs[i+1] - cumulDegs[i];
+        offset  = cumulDegs[i];
+        
+        for(uint32_t j = 0; j < size; ++j){
+            neighbor = neighs[offset + j];
+            if(test_coloring[i] == test_coloring[neighbor]){
+                std::cout << "NO! Il nodo " << i << " e il nodo " << neighbor << " sono vicini e colorati entrambi come " << test_coloring[i] << "\n";
+                abort();
+            }
+        }
+    }
+    #endif
 
     this->coloring = new Coloring();
     this->coloring->nCol = numColors;
@@ -413,9 +459,7 @@ __global__ void BalancingVFF_k::ensure_not_looping(const uint32_t numNodes, bool
         }
     }
     
-    #ifdef DEBUGGING
-    printf("WARNING >>> It was looping");
-    #endif
+    printf("WARNING >>> It was looping. Results will be unconsistent.\nResetting to Greedy First Fit coloring...\n");
     *output = false;
 }
 
@@ -434,6 +478,7 @@ void ColoringVFF<nodeW, edgeW>::saveStats(size_t iteration, float duration, std:
     file << "EXECUTION INFO\n";
     file << "Repetition: " << iteration << "\n";
     file << "Execution time: " << duration << "\n";
+    file << "Valid result? (boolean) " << not_looping << "\n";
     file << "-------------------------------------------\n";
     file << "Number of colors: " << numColors << "\n";
     file << "Color histogram: \n";
