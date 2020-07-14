@@ -3,6 +3,7 @@ buildDebug
 test_01
 src/zlib/*.h
 private
+tested/
 
 #Visual Studio
 .vs/
@@ -10,7 +11,7 @@ private
 **/x64/*
 **/x86/*
 **/vc140.pdb
-
+.vscode/
 **/*.txt
 !txt/*.txt
 !txt/results/*/*.txt

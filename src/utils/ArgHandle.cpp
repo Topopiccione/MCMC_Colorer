@@ -26,7 +26,7 @@ void ArgHandle::processCommandLine() {
 
 	printLogo();
 
-	char const *short_options = "g:o:s:n:1:2:3:k:r:t:l:R:S:v:h:M";
+	char const *short_options = "g:o:s:n:1:2:3:4:5:k:r:t:l:R:S:v:h:M";
 	const struct option long_options[] = {
 
 		{ "graph",			required_argument, 0, 'g' },
@@ -38,6 +38,9 @@ void ArgHandle::processCommandLine() {
 		{ "mcmccpu",		no_argument,	   0, '1' },
 		{ "mcmcgpu",		no_argument,	   0, '2' },
 		{ "lubygpu",		no_argument,	   0, '3' },
+		
+		{ "greedyff",		no_argument,	   0, '4' },
+		{ "rebalanced",		no_argument,	   0, '5' },
 
 		{ "nCol",			required_argument, 0, 'k' },
 		{ "numColRatio",	required_argument, 0, 'r' },
@@ -118,10 +121,18 @@ void ArgHandle::processCommandLine() {
 				lubygpu = true;
 				break;
 
+			case '4':
+				greedyff = true;
+				break;
+
+			case '5':
+				rebalanced_greedyff = true;
+				break;
 
 			case 'k':
 				try {
 					int temp = std::stoi( optarg );
+					std::cout << temp;
 					if (temp < 1) {
 						std::cout << TXT_BIRED << "nCol must be a positive integer." << TXT_NORML << std::endl;
 						exit( -1 );
@@ -235,7 +246,7 @@ void ArgHandle::processCommandLine() {
 		exit(-1);
 	}
 
-	if ((!mcmccpu) && (!mcmcgpu) && (!lubygpu)) {
+	if ((!mcmccpu) && (!mcmcgpu) && (!lubygpu) && (!greedyff) && (!rebalanced_greedyff)) {
 		std::cout << TXT_BIYLW << "No coloring algorithm specified: enabling MCMC CPU by default (--mcmccpu | --mcmcgpu | --lubygpu)" << TXT_NORML << std::endl;
 		mcmccpu = true;
 	}

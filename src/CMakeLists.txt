@@ -81,6 +81,8 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph_coloring/coloringMCMC_balance.cu"
 					"graph_coloring/coloringMCMC_utils.cu"
 					"graph_coloring/coloringMCMC_prints.cu"
+					"graph_coloring/coloringGreedyFF.cu"
+					"graph_coloring/coloringVFF.cu"
 					"main.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
 SET(LOGGINGPP		"easyloggingpp/easylogging++.cc")
