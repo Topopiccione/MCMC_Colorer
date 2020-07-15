@@ -2,57 +2,39 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "coloringMCMC.h"
 
-#if defined(DISTRIBUTION_LINE_INIT) || defined(COLOR_DECREASE_LINE) || defined(COLOR_BALANCE_LINE)
 __global__ void ColoringMCMC_k::initDistributionLine(float nCol, float denom, float lambda, float * probDistributionLine_d) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nCol)
 		return;
 
 	probDistributionLine_d[idx] = (float)(nCol - lambda * idx) / denom;
 	//probDistributionLine_d[idx] = (float)(lambda * idx) / denom;
 }
-#endif // DISTRIBUTION_LINE_INIT || COLOR_DECREASE_LINE
 
-#if defined(DISTRIBUTION_EXP_INIT) || defined(COLOR_DECREASE_EXP) || defined(COLOR_BALANCE_EXP)
+
 __global__ void ColoringMCMC_k::initDistributionExp(float nCol, float denom, float lambda, float * probDistributionExp_d) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nCol)
 		return;
 
 	probDistributionExp_d[idx] = exp(-lambda * idx) / denom;
 }
-#endif // DISTRIBUTION_EXP_INIT || COLOR_DECREASE_EXP || COLOR_BALANCE_EXP
 
-/**
-* Set coloring_d with random colors
-*/
-#ifdef STANDARD_INIT
+
 __global__ void ColoringMCMC_k::initColoring(uint32_t nnodes, uint32_t * coloring_d, float nCol, curandState * states) {
-
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nnodes)
 		return;
 
 	float randnum = curand_uniform(&states[idx]);
-
 	int color = (int)(randnum * nCol);
-
 	coloring_d[idx] = color;
 	//coloring_d[idx] = 0;
 }
-#endif // STANDARD_INIT
 
-/**
-* Set coloring_d with random colors
-*/
-#if defined(DISTRIBUTION_LINE_INIT) || defined(DISTRIBUTION_EXP_INIT)
+
 __global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, uint32_t * coloring_d, float nCol, float * probDistribution_d, curandState * states) {
-
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nnodes)
 		return;
 
@@ -60,8 +42,7 @@ __global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, ui
 
 	int color = 0;
 	float threshold = 0;
-	while (threshold < randnum)
-	{
+	while (threshold < randnum) {
 		threshold += probDistribution_d[color];
 		color++;
 	}
@@ -78,22 +59,18 @@ __global__ void ColoringMCMC_k::initColoringWithDistribution(uint32_t nnodes, ui
 
 	coloring_d[idx] = color - 1;
 }
-#endif // DISTRIBUTION_LINE_INIT
 
-#if defined(COLOR_BALANCE_DYNAMIC_DISTR)
+
 __global__ void ColoringMCMC_k::genDynamicDistribution(float * probDistributionDynamic_d, uint32_t nCol, uint32_t nnodes, uint32_t * statsColors_d) {
-
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nCol)
 		return;
 
 	probDistributionDynamic_d[idx] = (1 - ((float)statsColors_d[idx] / (float)nnodes)) / (float)(nCol - 1);
 }
-#endif // COLOR_BALANCE_DYNAMIC_DISTR
+
 
 __global__ void ColoringMCMC_k::tailCutting(uint32_t nnodes, col_sz nCol, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs, bool * colorsChecker_d, int conflictCounter, uint32_t * conflictCounter_d, uint32_t * orderedIndex_d) {
-
 	if (threadIdx.x + blockDim.x * blockIdx.x >= 1)
 		return;
 
@@ -125,7 +102,6 @@ __global__ void ColoringMCMC_k::tailCutting(uint32_t nnodes, col_sz nCol, uint32
 
 __global__ void ColoringMCMC_k::conflictCounter(uint32_t nnodes, uint32_t * conflictCounter_d, uint32_t * coloring_d, node_sz * cumulDegs, node * neighs) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nnodes)
 		return;
 
@@ -142,9 +118,7 @@ __global__ void ColoringMCMC_k::conflictCounter(uint32_t nnodes, uint32_t * conf
 	conflictCounter_d[idx] = conflicts;
 }
 
-/**
-* Parallel sum reduction inside a single warp
-*/
+
 __device__ void ColoringMCMC_k::warpReduction(volatile float *sdata, uint32_t tid, uint32_t blockSize) {
 	if (blockSize >= 64) sdata[tid] += sdata[tid + 32];
 	if (blockSize >= 32) sdata[tid] += sdata[tid + 16];
@@ -161,9 +135,7 @@ __device__ void ColoringMCMC_k::warpReduction(volatile float *sdata, uint32_t ti
 * refs: https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
 */
 __global__ void ColoringMCMC_k::sumReduction(uint32_t n, float * conflictCounter_d) {
-
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= n)
 		return;
 
@@ -184,20 +156,17 @@ __global__ void ColoringMCMC_k::sumReduction(uint32_t n, float * conflictCounter
 	__syncthreads();
 
 	//useless for blocks of dim <= 64
-	if (blockSize >= 512)
-	{
+	if (blockSize >= 512) {
 		if (tid < 256)
 			sdata[tid] += sdata[tid + 256];
 		__syncthreads();
 	}
-	if (blockSize >= 256)
-	{
+	if (blockSize >= 256) {
 		if (tid < 128)
 			sdata[tid] += sdata[tid + 128];
 		__syncthreads();
 	}
-	if (blockSize >= 128)
-	{
+	if (blockSize >= 128) {
 		if (tid < 64)
 			sdata[tid] += sdata[tid + 64];
 		__syncthreads();
@@ -210,6 +179,7 @@ __global__ void ColoringMCMC_k::sumReduction(uint32_t n, float * conflictCounter
 	if (tid == 0)
 		conflictCounter_d[blockIdx.x] = sdata[0];
 }
+
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::calcConflicts(int &conflictCounter, uint32_t * coloring_d) {
@@ -227,25 +197,22 @@ void ColoringMCMC<nodeW, edgeW>::calcConflicts(int &conflictCounter, uint32_t * 
 		conflictCounter += conflictCounter_h[i];
 }
 
-/**
-* Apply logarithm to all values
-*/
+
 __global__ void ColoringMCMC_k::logarithmer(uint32_t nnodes, float * values) {
 	uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-
 	if (idx >= nnodes)
 		return;
 
+	// TODO: zio, qui si possono usare le istruzioni hw cuda!
 	values[idx] = log(values[idx]);
 }
 
-template<typename nodeW, typename edgeW>
-void ColoringMCMC<nodeW, edgeW>::calcStdDev(float &std, uint32_t	* col_d) {
 
+template<typename nodeW, typename edgeW>
+void ColoringMCMC<nodeW, edgeW>::calcStdDev(float &std, uint32_t * col_d) {
 	cuSts = cudaMemcpy(coloring_h, col_d, nnodes * sizeof(uint32_t), cudaMemcpyDeviceToHost); cudaCheck(cuSts, __FILE__, __LINE__);
 	memset(statsColors_h, 0, nnodes * sizeof(uint32_t));
-	for (int i = 0; i < nnodes; i++)
-	{
+	for (int i = 0; i < nnodes; i++) {
 		statsColors_h[coloring_h[i]]++;
 	}
 
@@ -259,6 +226,7 @@ void ColoringMCMC<nodeW, edgeW>::calcStdDev(float &std, uint32_t	* col_d) {
 
 	std = sqrt(variance);
 }
+
 
 template<typename nodeW, typename edgeW>
 void ColoringMCMC<nodeW, edgeW>::calcProbs() {
@@ -276,8 +244,7 @@ void ColoringMCMC<nodeW, edgeW>::calcProbs() {
 
 	pStar = 0;
 	p = 0;
-	for (int i = 0; i < blocksPerGrid_half.x; i++)
-	{
+	for (int i = 0; i < blocksPerGrid_half.x; i++) {
 		pStar += qStar_h[i];
 		p += q_h[i];
 	}

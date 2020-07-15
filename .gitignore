@@ -1,10 +1,10 @@
 build/*
 buildDebug
-easyloggingpp/easyloggingpp/*.cc
-easyloggingpp/easyloggingpp/*.h
 test_01
 src/zlib/*.h
 pyScripts/*
+private
+tested/
 
 #Visual Studio
 .vs/
@@ -12,7 +12,7 @@ pyScripts/*
 **/x64/*
 **/x86/*
 **/vc140.pdb
-
+.vscode/
 **/*.txt
 !txt/*.txt
 !txt/results/*/*.txt

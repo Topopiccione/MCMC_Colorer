@@ -7,7 +7,7 @@
 
 #include "graph/graph.h"
 #include "coloring.h"
-#include "easyloggingpp/easyloggingpp/easylogging++.h"
+#include "easyloggingpp/easylogging++.h"
 
 template<typename nodeW, typename edgeW>
 class ColoringMCMC_CPU : public Colorer<nodeW, edgeW> {
@@ -27,7 +27,8 @@ public:
 		const std::vector<uint32_t> & oldColoring, const std::vector<bool> & freeCols, const std::vector<bool> & newColoringViols,
 		std::vector<float> & qVect);
 	bool 			unlock_stall();
-	void 			saveStats( size_t iter, float duration, std::ofstream & outFile );
+	void 			saveStats(size_t iter, float duration, std::ofstream & outFile);
+	void 			saveColor(std::ofstream & outfile);
 
 	// Just for class dbg...
 	std::vector<uint32_t>	*	getC() { return &C; }

@@ -1,4 +1,10 @@
+// MCMC Colorer - Misc utilities
+// Alessandro Petrini, 2019-20
 #pragma once
+#include <string>
+#include <vector>
+#include <fstream>
+#include <iostream>
 
 // ANSI console command for text coloring
 #ifdef __unix
@@ -22,3 +28,14 @@
 #endif
 
 extern bool g_traceLogEn;
+
+enum cmode {
+	MODE_MCMC_CPU	= 1,
+	MODE_MCMC_GPU	= 2,
+	MODE_LUBY_GPU 	= 4
+};
+
+void checkLoggerConfFile();
+
+std::vector<std::string> split_str(const std::string s, const std::string delimiters);
+std::string join_str(const std::vector<std::string> & v, const std::string delim);

@@ -28,6 +28,7 @@ public:
 
 	Coloring	*	getColoringGPU();
 	void 			saveStats(size_t it, float duration, std::ofstream & outFile);
+	void 			saveColor(std::ofstream & outfile);
 
 protected:
 	uint32_t		nnodes;

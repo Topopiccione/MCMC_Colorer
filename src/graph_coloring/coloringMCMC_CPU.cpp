@@ -86,8 +86,15 @@ ColoringMCMC_CPU<nodeW, edgeW>::ColoringMCMC_CPU(Graph<nodeW, edgeW>* g, Colorin
 	//////////////
 
 
-	// Setting the tail cutting threshold. 0 for disabling
-	z = (50 > nNodes / 2000) ? 50 : (nNodes / 2000);
+	// Setting the tail cutting threshold.
+	if (params.tailcut) {
+		z = (50 > nNodes / 2000) ? 50 : (nNodes / 2000);
+		LOG(TRACE) << TXT_BIYLW << "Tailcut set to " << z << " nodes" << TXT_NORML;
+	}
+	else {
+		z = 0;
+		LOG(TRACE) << TXT_BIYLW << "Tailcut disabled (--tailcut)" << TXT_NORML;
+	}
 }
 
 template<typename nodeW, typename edgeW>
@@ -286,8 +293,8 @@ void ColoringMCMC_CPU<nodeW, edgeW>::run() {
 				const node * neighPtr = str->neighs + neighIdx;
 
 				// Scan the neighborhood, and set 0 to all conflicting colors
-				for (size_t i = 0; i < nodeDeg; i++) {
-					node neigh = neighPtr[i];
+				for (size_t k = 0; k < nodeDeg; i++) {
+					node neigh = neighPtr[k];
 					freeColors[C[neigh]] = 0;
 				}
 

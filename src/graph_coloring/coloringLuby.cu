@@ -210,6 +210,14 @@ void ColoringLuby<nodeW, edgeW>::saveStats( size_t it, float duration, std::ofst
 	outFile << "StD: " << std << std::endl;
 }
 
+template<typename nodeW, typename edgeW>
+void ColoringLuby<nodeW, edgeW>::saveColor(std::ofstream & outfile) {
+	std::vector<uint32_t> C( nnodes );
+	cuSts = cudaMemcpy( C.data(), coloring_d, nnodes * sizeof( uint32_t ), cudaMemcpyDeviceToHost ); cudaCheck( cuSts, __FILE__, __LINE__ );
+	size_t idx = 0;
+	std::for_each(std::begin(C), std::end(C), [&](uint32_t val) {outfile << idx++ << " " << val << std::endl;});
+}
+
 
 // Rimuove dal vettore dei candidati i nodi già colorati
 __global__ void ColoringLuby_k::prune_eligible( const uint32_t nnodes, const uint32_t * const coloring_d, bool *const cands_d ) {

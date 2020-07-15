@@ -2,13 +2,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(MCMC_Colorer)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
-option(test "Build all tests." OFF)								# Attiva GoogleTest
-option(sm61 "Activate nvcc compiling for 6.1 capability" OFF)	# dalab
+option(sm61 "Activate nvcc compiling for 6.1 capability" OFF)
 option(sm60 "Activate nvcc compiling for 6.0 capability" OFF)
-option(sm52 "Activate nvcc compiling for 5.2 capability" ON)
-option(sm50 "Activate nvcc compiling for 5.0 capability" OFF)	# Default sul mio pc
+option(sm52 "Activate nvcc compiling for 5.2 capability" OFF)
+option(sm50 "Activate nvcc compiling for 5.0 capability" ON)
 option(sm35 "Activate nvcc compiling for 3.5 capability" OFF)
 option(debug "Compile in debug mode" OFF)
+option(test "Build all tests." OFF)								# Activate GoogleTest
 
 add_subdirectory(easyloggingpp)
 
@@ -20,14 +20,6 @@ include_directories(utils)
 include_directories(easyloggingpp)
 
 include(FindCUDA)
-
-find_package(OpenMP REQUIRED) 		#Required?
-if(OPENMP_FOUND)
-message("OPENMP FOUND")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
 
 #SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; --compiler-options -fno-strict-aliasing -lineinfo -use_fast_math -Xptxas -dlcm=cg)
 if (sm61)
@@ -75,12 +67,13 @@ SET(SOURCESCPP      "graph/graphCPU.cpp"
 					"utils/ArgHandle.cpp"
 					"utils/dbg.cpp"
 					"utils/fileImporter.cpp"
+					"utils/miscUtils.cpp"
 					"utils/timer.cpp")
 SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
-                	"GPUutils/GPUStream.cu"
-                	"GPUutils/GPURandomizer.cu"
+					"GPUutils/GPUStream.cu"
+					"GPUutils/GPURandomizer.cu"
 					"graph/graphGPU.cu"
-                	"graph_coloring/coloringLuby.cu"
+					"graph_coloring/coloringLuby.cu"
 					"graph_coloring/coloringLubyFast.cu"
 					"graph_coloring/coloringMCMC_main.cu"
 					"graph_coloring/coloringMCMC_standard.cu"
@@ -88,9 +81,11 @@ SET(SOURCESCUDA     "GPUutils/GPUCudaCleaner.cu"
 					"graph_coloring/coloringMCMC_balance.cu"
 					"graph_coloring/coloringMCMC_utils.cu"
 					"graph_coloring/coloringMCMC_prints.cu"
-					"testColoring_Benchmark.cu")
+					"graph_coloring/coloringGreedyFF.cu"
+					"graph_coloring/coloringVFF.cu"
+					"main.cu")
 SET(SOURCEGEN		"datasetGenerator.cpp")
-SET(LOGGINGPP		"easyloggingpp/easyloggingpp/easylogging++.cc")
+SET(LOGGINGPP		"easyloggingpp/easylogging++.cc")
 
 cuda_add_executable(MCMC_Colorer ${SOURCESCUDA} ${SOURCESCPP} ${LOGGINGPP})
 add_executable(datasetGen ${SOURCEGEN})

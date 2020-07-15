@@ -20,8 +20,10 @@ void ColoringMCMC_CPU<nodeW, edgeW>::show_histogram() {
 	std::vector<size_t> tempVec(nCol);
 	idx = 0;
 	std::for_each( std::begin(tempVec), std::end(tempVec), [&](size_t &val) { val = histBinsOcc[idx] + histBins[idx]; idx++;} );
+	std::cout << "AAA" << std::endl;
 	auto max_val = std::max_element( std::begin(tempVec), std::end(tempVec) );
 	size_t scaler = *max_val / 80;
+	std::cout << "BBB" << std::endl;
 
 	// Printing the histogram.
 	for (size_t i = 0; i < histBins.size(); i++) {
@@ -97,6 +99,13 @@ void ColoringMCMC_CPU<nodeW, edgeW>::saveStats( size_t it, float duration, std::
 	outFile << "Average number of nodes for each color: " << mean << std::endl;
 	outFile << "Variance: " << variance << std::endl;
 	outFile << "StD: " << std << std::endl;
+}
+
+
+template<typename nodeW, typename edgeW>
+void ColoringMCMC_CPU<nodeW, edgeW>::saveColor(std::ofstream & outfile) {
+	size_t idx = 0;
+	std::for_each(std::begin(C), std::end(C), [&](uint32_t val) {outfile << idx++ << " " << val << std::endl;});
 }
 
 /////////////////////
