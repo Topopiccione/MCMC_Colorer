@@ -58,19 +58,19 @@ ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) :
 //  Destructor
 template<typename nodeW, typename edgeW>
 ColoringVFF<nodeW, edgeW>::~ColoringVFF(){
-    cudaStatus = cudaFree(coloring_device);     cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(coloring_device);			cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    cudaStatus = cudaFree(temp_coloring);                                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(forbiddenColors);                                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(uncolored_nodes_device);                                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(temp_coloring);			cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(forbiddenColors);			cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(uncolored_nodes_device);	cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    cudaStatus = cudaFree(unbalanced_nodes);                                                            cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(binCumulSizes_device);                                                        cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(unbalanced_d);                                                                cudaCheck(cudaStatus, __FILE__, __LINE__);
-    cudaStatus = cudaFree(not_looping_d);                                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(unbalanced_nodes);		cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(binCumulSizes_device);	cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(unbalanced_d);			cudaCheck(cudaStatus, __FILE__, __LINE__);
+    cudaStatus = cudaFree(not_looping_d);			cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    if(this->coloring != nullptr)
-        delete this->coloring;
+	if(this->coloring != nullptr)
+		delete this->coloring;
 }
 
 //  Entry point of the coloring + balancing; main should call this
