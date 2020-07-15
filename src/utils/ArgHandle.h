@@ -36,9 +36,8 @@ public:
 	bool			mcmcgpu;
 	bool			lubygpu;
 	bool			tailcut;
-	
-	bool			greedyff;				//use this to enable GreedyFF coloring
-	bool			rebalanced_greedyff;	//use this to enable Vertex-centric FF rebalanced coloring
+	bool			greedyff;
+	bool			rebalanced_greedyff;
 
 	std::string		graphName;
 

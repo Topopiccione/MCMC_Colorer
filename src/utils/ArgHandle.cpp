@@ -38,9 +38,8 @@ void ArgHandle::processCommandLine() {
 		{ "mcmccpu",		no_argument,	   0, '1' },
 		{ "mcmcgpu",		no_argument,	   0, '2' },
 		{ "lubygpu",		no_argument,	   0, '3' },
-		
-		{ "greedyff",		no_argument,	   0, '4' },
-		{ "rebalanced",		no_argument,	   0, '5' },
+		{ "grdffgpu",		no_argument,	   0, '4' },
+		{ "vffgpu",			no_argument,	   0, '5' },
 
 		{ "nCol",			required_argument, 0, 'k' },
 		{ "numColRatio",	required_argument, 0, 'r' },
@@ -132,7 +131,6 @@ void ArgHandle::processCommandLine() {
 			case 'k':
 				try {
 					int temp = std::stoi( optarg );
-					std::cout << temp;
 					if (temp < 1) {
 						std::cout << TXT_BIRED << "nCol must be a positive integer." << TXT_NORML << std::endl;
 						exit( -1 );
@@ -328,6 +326,8 @@ void ArgHandle::displayHelp() {
 	std::cout << "    " << "--mcmccpu            Enables MCMC CPU colorer." << std::endl;
 	std::cout << "    " << "--mcmcgpu            Enables MCMC GPU colorer." << std::endl;
 	std::cout << "    " << "--lubygpu            Enables Luby GPU colorer." << std::endl;
+	std::cout << "    " << "--grdffgpu           Enables Greedy First Fit GPU colorer." << std::endl;
+	std::cout << "    " << "--vffgpu             Enables Greedy First Fit + Vertex-centric First Fit rebalance GPU colorer." << std::endl;
 	std::cout << TXT_BIYLW << "  Coloring options (only for MCMC CPU and MCMC GPU)" << TXT_NORML << std::endl;
 	std::cout << "    " << "--nCol N             Number of colors (mandatory)" << std::endl;
 	std::cout << "    " << "--numColRatio N.N    Optional divider for number of colors (default = 1.0, 1.0 <= numColRatio <= 16.0)" << std::endl;
@@ -367,7 +367,7 @@ void ArgHandle::printLogo() {
 	std::cout << "\033[38;5;218m            ░                   ░           ░                                                           \e[0m" << std::endl;
 	std::cout <<               "_________________________________________________________________________________________________________" << std::endl << std::endl;
 	std::cout <<               "                  PhuseLab / AnacletoLab - Universita' degli studi di Milano - 2019-20                  " << std::endl;
-	std::cout <<               "                                   N. Aspes - G. Grossi - A. Petrini                                    " << std::endl;
+	std::cout <<               "                             N. Aspes - A. Natilla - G. Grossi - A. Petrini                             " << std::endl;
 	std::cout <<               "                                http://github.com/PhuseLab/MCMC_Colorer                                 " << std::endl << std::endl;
 	std::cout <<               "                         Use '--cite-me' command line option for citation info                          " << std::endl << std::endl;
 	std::cout <<               "                        '--help' for the complete  list of command line options                         " << std::endl;
