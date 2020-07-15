@@ -1,16 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-#include <coloring.h>
-#include <coloringGreedyFF.h>
-#include <graph/graph.h>
-
-#include "GPUutils/GPUutils.h"          //is required in order to use cudaCheck
-
-#include <set>                          //is used for counting the number of colors
-#include <algorithm>                    //count is used for conversion to standard notation
-#include <numeric>                      //transform_reduce is used for stats
-
-//#define TESTCOLORINGCORRECTNESS
+#include "coloringGreedyFF.h"
 
 //  Constructor implementation
 template<typename nodeW, typename edgeW>
@@ -37,6 +27,8 @@ ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
     //  We setup our grid to be divided in blocks of 128 threads
     threadsPerBlock = dim3(128, 1, 1);
     blocksPerGrid = dim3((numNodes + threadsPerBlock.x - 1)/threadsPerBlock.x, 1, 1);
+
+	this->coloring = nullptr;
 }
 
 //  Destructor implementation
@@ -50,7 +42,7 @@ ColoringGreedyFF<nodeW, edgeW>::~ColoringGreedyFF(){
     cudaStatus = cudaFree(uncolored_nodes_device);                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     if(this->coloring != nullptr)                 //Note: this may be unnecessary
-        free(this->coloring);
+        delete this->coloring;
 }
 
 template<typename nodeW, typename edgeW>
@@ -210,7 +202,7 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
         cumulColorClassesSize[col] = std::count(coloring_host.get(), coloring_host.get() + numNodes, col);
     }
 
-    #ifdef TESTCOLORINGCORRECTNESS
+    #ifdef TESTCOLORINGCORRECTNESS_GFF
     std::cout << "Color Classes:\n";
     for(uint32_t col = 0; col < numColors + 1; ++col){
         std::cout << cumulColorClassesSize[col] << " ";
@@ -225,7 +217,7 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
     }
 
     //DEBUG CORRECTNESS, BRUTE FORCE
-    #ifdef TESTCOLORINGCORRECTNESS
+    #ifdef TESTCOLORINGCORRECTNESS_GFF
     std::cout << "Cumulative Sizes of Color Classes:\n";
     for(uint32_t col = 0; col < numColors + 1; ++col){
         std::cout << cumulColorClassesSize[col] << " ";
