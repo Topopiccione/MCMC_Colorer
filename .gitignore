@@ -4,7 +4,7 @@ easyloggingpp/easyloggingpp/*.cc
 easyloggingpp/easyloggingpp/*.h
 test_01
 src/zlib/*.h
-
+pyScripts/*
 
 #Visual Studio
 .vs/
