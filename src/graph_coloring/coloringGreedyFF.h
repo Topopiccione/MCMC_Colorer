@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <numeric>
 #include "graph/graph.h"
-#include "coloring.h"
+#include "graph_coloring/coloring.h"
 #include "GPUutils/GPUutils.h"
 
 //#define TESTCOLORINGCORRECTNESS_GFF

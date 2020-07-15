@@ -1,19 +1,17 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-#include <coloring.h>
-#include <coloringVFF.h>
-#include <graph/graph.h>
-
-#include "GPUutils/GPUutils.h"          //is required in order to use cudaCheck
+#include "coloringVFF.h"
+// NOTE: in order to avoid a bug with GCC 5.4.0+ and Cuda - name collision for isnan in
+//       a Cuda include - thrust includes should stay here
 #include <thrust/count.h>               //is used to count colors in the coloring
 #include <thrust/scan.h>                //is used for inclusive scan during the balancing loop
 #include <thrust/copy.h>                //is used for updating the array of unbalanced nodes
 #include <thrust/execution_policy.h>    //specifies where the data are and which policy some thrust functions should use
-
 //  These may be used for thrust::any_of, in case you'd want to switch
 // to using more thrust functions in the balancing loop:
 //      #include <thrust/logical.h>
 //      #include <thrust/functional.h>
+
 
 #define BIN_SIZE(cumulBinSize, binIndex) (cumulBinSize[binIndex] - cumulBinSize[binIndex-1])
 #define UNBALANCED_HISTORY 10
@@ -53,6 +51,8 @@ ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) :
 
     threadsPerBlock = dim3(128, 1, 1);
     blocksPerGrid = dim3((numNodes + threadsPerBlock.x - 1) / threadsPerBlock.x, 1, 1);
+
+	this->coloring = nullptr;
 }
 
 //  Destructor
@@ -70,7 +70,7 @@ ColoringVFF<nodeW, edgeW>::~ColoringVFF(){
     cudaStatus = cudaFree(not_looping_d);                                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     if(this->coloring != nullptr)
-        free(this->coloring);
+        delete this->coloring;
 }
 
 //  Entry point of the coloring + balancing; main should call this
