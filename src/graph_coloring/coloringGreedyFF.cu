@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <coloring.h>
 #include <coloringGreedyFF.h>
 #include <graph/graph.h>
@@ -15,24 +17,24 @@ template<typename nodeW, typename edgeW>
 ColoringGreedyFF<nodeW, edgeW>::ColoringGreedyFF(Graph<nodeW, edgeW>* graph_d) :
     Colorer<nodeW, edgeW>(graph_d), graphStruct_device(graph_d->getStruct()),
     numNodes(graph_d->getStruct()->nNodes), numColors(0) {
-    
+
     //  We need to have an array representing the colors of each node
     // both on host...
     coloring_host = std::unique_ptr<uint32_t[]>(new uint32_t[numNodes]);
-    
+
     // ...and on device
     cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
-    
+
     //  We are assuming getMaxNodeDeg() returns a valid result here
-    maxColors = this->graph->getMaxNodeDeg() + 1;   
+    maxColors = this->graph->getMaxNodeDeg() + 1;
 
     //  Data structures initialization
-    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                       cudaCheck(cudaStatus, __FILE__, __LINE__); 
+    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                       cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));                   cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));                         cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    //  We setup our grid to be divided in blocks of 128 threads 
+    //  We setup our grid to be divided in blocks of 128 threads
     threadsPerBlock = dim3(128, 1, 1);
     blocksPerGrid = dim3((numNodes + threadsPerBlock.x - 1)/threadsPerBlock.x, 1, 1);
 }
@@ -42,7 +44,7 @@ template<typename nodeW, typename edgeW>
 ColoringGreedyFF<nodeW, edgeW>::~ColoringGreedyFF(){
     //  We only need to deallocate what we allocated in the constructor
     cudaStatus = cudaFree(coloring_device);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
-    
+
     cudaStatus = cudaFree(temp_coloring);                                               cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(forbiddenColors);                                             cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaFree(uncolored_nodes_device);                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -70,7 +72,7 @@ void ColoringGreedyFF<nodeW, edgeW>::run(){
         //  Update the coloring before next loop
         ColoringGreedyFF_k::update_coloring_GPU<<<blocksPerGrid, threadsPerBlock>>>(numNodes, temp_coloring, coloring_device);
         cudaDeviceSynchronize();
-        
+
         //  Set <uncolored_nodes_device> to false and update it with <check_uncolored_nodes>
         cudaStatus = cudaMemset(uncolored_nodes_device, 0, sizeof(bool));                                           cudaCheck(cudaStatus, __FILE__, __LINE__);
         ColoringGreedyFF_k::check_uncolored_nodes<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, uncolored_nodes_device);
@@ -95,14 +97,14 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
     uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 
     //  If idx doesn't correspond to a node, it is excluded from this computation
-    if(idx >= numNodes){     
+    if(idx >= numNodes){
         return;
     }
 
-    //  Line "idx_forbidden_colors[i] != idx", later in the code, didn't allow idx = 0 
+    //  Line "idx_forbidden_colors[i] != idx", later in the code, didn't allow idx = 0
     // to get a color different from 0; this resulted in endless looping as a bug.
     // Since this algorithm is a First Fit, node 0 can be put to 1 asap since it would win anyway.
-    if(idx == 0){                   
+    if(idx == 0){
         output_coloring[idx] = 1;
     }
 
@@ -110,8 +112,8 @@ __global__ void ColoringGreedyFF_k::tentative_coloring(const uint32_t numNodes, 
     if(input_coloring[idx] != 0){
         return;
     }
-    
-    uint32_t* idx_forbidden_colors = forbidden_colors + idx * maxColors; 
+
+    uint32_t* idx_forbidden_colors = forbidden_colors + idx * maxColors;
     uint32_t numNeighs = cumulDegs[idx+1] - cumulDegs[idx];
     uint32_t neighsOffset = cumulDegs[idx];
     uint32_t neighbor;
@@ -155,7 +157,7 @@ __global__ void ColoringGreedyFF_k::conflict_detection(const uint32_t numNodes, 
     uint32_t neighsOffset = cumulDegs[idx];
     uint32_t neighbor;
 
-    //   If the idx-th node has the same color of a neighbor 
+    //   If the idx-th node has the same color of a neighbor
     //  and its id is greater than the one of its neighbor
     //  we make it uncolored
     for(uint32_t j = 0; j < numNeighs; ++j){
@@ -165,12 +167,12 @@ __global__ void ColoringGreedyFF_k::conflict_detection(const uint32_t numNodes, 
             break;
         }
     }
-} 
+}
 
 //  Note that input_coloring and output_coloring must be pointers to GPU memory
 __global__ void ColoringGreedyFF_k::update_coloring_GPU(const uint32_t numNodes, const uint32_t* input_coloring, uint32_t* output_coloring){
     uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-    
+
     if(idx >= numNodes){
         return;
     }
@@ -199,7 +201,7 @@ template<typename nodeW, typename edgeW>
 void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
 
     //  Since we already use 0 as an "uncolored" identifier, there's no need to do
-    // what coloringLuby.cu does on lines colClass (lines 93-to-103, see NB on line 95) 
+    // what coloringLuby.cu does on lines colClass (lines 93-to-103, see NB on line 95)
     uint32_t *cumulColorClassesSize = new uint32_t[numColors + 1];
     memset(cumulColorClassesSize, 0, (numColors+1)*sizeof(uint32_t));
 
@@ -215,13 +217,13 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
     }
     std::cout << "\n";
     #endif
-    
+
     // ... you accumulate them in place
     // NOTE: index 0 is skipped, and we can start from 2 because cumulColorClassesSize[0] = 0
     for(uint32_t col = 2; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = cumulColorClassesSize[col] + cumulColorClassesSize[col-1];
     }
-    
+
     //DEBUG CORRECTNESS, BRUTE FORCE
     #ifdef TESTCOLORINGCORRECTNESS
     std::cout << "Cumulative Sizes of Color Classes:\n";
@@ -231,20 +233,20 @@ void ColoringGreedyFF<nodeW, edgeW>::convert_to_standard_notation(){
     std::cout << "\n";
 
 	std::cout << "Test colorazione attivato!\n";
-    
+
     uint32_t* test_coloring = coloring_host.get();
     std::unique_ptr<node_sz[]> cumulDegs( new node_sz[graphStruct_device->nNodes + 1]);
 	std::unique_ptr<node[]>  neighs( new node[graphStruct_device->nEdges] );
 	cudaStatus = cudaMemcpy( cumulDegs.get(), graphStruct_device->cumulDegs, (graphStruct_device->nNodes + 1) * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
 	cudaStatus = cudaMemcpy( neighs.get(),    graphStruct_device->neighs,    graphStruct_device->nEdges       * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
-    
+
     uint32_t offset;
     uint32_t size;
     uint32_t neighbor;
     for(uint32_t i = 0; i < numNodes; ++i){
         size    = cumulDegs[i+1] - cumulDegs[i];
         offset  = cumulDegs[i];
-        
+
         for(uint32_t j = 0; j < size; ++j){
             neighbor = neighs[offset + j];
             if(test_coloring[i] == test_coloring[neighbor]){
@@ -276,7 +278,7 @@ void ColoringGreedyFF<nodeW, edgeW>::saveStats(size_t iteration, float duration,
     file << "-------------------------------------------\n";
     file << "GRAPH INFO\n";
     file << "Nodes: " << numNodes << " - Edges: " << graphStruct_device->nEdges << "\n";
-    file << "Max deg: " << this->graph->getMaxNodeDeg() << " - Min deg: " << this->graph->getMinNodeDeg() 
+    file << "Max deg: " << this->graph->getMaxNodeDeg() << " - Min deg: " << this->graph->getMinNodeDeg()
          << " - Avg deg: " << this->graph->getMeanNodeDeg() << "\n";
     file << "Edge Probability (for randomly generated graphs): " << this->graph->prob << "\n";
     file << "-------------------------------------------\n";
@@ -297,11 +299,11 @@ void ColoringGreedyFF<nodeW, edgeW>::saveStats(size_t iteration, float duration,
 
     //  Personal note: C++14 doesn't have transform_reduce, I fear,
     // so the following cannot be compiled:
-    // 
+    //
     // auto distance_to_mean = [&](uint32_t value){
     //     return (value - mean) * (value - mean);
     // };
-    //  float variance = std::transform_reduce(std::begin(histogram), std::end(histogram), 0, std::plus<>, distance_to_mean); 
+    //  float variance = std::transform_reduce(std::begin(histogram), std::end(histogram), 0, std::plus<>, distance_to_mean);
 
     float variance = 0;
     auto add_quadratic_distance_to_mean = [&](uint32_t value){

@@ -1,14 +1,16 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <coloring.h>
 #include <coloringVFF.h>
 #include <graph/graph.h>
 
-#include "GPUutils/GPUutils.h"          //is required in order to use cudaCheck          
+#include "GPUutils/GPUutils.h"          //is required in order to use cudaCheck
 #include <thrust/count.h>               //is used to count colors in the coloring
 #include <thrust/scan.h>                //is used for inclusive scan during the balancing loop
 #include <thrust/copy.h>                //is used for updating the array of unbalanced nodes
-#include <thrust/execution_policy.h>    //specifies where the data are and which policy some thrust functions should use 
+#include <thrust/execution_policy.h>    //specifies where the data are and which policy some thrust functions should use
 
-//  These may be used for thrust::any_of, in case you'd want to switch 
+//  These may be used for thrust::any_of, in case you'd want to switch
 // to using more thrust functions in the balancing loop:
 //      #include <thrust/logical.h>
 //      #include <thrust/functional.h>
@@ -19,22 +21,22 @@
 
 //  Constructor - initialization as in ColoringGreedyFF
 template<typename nodeW, typename edgeW>
-ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) : 
+ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) :
     Colorer<nodeW, edgeW>(graph_d), graphStruct_device(graph_d->getStruct()),
     numNodes(graph_d->getStruct()->nNodes), numColors(0) {
 
     //  We need to have an array representing the colors of each node
     // both on host...
     coloring_host = std::unique_ptr<uint32_t[]>(new uint32_t[numNodes]);
-    
+
     // ...and on device
     cudaStatus = cudaMalloc((void**)&coloring_device, numNodes * sizeof(uint32_t));                     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     //  We are assuming getMaxNodeDeg() returns a valid result here
-    maxColors = this->graph->getMaxNodeDeg() + 1;   
+    maxColors = this->graph->getMaxNodeDeg() + 1;
 
     //  Data structures initialization
-    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                           cudaCheck(cudaStatus, __FILE__, __LINE__); 
+    cudaStatus = cudaMemset(coloring_device, 0, numNodes * sizeof(uint32_t));                           cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&temp_coloring, numNodes * sizeof(uint32_t));                       cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * maxColors * sizeof(uint32_t));         cudaCheck(cudaStatus, __FILE__, __LINE__);
     cudaStatus = cudaMalloc((void**)&uncolored_nodes_device, sizeof(bool));                             cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -46,7 +48,7 @@ ColoringVFF<nodeW, edgeW>::ColoringVFF(Graph<nodeW, edgeW>* graph_d) :
     cudaStatus = cudaMalloc((void**)&not_looping_d, sizeof(bool));                                      cudaCheck(cudaStatus, __FILE__, __LINE__);
 
 
-    //  Note that binCumulSizes_device is initialized later since it needs 
+    //  Note that binCumulSizes_device is initialized later since it needs
     // results from coloring to be allocated; it gets freed in the destructor.
 
     threadsPerBlock = dim3(128, 1, 1);
@@ -81,7 +83,7 @@ void ColoringVFF<nodeW, edgeW>::run(){
     run_balancing();
 
     convert_to_standard_notation();
-} 
+}
 
 //  Using run() implementation from ColoringGreedyFF for coloring
 template <typename nodeW, typename edgeW>
@@ -103,7 +105,7 @@ void ColoringVFF<nodeW, edgeW>::run_coloring(){
         //  Update the coloring before next loop
         ColoringGreedyFF_k::update_coloring_GPU<<<blocksPerGrid, threadsPerBlock>>>(numNodes, temp_coloring, coloring_device);
         cudaDeviceSynchronize();
-        
+
         //  Set <uncolored_nodes_device> to false and update it with <check_uncolored_nodes>
         cudaStatus = cudaMemset(uncolored_nodes_device, 0, sizeof(bool));                                           cudaCheck(cudaStatus, __FILE__, __LINE__);
         ColoringGreedyFF_k::check_uncolored_nodes<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, uncolored_nodes_device);
@@ -129,19 +131,19 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
 
     cudaStatus = cudaMemset(unbalanced_nodes, 0, sizeof(bool) * numNodes * UNBALANCED_HISTORY);         // Note: it is initialized to false
     cudaCheck(cudaStatus, __FILE__, __LINE__);
-    
+
     //  Coloring array, temporary; used for parallelization and avoiding data races
     // Note memory was allocated in constructor, so it has to be reset now
     cudaStatus = cudaMemcpy(temp_coloring, coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToDevice);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-     
+
     //  Matrix of colors per array (from 0 to numColors); a pointer to the first element                //  Personal note on performance: the paper that inspired this uses an array that is
     // is passed to <tentative_rebalancing> kernel, and each thread will dereference only               // private to each node, and it considers it as an unsigned int array; I implemented it
     // a part of it (numColors + 1 elements per node).                                                  // as the paper did, but better performances and a lower memory impact could be achieved
                                                                                                         // with a matrix of boolean values.
-    
-    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * (numColors+1) * sizeof(uint32_t));     // numColors+1 since we need to consider the 0 
+
+    cudaStatus = cudaMalloc((void**)&forbiddenColors, numNodes * (numColors+1) * sizeof(uint32_t));     // numColors+1 since we need to consider the 0
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
     //  Array of cumulative sizes of the color classes/bins
@@ -151,14 +153,14 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     cudaStatus = cudaMemcpy(binCumulSizes_device, this->coloring->cumulSize, sizeof(uint32_t) * (numColors + 1), cudaMemcpyHostToDevice);
     cudaCheck(cudaStatus, __FILE__, __LINE__);
 
-    //  We use a non-blocking CUDA Stream in order to make bin updating  
+    //  We use a non-blocking CUDA Stream in order to make bin updating
     // and conflict checking parallel
     cudaStream_t non_default_stream;
     cudaStreamCreateWithFlags(&non_default_stream, cudaStreamNonBlocking);
 
     //  Detection of the set of unbalanced nodes, by checking which bin sizes are greater than gamma
     BalancingVFF_k::detect_unbalanced_nodes<<<blocksPerGrid, threadsPerBlock>>>(numNodes, coloring_device, binCumulSizes_device, gamma_threshold, unbalanced_nodes);
-    
+
     //  Define and initialize a bool that will allow to loop until rebalancing is completed
     bool unbalanced;
     not_looping = true;
@@ -182,7 +184,7 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     }
     std::cout << "\nGamma is " << gamma_threshold << "\n";
     #endif
-    
+
     //  Until there is even one of the nodes flagged as unbalanced...
     while(unbalanced && not_looping){
         cudaStatus = cudaMemset(forbiddenColors, 0, numNodes * (numColors + 1) * sizeof(uint32_t));     cudaCheck(cudaStatus, __FILE__, __LINE__);
@@ -200,7 +202,7 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
         cudaCheck(cudaPeekAtLastError(), __FILE__, __LINE__);
         cudaStreamSynchronize(non_default_stream);
 
-        //  When the bin update is done, <binCumulSizes_device> contains the size of the i-th  
+        //  When the bin update is done, <binCumulSizes_device> contains the size of the i-th
         // color class at index i; we apply an inclusive scan to get a cumulative array of sizes
         thrust::inclusive_scan(thrust::device, binCumulSizes_device, binCumulSizes_device + (numColors + 1), binCumulSizes_device);
         cudaDeviceSynchronize();
@@ -233,16 +235,16 @@ void ColoringVFF<nodeW, edgeW>::run_balancing(){
     else{
         cudaStatus = cudaMemcpy(coloring_host.get(), coloring_device, sizeof(uint32_t) * numNodes, cudaMemcpyDeviceToHost);
         cudaCheck(cudaStatus, __FILE__, __LINE__);
-        
+
         //  Update coloring data
         cudaStatus = cudaMemcpy(this->coloring->cumulSize, binCumulSizes_device, sizeof(uint32_t) * (numColors + 1), cudaMemcpyDeviceToHost);
         cudaCheck(cudaStatus, __FILE__, __LINE__);
-        
-        this->coloring->colClass = coloring_host.get(); 
 
-        //  Note that this->coloring->nCol shouldn't be updated 
+        this->coloring->colClass = coloring_host.get();
+
+        //  Note that this->coloring->nCol shouldn't be updated
         // since the number of used colors should stay the same
-    
+
         #ifdef DEBUGGING
         std::cout << "\nNew sizes of the bins are:\n";
         for(int i = 1; i <= numColors; ++i){
@@ -265,10 +267,10 @@ void ColoringVFF<nodeW, edgeW>::convert_to_standard_notation(){
     for(uint32_t col = 1; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = std::count(coloring_host.get(), coloring_host.get() + numNodes, col);
     }
-    
+
     // ... you accumulate them in place
     // NOTE: index 0 is skipped, and we can start from 2 because cumulColorClassesSize[0] = 0
-    // and cumulColorClassesSize[1] = cumulColorClassesSize[1] - cumulColorClassesSize[0] 
+    // and cumulColorClassesSize[1] = cumulColorClassesSize[1] - cumulColorClassesSize[0]
     for(uint32_t col = 2; col < numColors + 1; ++col){
         cumulColorClassesSize[col] = cumulColorClassesSize[col] + cumulColorClassesSize[col-1];
     }
@@ -281,20 +283,20 @@ void ColoringVFF<nodeW, edgeW>::convert_to_standard_notation(){
     std::cout << "\n";
 
 	std::cout << "Test colorazione attivato!\n";
-    
+
     uint32_t* test_coloring = coloring_host.get();
     std::unique_ptr<node_sz[]> cumulDegs( new node_sz[graphStruct_device->nNodes + 1]);
 	std::unique_ptr<node[]>  neighs( new node[graphStruct_device->nEdges] );
 	cudaStatus = cudaMemcpy( cumulDegs.get(), graphStruct_device->cumulDegs, (graphStruct_device->nNodes + 1) * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
 	cudaStatus = cudaMemcpy( neighs.get(),    graphStruct_device->neighs,    graphStruct_device->nEdges       * sizeof(node_sz),    cudaMemcpyDeviceToHost );   cudaCheck( cudaStatus, __FILE__, __LINE__ );
-    
+
     uint32_t offset;
     uint32_t size;
     uint32_t neighbor;
     for(uint32_t i = 0; i < numNodes; ++i){
         size    = cumulDegs[i+1] - cumulDegs[i];
         offset  = cumulDegs[i];
-        
+
         for(uint32_t j = 0; j < size; ++j){
             neighbor = neighs[offset + j];
             if(test_coloring[i] == test_coloring[neighbor]){
@@ -332,7 +334,7 @@ __global__ void BalancingVFF_k::detect_unbalanced_nodes(const uint32_t numNodes,
 }
 
 //  Kernel searching for unbalanced nodes in a bool array; returns
-// the result of the searching in the out-variable <result> 
+// the result of the searching in the out-variable <result>
 __global__ void BalancingVFF_k::is_unbalanced(const uint32_t numNodes, const bool* unbalanced_nodes, bool* result){
     uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
     if(idx >= numNodes){
@@ -373,26 +375,26 @@ __global__ void BalancingVFF_k::tentative_rebalancing(const uint32_t numNodes, c
         neighbor = neighs[neighsOffset + j];
         idx_forbidden_colors[input_coloring[neighbor]] = idx;
     }
-    
-    //  Pick the lowest (FF) color that is: 
-    // - permissible [read: not forbidden] 
+
+    //  Pick the lowest (FF) color that is:
+    // - permissible [read: not forbidden]
     // - belongs to an undersized bin
     for(uint32_t i = 1; i <= numColors; ++i){
         if(idx_forbidden_colors[i] != idx && gamma < BIN_SIZE(cumulBinSizes, i)){
             output_coloring[idx] = i;
-            return;            
+            return;
         }
     }
 }
 
 //  Kernel for updating bins
-//  Note that this kernel works per-color; idx stands for the corresponding color, 
+//  Note that this kernel works per-color; idx stands for the corresponding color,
 // and goes from 1 to numColors, both included
 __global__ void BalancingVFF_k::update_bins(const uint32_t numNodes, const uint32_t numColors, const uint32_t* coloring, uint32_t* binSizes){
     uint32_t idx = threadIdx.x + blockDim.x * blockIdx.x;
-    
+
     //  Also note that "color 0" is "invalid" (counting from 1)
-    if(idx > numColors || idx == 0){        
+    if(idx > numColors || idx == 0){
         return;
     }
 
@@ -422,7 +424,7 @@ __global__ void BalancingVFF_k::solve_conflicts(const uint32_t numNodes, const u
     uint32_t neighbor;
 
     //  If there is a conflict with a neighbor and idx is greater than
-    // the neighbor index, node idx stays in the unbalanced set... 
+    // the neighbor index, node idx stays in the unbalanced set...
     for(uint32_t i = 0; i < numNeighs; ++i){
         neighbor = neighs[neighsOffset + i];
         if(coloring[neighbor] == coloring[idx] && idx > neighbor){
@@ -446,7 +448,7 @@ __global__ void BalancingVFF_k::ensure_not_looping(const uint32_t numNodes, bool
     if(*output == false){
         return;
     }
-    
+
     if(threadIdx.x > 0 || blockIdx.x > 0){
         return;
     }
@@ -458,7 +460,7 @@ __global__ void BalancingVFF_k::ensure_not_looping(const uint32_t numNodes, bool
             }
         }
     }
-    
+
     printf("WARNING >>> It was looping. Results will be unconsistent.\nResetting to Greedy First Fit coloring...\n");
     *output = false;
 }
@@ -471,7 +473,7 @@ void ColoringVFF<nodeW, edgeW>::saveStats(size_t iteration, float duration, std:
     file << "-------------------------------------------\n";
     file << "GRAPH INFO\n";
     file << "Nodes: " << numNodes << " - Edges: " << graphStruct_device->nEdges << "\n";
-    file << "Max deg: " << this->graph->getMaxNodeDeg() << " - Min deg: " << this->graph->getMinNodeDeg() 
+    file << "Max deg: " << this->graph->getMaxNodeDeg() << " - Min deg: " << this->graph->getMinNodeDeg()
          << " - Avg deg: " << this->graph->getMeanNodeDeg() << "\n";
     file << "Edge Probability (for randomly generated graphs): " << this->graph->prob << "\n";
     file << "-------------------------------------------\n";
