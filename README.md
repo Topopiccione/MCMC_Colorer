@@ -9,6 +9,7 @@ A parallel MCMC algorithm for the Balanced Graph Coloring problem
 IAPR International workshop on Graph-Based Representation in Pattern Recognition, 19-21 July 2019, Tours, France.
 
 Software implementation by: N. Aspes - G. Grossi - A. Petrini  
+Greedy First Fit and Vertex-centric First Fit contribution by A. Natilla  
 PhuseLab / AnacletoLab - Universita' degli studi di Milano - 2019-20
 
 ### Table of Contents
@@ -32,6 +33,8 @@ A parallel MCMC algorithm for the Balanced Graph Coloring problem
 IAPR International workshop on Graph-Based Representation in Pattern Recognition, Tours, France. 19-21 July 2019
 
 This software includes a fully-parallel GPU implementation of the algorithm. For comparison, we also included a sequential CPU implementation of the same strategy and a novel Luby-inspired greedy colorer, also implemented for GPU.
+
+Greedy First Fit and Vertex-centric First Fit algorithms come from  H. Lu, M. Halappanavar, D. Chavarría-Miranda, A. Gebremedhin and A. Kalyanaraman, "Balanced Coloring for Parallel Computing Applications", IEEE International Parallel and Distributed Processing Symposium, 25-29 May 2015 (https://ieeexplore.ieee.org/document/7161271)
 
 
 ---
@@ -108,6 +111,8 @@ MCMC_Colorer is a command line executable. At present time, no graphical user in
 |Coloring algorithm selection| `--mcmccpu` | (2) | - | Enables the MCMC CPU algorithm |
 | | `--mcmcgpu` | (2) | - | Enables the MCMC GPU algorithm |
 | | `--lubygpu` | (2) | - | Enables the Luby GPU algorithm |
+| | `--grdffgpu` | (2) | - |  Enables Greedy First Fit GPU algorithm |
+| | `--vffgpu` | (2) | - | Enables Greedy First Fit followed by the Vertex-centric First Fit rebalance GPU algorithm |
 |MCMC coloring options| `--nCol` | No | maxDeg / numColRatio | Chooses the number of colors. By default is set to the maximum node degree divided by the `--numColRatio` value |
 || `--numColRatio` | No | 1.0 | Optional divider for the numer of colors `--nCol` |
 || `--tabooIterations` | No | 0 | Optional number of iteration for the taboo strategy |
@@ -116,7 +121,7 @@ MCMC_Colorer is a command line executable. At present time, no graphical user in
 || `--repet N` | No | 1 | Number of times each colorer algorithm is invoked on each run  |
 || `--seed N` | No | Random | Integer seed for pseudo-random number generator  |
 
-(1): **Warning**: previous save files are overwritten by default!
+(1): **Warning**: previous save files are overwritten by default!  
 (2): More than one algorithm can be selected per run. If no selection is made, MCMC CPU is chosen by default.
 
 
